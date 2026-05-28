@@ -31,6 +31,8 @@ impl SimpleComponent for Bar {
 
             gtk::Box {
                 set_orientation: gtk::Orientation::Horizontal,
+                set_hexpand: true,
+                add_css_class: "bar",
                 set_spacing: 8,
                 set_margin_start: 8,
                 set_margin_end: 8,
@@ -49,7 +51,7 @@ impl SimpleComponent for Bar {
     fn init(
         _init: Self::Init,
         root: Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         root.init_layer_shell();
         root.set_layer(Layer::Top);
@@ -61,30 +63,16 @@ impl SimpleComponent for Bar {
         root.set_namespace(Some("wayward"));
 
         let model = Bar {
-            workspaces: vec![
-                WorkspaceSummary {
-                    id: 1,
-                    idx: 1,
-                    name: None,
-                    output: Some("fake".to_string()),
-                    is_active: true,
-                    is_focused: true,
-                    is_urgent: false,
-                },
-                WorkspaceSummary {
-                    id: 2,
-                    idx: 2,
-                    name: Some("web".to_string()),
-                    output: Some("fake".to_string()),
-                    is_active: false,
-                    is_focused: false,
-                    is_urgent: false,
-                },
-            ],
-            status: None,
+            workspaces: Vec::new(),
+            status: Some("Connecting to Niri".to_string()),
         };
         let widgets = view_output!();
         model.render_workspace_row(&widgets.workspace_row);
+
+        let input_sender = sender.input_sender().clone();
+        relm4::spawn(async move {
+            crate::niri::run_workspace_watcher(input_sender).await;
+        });
 
         ComponentParts { model, widgets }
     }

@@ -46,6 +46,18 @@ impl WorkspaceSummary {
 
         classes
     }
+
+    pub fn from_wayle_workspace(workspace: &wayle_niri::core::Workspace) -> Self {
+        Self {
+            id: workspace.id.get(),
+            idx: workspace.idx.get(),
+            name: workspace.name.get(),
+            output: workspace.output.get(),
+            is_active: workspace.is_active.get(),
+            is_focused: workspace.is_focused.get(),
+            is_urgent: workspace.is_urgent.get(),
+        }
+    }
 }
 
 impl From<RawWorkspace> for WorkspaceSummary {

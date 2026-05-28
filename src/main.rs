@@ -1,10 +1,12 @@
 mod bar;
+mod niri;
 mod workspace;
 
 use relm4::RelmApp;
 
 const CSS: &str = r#"
-window {
+window,
+.bar {
     background: #202124;
     color: #f1f3f4;
     font: 12px sans-serif;
