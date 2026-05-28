@@ -12,6 +12,10 @@ window,
     font: 12px sans-serif;
 }
 
+.bar-region {
+    background: transparent;
+}
+
 .workspace {
     padding: 3px 8px;
     border-radius: 4px;
