@@ -27,7 +27,7 @@ impl SimpleComponent for Bar {
         gtk::ApplicationWindow {
             set_title: Some("Wayward"),
             set_default_height: 32,
-            set_resizable: false,
+            set_resizable: true,
 
             gtk::Box {
                 set_orientation: gtk::Orientation::Horizontal,
