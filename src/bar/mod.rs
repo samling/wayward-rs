@@ -27,6 +27,34 @@ pub enum BarMsg {
     UpdatesStopped,
 }
 
+impl Bar {
+    fn configure_window(root: &gtk::ApplicationWindow) {
+        root.init_layer_shell();
+        root.set_layer(Layer::Top);
+        root.set_anchor(Edge::Top, true);
+        root.set_anchor(Edge::Left, true);
+        root.set_anchor(Edge::Right, true);
+        root.auto_exclusive_zone_enable();
+        root.set_keyboard_mode(KeyboardMode::None);
+        root.set_namespace(Some("wayward"));
+    }
+
+    fn start_watchers(sender: &ComponentSender<Self>) {
+        battery::start(sender.input_sender().clone());
+        clock::start(sender.input_sender().clone());
+        crate::niri::start_workspace_watcher(sender.input_sender().clone());
+    }
+
+    fn initial_model() -> Self {
+        Self {
+            workspaces: Vec::new(),
+            status: Some("Connecting to Niri".to_string()),
+            clock_text: clock::initial_text(),
+            battery_text: battery::initial_text(),
+        }
+    }
+}
+
 #[relm4::component(pub)]
 impl SimpleComponent for Bar {
     type Init = ();
@@ -86,32 +114,16 @@ impl SimpleComponent for Bar {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        root.init_layer_shell();
-        root.set_layer(Layer::Top);
-        root.set_anchor(Edge::Top, true);
-        root.set_anchor(Edge::Left, true);
-        root.set_anchor(Edge::Right, true);
-        root.auto_exclusive_zone_enable();
-        root.set_keyboard_mode(KeyboardMode::None);
-        root.set_namespace(Some("wayward"));
+        Self::configure_window(&root);
 
-        let model = Bar {
-            workspaces: Vec::new(),
-            status: Some("Connecting to Niri".to_string()),
-            clock_text: clock::initial_text(),
-            battery_text: battery::initial_text(),
-        };
-
+        let model = Self::initial_model();
         let widgets = view_output!();
 
         battery::render(&widgets.battery_label);
-        battery::start(sender.input_sender().clone());
-
         clock::render(&widgets.clock_label);
-        clock::start(sender.input_sender().clone());
-
         model.render_workspace_row(&widgets.workspace_row);
-        crate::niri::start_workspace_watcher(sender.input_sender().clone());
+
+        Self::start_watchers(&sender);
 
         ComponentParts { model, widgets }
     }
