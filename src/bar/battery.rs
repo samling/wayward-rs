@@ -2,6 +2,7 @@ use crate::bar::item;
 use futures::{StreamExt, select};
 use relm4::Sender;
 use relm4::gtk;
+use relm4::gtk::prelude::BoxExt;
 use wayle_battery::BatteryService;
 use wayle_battery::types::DeviceState;
 
@@ -61,6 +62,8 @@ fn send_battery_snapshot(sender: &Sender<BarMsg>, service: &BatteryService) {
     let _ = sender.send(BarMsg::BatteryChanged(text));
 }
 
-pub(super) fn render(label: &gtk::Label) {
-    item::style_label(label, "battery");
+pub(super) fn render(container: &gtk::Box, text: &str) {
+    let label = gtk::Label::new(Some(text));
+    item::style_label(&label, "battery");
+    container.append(&label);
 }

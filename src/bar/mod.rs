@@ -1,7 +1,11 @@
 mod battery;
 mod clock;
 mod item;
+mod layout;
+mod registry;
 mod workspaces;
+
+use layout::{BarItem, BarLayout};
 
 use gtk::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
@@ -11,6 +15,7 @@ use relm4::prelude::*;
 use crate::workspace::WorkspaceSummary;
 
 pub struct Bar {
+    layout: BarLayout,
     pub(super) workspaces: Vec<WorkspaceSummary>,
     pub(super) status: Option<String>,
     pub(super) clock_text: String,
@@ -39,18 +44,40 @@ impl Bar {
         root.set_namespace(Some("wayward"));
     }
 
-    fn start_watchers(sender: &ComponentSender<Self>) {
-        battery::start(sender.input_sender().clone());
-        clock::start(sender.input_sender().clone());
-        crate::niri::start_workspace_watcher(sender.input_sender().clone());
+    fn start_watchers(layout: &BarLayout, sender: &ComponentSender<Self>) {
+        for item in layout.items() {
+            registry::start_item(item, sender);
+        }
     }
 
     fn initial_model() -> Self {
         Self {
+            layout: BarLayout::default_top_bar(),
             workspaces: Vec::new(),
             status: Some("Connecting to Niri".to_string()),
-            clock_text: clock::initial_text(),
-            battery_text: battery::initial_text(),
+            clock_text: registry::initial_clock_text(),
+            battery_text: registry::initial_battery_text(),
+        }
+    }
+
+    fn render_layout(
+        &self,
+        left_items: &gtk::Box,
+        center_items: &gtk::Box,
+        right_items: &gtk::Box,
+    ) {
+        self.render_region(&self.layout.left, left_items);
+        self.render_region(&self.layout.center, center_items);
+        self.render_region(&self.layout.right, right_items);
+    }
+
+    fn render_region(&self, items: &[BarItem], container: &gtk::Box) {
+        while let Some(child) = container.first_child() {
+            container.remove(&child);
+        }
+
+        for item in items {
+            registry::render_item(self, *item, container);
         }
     }
 }
@@ -73,7 +100,7 @@ impl SimpleComponent for Bar {
                 set_start_widget = &gtk::Box {
                     add_css_class: "bar-region",
 
-                    #[name = "workspace_row"]
+                    #[name = "left_items"]
                     gtk::Box {
                         set_orientation: gtk::Orientation::Horizontal,
                         set_spacing: 4,
@@ -87,10 +114,10 @@ impl SimpleComponent for Bar {
                     set_halign: gtk::Align::Center,
                     add_css_class: "bar-region",
 
-                    #[name = "clock_label"]
-                    gtk::Label {
-                        #[watch]
-                        set_label: &model.clock_text
+                    #[name = "center_items"]
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Horizontal,
+                        set_spacing: 4,
                     }
                 },
 
@@ -99,10 +126,10 @@ impl SimpleComponent for Bar {
                 set_end_widget = &gtk::Box {
                     add_css_class: "bar-region",
 
-                    #[name = "battery_label"]
-                    gtk::Label {
-                        #[watch]
-                        set_label: &model.battery_text
+                    #[name = "right_items"]
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Horizontal,
+                        set_spacing: 4,
                     }
                 }
             }
@@ -119,11 +146,13 @@ impl SimpleComponent for Bar {
         let model = Self::initial_model();
         let widgets = view_output!();
 
-        battery::render(&widgets.battery_label);
-        clock::render(&widgets.clock_label);
-        model.render_workspace_row(&widgets.workspace_row);
+        model.render_layout(
+            &widgets.left_items,
+            &widgets.center_items,
+            &widgets.right_items,
+        );
 
-        Self::start_watchers(&sender);
+        Self::start_watchers(&model.layout, &sender);
 
         ComponentParts { model, widgets }
     }
@@ -138,7 +167,7 @@ impl SimpleComponent for Bar {
                 self.battery_text = battery_text;
             }
             BarMsg::BatteryUnavailable => {
-                self.battery_text = battery::initial_text();
+                self.battery_text = registry::initial_battery_text();
             }
             BarMsg::ClockChanged(clock_text) => {
                 self.clock_text = clock_text;
@@ -154,6 +183,6 @@ impl SimpleComponent for Bar {
     }
 
     fn pre_view() {
-        self.render_workspace_row(&workspace_row);
+        self.render_layout(&left_items, &center_items, &right_items);
     }
 }
