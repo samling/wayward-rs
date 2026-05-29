@@ -12,8 +12,16 @@ window,
     font: 12px sans-serif;
 }
 
+.bar-item {
+    padding: 0 8px;
+}
+
 .bar-region {
     background: transparent;
+}
+
+.battery {
+    opacity: 0.85;
 }
 
 .workspace {

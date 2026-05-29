@@ -1620,6 +1620,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "wayle-battery"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a84c4e68a9846ac0ef9bc9582595480250bfd189be6b4857965a7843766b7bb3"
+dependencies = [
+ "async-trait",
+ "derive_more",
+ "futures",
+ "serde",
+ "thiserror",
+ "tokio",
+ "tokio-stream",
+ "tokio-util",
+ "tracing",
+ "wayle-core",
+ "wayle-traits",
+ "zbus",
+]
+
+[[package]]
 name = "wayle-core"
 version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1669,6 +1689,7 @@ dependencies = [
  "relm4",
  "tracing",
  "tracing-subscriber",
+ "wayle-battery",
  "wayle-niri",
 ]
 
