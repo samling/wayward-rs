@@ -1,9 +1,10 @@
-use futures::{FutureExt, StreamExt, select};
-use gtk::prelude::*;
-use relm4::gtk;
+use crate::bar::item;
+use futures::{StreamExt, select};
 use relm4::Sender;
+use relm4::gtk;
 use wayle_battery::BatteryService;
 use wayle_battery::types::DeviceState;
+
 use super::BarMsg;
 
 pub(super) fn initial_text() -> String {
@@ -16,7 +17,7 @@ pub(super) fn start(sender: Sender<BarMsg>) {
     });
 }
 
-fn battery_text(percentage: f64, state: DeviceState) -> String{
+fn battery_text(percentage: f64, state: DeviceState) -> String {
     format!("{percentage:.0}% {state}")
 }
 
@@ -49,13 +50,7 @@ async fn run_battery_watcher(sender: Sender<BarMsg>) {
         }
     }
 
-    send_battery_snapshot(&sender, &service);
-
-    let mut percentage_updates = service.device.percentage.watch();
-
-    while percentage_updates.next().await.is_some() {
-        send_battery_snapshot(&sender, &service);
-    }
+    let _ = sender.send(BarMsg::BatteryUnavailable);
 }
 
 fn send_battery_snapshot(sender: &Sender<BarMsg>, service: &BatteryService) {
@@ -67,6 +62,5 @@ fn send_battery_snapshot(sender: &Sender<BarMsg>, service: &BatteryService) {
 }
 
 pub(super) fn render(label: &gtk::Label) {
-    label.add_css_class("bar-item");
-    label.add_css_class("battery");
+    item::style_label(label, "battery");
 }

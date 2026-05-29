@@ -1,5 +1,6 @@
 mod battery;
 mod clock;
+mod item;
 mod workspaces;
 
 use gtk::prelude::*;
@@ -115,11 +116,7 @@ impl SimpleComponent for Bar {
         ComponentParts { model, widgets }
     }
 
-    fn update(
-        &mut self,
-        message: Self::Input,
-        _sender: ComponentSender<Self>,
-    ) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
             BarMsg::WorkspacesChanged(workspaces) => {
                 self.workspaces = workspaces;
