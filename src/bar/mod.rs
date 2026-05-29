@@ -1,3 +1,4 @@
+mod battery;
 mod clock;
 mod workspaces;
 
@@ -12,11 +13,14 @@ pub struct Bar {
     pub(super) workspaces: Vec<WorkspaceSummary>,
     pub(super) status: Option<String>,
     pub(super) clock_text: String,
+    pub(super) battery_text: String,
 }
 
 #[derive(Debug)]
 pub enum BarMsg {
     WorkspacesChanged(Vec<WorkspaceSummary>),
+    BatteryChanged(String),
+    BatteryUnavailable,
     ClockChanged(String),
     NiriUnavailable(String),
     UpdatesStopped,
@@ -34,13 +38,10 @@ impl SimpleComponent for Bar {
             set_default_height: 32,
             set_resizable: true,
 
-            gtk::Box {
-                set_orientation: gtk::Orientation::Horizontal,
-                set_hexpand: true,
-                add_css_class: "bar",
-
+            gtk::CenterBox {
+                #[wrap(Some)]
                 #[name = "left_region"]
-                gtk::Box {
+                set_start_widget = &gtk::Box {
                     add_css_class: "bar-region",
 
                     #[name = "workspace_row"]
@@ -50,24 +51,30 @@ impl SimpleComponent for Bar {
                     }
                 },
 
+                #[wrap(Some)]
                 #[name = "center_region"]
-                gtk::Box {
+                set_center_widget = &gtk::Box {
                     set_hexpand: true,
                     set_halign: gtk::Align::Center,
                     add_css_class: "bar-region",
 
                     #[name = "clock_label"]
                     gtk::Label {
-                        add_css_class: "bar-item",
-                        add_css_class: "clock",
                         #[watch]
                         set_label: &model.clock_text
                     }
                 },
 
+                #[wrap(Some)]
                 #[name = "right_region"]
-                gtk::Box {
+                set_end_widget = &gtk::Box {
                     add_css_class: "bar-region",
+
+                    #[name = "battery_label"]
+                    gtk::Label {
+                        #[watch]
+                        set_label: &model.battery_text
+                    }
                 }
             }
         }
@@ -87,23 +94,23 @@ impl SimpleComponent for Bar {
         root.set_keyboard_mode(KeyboardMode::None);
         root.set_namespace(Some("wayward"));
 
-        let clock_sender = sender.input_sender().clone();
-        relm4::spawn(async move {
-            clock::run_clock(clock_sender).await;
-        });
-
         let model = Bar {
             workspaces: Vec::new(),
             status: Some("Connecting to Niri".to_string()),
-            clock_text: clock::current_time_text(),
+            clock_text: clock::initial_text(),
+            battery_text: battery::initial_text(),
         };
-        let widgets = view_output!();
-        model.render_workspace_row(&widgets.workspace_row);
 
-        let input_sender = sender.input_sender().clone();
-        relm4::spawn(async move {
-            crate::niri::run_workspace_watcher(input_sender).await;
-        });
+        let widgets = view_output!();
+
+        battery::render(&widgets.battery_label);
+        battery::start(sender.input_sender().clone());
+
+        clock::render(&widgets.clock_label);
+        clock::start(sender.input_sender().clone());
+
+        model.render_workspace_row(&widgets.workspace_row);
+        crate::niri::start_workspace_watcher(sender.input_sender().clone());
 
         ComponentParts { model, widgets }
     }
@@ -117,6 +124,12 @@ impl SimpleComponent for Bar {
             BarMsg::WorkspacesChanged(workspaces) => {
                 self.workspaces = workspaces;
                 self.status = None;
+            }
+            BarMsg::BatteryChanged(battery_text) => {
+                self.battery_text = battery_text;
+            }
+            BarMsg::BatteryUnavailable => {
+                self.battery_text = battery::initial_text();
             }
             BarMsg::ClockChanged(clock_text) => {
                 self.clock_text = clock_text;
