@@ -53,11 +53,7 @@ impl SimpleComponent for Bar {
                 #[name = "center_region"]
                 gtk::Box {
                     set_hexpand: true,
-                    add_css_class: "bar-region",
-                },
-
-                #[name = "right_region"]
-                gtk::Box {
+                    set_halign: gtk::Align::Center,
                     add_css_class: "bar-region",
 
                     #[name = "clock_label"]
@@ -67,6 +63,11 @@ impl SimpleComponent for Bar {
                         #[watch]
                         set_label: &model.clock_text
                     }
+                },
+
+                #[name = "right_region"]
+                gtk::Box {
+                    add_css_class: "bar-region",
                 }
             }
         }
