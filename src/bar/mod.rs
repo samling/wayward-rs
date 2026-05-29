@@ -1,3 +1,4 @@
+mod clock;
 mod workspaces;
 
 use gtk::prelude::*;
@@ -10,11 +11,13 @@ use crate::workspace::WorkspaceSummary;
 pub struct Bar {
     pub(super) workspaces: Vec<WorkspaceSummary>,
     pub(super) status: Option<String>,
+    pub(super) clock_text: String,
 }
 
 #[derive(Debug)]
 pub enum BarMsg {
     WorkspacesChanged(Vec<WorkspaceSummary>),
+    ClockChanged(String),
     NiriUnavailable(String),
     UpdatesStopped,
 }
@@ -35,16 +38,36 @@ impl SimpleComponent for Bar {
                 set_orientation: gtk::Orientation::Horizontal,
                 set_hexpand: true,
                 add_css_class: "bar",
-                set_spacing: 8,
-                set_margin_start: 8,
-                set_margin_end: 8,
-                set_margin_top: 4,
-                set_margin_bottom: 4,
 
-                #[name = "workspace_row"]
+                #[name = "left_region"]
                 gtk::Box {
-                    set_orientation: gtk::Orientation::Horizontal,
-                    set_spacing: 4,
+                    add_css_class: "bar-region",
+
+                    #[name = "workspace_row"]
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Horizontal,
+                        set_spacing: 4,
+                    }
+                },
+
+                #[name = "center_region"]
+                gtk::Box {
+                    set_hexpand: true,
+                    set_halign: gtk::Align::Center,
+                    add_css_class: "bar-region",
+
+                    #[name = "clock_label"]
+                    gtk::Label {
+                        add_css_class: "bar-item",
+                        add_css_class: "clock",
+                        #[watch]
+                        set_label: &model.clock_text
+                    }
+                },
+
+                #[name = "right_region"]
+                gtk::Box {
+                    add_css_class: "bar-region",
                 }
             }
         }
@@ -64,9 +87,15 @@ impl SimpleComponent for Bar {
         root.set_keyboard_mode(KeyboardMode::None);
         root.set_namespace(Some("wayward"));
 
+        let clock_sender = sender.input_sender().clone();
+        relm4::spawn(async move {
+            clock::run_clock(clock_sender).await;
+        });
+
         let model = Bar {
             workspaces: Vec::new(),
             status: Some("Connecting to Niri".to_string()),
+            clock_text: clock::current_time_text(),
         };
         let widgets = view_output!();
         model.render_workspace_row(&widgets.workspace_row);
@@ -88,6 +117,9 @@ impl SimpleComponent for Bar {
             BarMsg::WorkspacesChanged(workspaces) => {
                 self.workspaces = workspaces;
                 self.status = None;
+            }
+            BarMsg::ClockChanged(clock_text) => {
+                self.clock_text = clock_text;
             }
             BarMsg::NiriUnavailable(error) => {
                 self.workspaces.clear();
