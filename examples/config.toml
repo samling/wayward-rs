@@ -1,0 +1,4 @@
+[bar]
+left = ["workspaces"]
+center = ["clock"]
+right = ["battery"]

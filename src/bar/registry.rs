@@ -10,18 +10,19 @@ pub(super) fn render_item(bar: &Bar, item: BarItem, container: &gtk::Box) {
     }
 }
 
-pub(super) fn start_item(item: BarItem, sender: &ComponentSender<Bar>) {
+pub(super) fn start_item(
+    item: BarItem,
+    sender: &ComponentSender<Bar>
+) -> relm4::JoinHandle<()> {
     match item {
         BarItem::Workspaces => {
-            crate::niri::start_workspace_watcher(sender.input_sender().clone());
+            crate::niri::start_workspace_watcher(sender.input_sender().clone())
         }
-
         BarItem::Clock => {
-            clock::start(sender.input_sender().clone());
+            clock::start(sender.input_sender().clone())
         }
-
         BarItem::Battery => {
-            battery::start(sender.input_sender().clone());
+            battery::start(sender.input_sender().clone())
         }
     }
 }

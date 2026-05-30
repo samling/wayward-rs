@@ -5,10 +5,10 @@ use wayle_niri::NiriService;
 use crate::bar::BarMsg;
 use crate::workspace::WorkspaceSummary;
 
-pub fn start_workspace_watcher(sender: relm4::Sender<BarMsg>) {
+pub fn start_workspace_watcher(sender: relm4::Sender<BarMsg>) -> relm4::tokio::task::JoinHandle<()> {
     relm4::spawn(async move {
         run_workspace_watcher(sender).await;
-    });
+    })
 }
 
 pub async fn run_workspace_watcher(sender: Sender<BarMsg>) {
