@@ -12,10 +12,10 @@ pub(super) fn initial_text() -> String {
     "NaN".to_string()
 }
 
-pub(super) fn start(sender: Sender<BarMsg>) {
+pub(super) fn start(sender: Sender<BarMsg>) -> relm4::tokio::task::JoinHandle<()> {
     relm4::spawn(async move {
         run_battery_watcher(sender).await;
-    });
+    })
 }
 
 fn battery_text(percentage: f64, state: DeviceState) -> String {

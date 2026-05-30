@@ -17,6 +17,7 @@ use crate::workspace::WorkspaceSummary;
 
 pub struct Bar {
     layout: BarLayout,
+    active_watchers: Vec<(BarItem, relm4::JoinHandle<()>)>,
     pub(super) workspaces: Vec<WorkspaceSummary>,
     pub(super) status: Option<String>,
     pub(super) clock_text: String,
@@ -25,6 +26,7 @@ pub struct Bar {
 
 #[derive(Debug)]
 pub enum BarMsg {
+    LayoutChanged(BarLayout),
     WorkspacesChanged(Vec<WorkspaceSummary>),
     BatteryChanged(String),
     BatteryUnavailable,
@@ -45,15 +47,75 @@ impl Bar {
         root.set_namespace(Some("wayward"));
     }
 
-    fn start_watchers(layout: &BarLayout, sender: &ComponentSender<Self>) {
-        for item in layout.unique_items() {
-            registry::start_item(item, sender);
+    fn start_missing_watchers(&mut self, sender: &ComponentSender<Self>) {
+        for item in self.layout.unique_items() {
+            let already_active = self
+                .active_watchers
+                .iter()
+                .any(|(active_item, _)| *active_item == item);
+
+            if already_active {
+                continue;
+            }
+            
+            let handle = registry::start_item(item, sender);
+            self.active_watchers.push((item, handle));
         }
+    }
+
+    fn stop_removed_watchers(&mut self) {
+        let active_layout_items = self.layout.unique_items();
+
+        let mut index = 0;
+
+        while index < self.active_watchers.len() {
+            let (item, _) = &self.active_watchers[index];
+
+            if active_layout_items.contains(item) {
+                index += 1;
+                continue;
+            }
+
+            let (item, handle) = self.active_watchers.remove(index);
+            handle.abort();
+            tracing::info!("Stopped watcher for {item:?}");
+        }
+    }
+
+    fn reconcile_watchers(&mut self, sender: &ComponentSender<Self>) {
+        self.stop_removed_watchers();
+        self.start_missing_watchers(sender);
+    }
+
+    fn start_config_hot_reload(sender: &ComponentSender<Self>) {
+        let Some(dir) = crate::config::config_dir() else {
+            tracing::info!("Could not determine config directory, config hot reload disabled");
+            return;
+        };
+
+        let Some(path) = crate::config::config_path() else {
+            tracing::info!("Could not determine config path, config hot reload disabled");
+            return;
+        };
+
+        let input_sender = sender.input_sender().clone();
+
+        crate::file_watch::start_debounced_file_watch("config", dir, path, move || {
+            let config = AppConfig::load();
+            let layout = BarLayout::from_config(config.bar.as_ref());
+
+            if input_sender.send(BarMsg::LayoutChanged(layout)).is_err() {
+                return;
+            }
+
+            tracing::info!("Reloaded config");
+        });
     }
 
     fn initial_model(config: &AppConfig) -> Self {
         Self {
             layout: BarLayout::from_config(config.bar.as_ref()),
+            active_watchers: Vec::new(),
             workspaces: Vec::new(),
             status: Some("Connecting to Niri".to_string()),
             clock_text: registry::initial_clock_text(),
@@ -145,7 +207,7 @@ impl SimpleComponent for Bar {
         Self::configure_window(&root);
 
         let config = AppConfig::load();
-        let model = Self::initial_model(&config);
+        let mut model = Self::initial_model(&config);
         let widgets = view_output!();
 
         model.render_layout(
@@ -154,13 +216,18 @@ impl SimpleComponent for Bar {
             &widgets.right_items,
         );
 
-        Self::start_watchers(&model.layout, &sender);
+        model.start_missing_watchers(&sender);
+        Self::start_config_hot_reload(&sender);
 
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
         match message {
+            BarMsg::LayoutChanged(layout) => {
+                self.layout = layout;
+                self.reconcile_watchers(&sender);
+            }
             BarMsg::WorkspacesChanged(workspaces) => {
                 self.workspaces = workspaces;
                 self.status = None;

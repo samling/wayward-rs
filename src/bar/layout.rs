@@ -1,14 +1,14 @@
 use crate::config::BarConfig;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum BarItem {
+pub(crate) enum BarItem {
     Workspaces,
     Clock,
     Battery,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) struct BarLayout {
+pub(crate) struct BarLayout {
     pub(super) left: Vec<BarItem>,
     pub(super) center: Vec<BarItem>,
     pub(super) right: Vec<BarItem>,

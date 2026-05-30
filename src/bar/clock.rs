@@ -16,10 +16,10 @@ pub(super) fn current_time_text() -> String {
     chrono::Local::now().format("%H:%M").to_string()
 }
 
-pub(super) fn start(sender: relm4::Sender<BarMsg>) {
+pub(super) fn start(sender: relm4::Sender<BarMsg>) -> relm4::tokio::task::JoinHandle<()> {
     relm4::spawn(async move {
         run_clock(sender).await;
-    });
+    })
 }
 
 pub(super) async fn run_clock(sender: Sender<BarMsg>) {

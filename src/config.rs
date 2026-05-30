@@ -35,8 +35,12 @@ impl AppConfig {
     }
 }
 
-fn config_path() -> Option<PathBuf> {
-    dirs::config_dir().map(|dir| dir.join("wayward").join("config.toml"))
+pub(crate) fn config_dir() -> Option<PathBuf> {
+    dirs::config_dir().map(|dir| dir.join("wayward"))
+}
+
+pub(crate) fn config_path() -> Option<PathBuf> {
+    config_dir().map(|dir| dir.join("config.toml"))
 }
 
 impl Default for AppConfig {
