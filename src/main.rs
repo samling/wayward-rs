@@ -1,4 +1,5 @@
 mod bar;
+mod config;
 mod niri;
 mod workspace;
 

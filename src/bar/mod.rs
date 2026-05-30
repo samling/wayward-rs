@@ -12,6 +12,7 @@ use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use relm4::gtk;
 use relm4::prelude::*;
 
+use crate::config::AppConfig;
 use crate::workspace::WorkspaceSummary;
 
 pub struct Bar {
@@ -45,14 +46,14 @@ impl Bar {
     }
 
     fn start_watchers(layout: &BarLayout, sender: &ComponentSender<Self>) {
-        for item in layout.items() {
+        for item in layout.unique_items() {
             registry::start_item(item, sender);
         }
     }
 
-    fn initial_model() -> Self {
+    fn initial_model(config: &AppConfig) -> Self {
         Self {
-            layout: BarLayout::default_top_bar(),
+            layout: BarLayout::from_config(config.bar.as_ref()),
             workspaces: Vec::new(),
             status: Some("Connecting to Niri".to_string()),
             clock_text: registry::initial_clock_text(),
@@ -143,7 +144,8 @@ impl SimpleComponent for Bar {
     ) -> ComponentParts<Self> {
         Self::configure_window(&root);
 
-        let model = Self::initial_model();
+        let config = AppConfig::load();
+        let model = Self::initial_model(&config);
         let widgets = view_output!();
 
         model.render_layout(

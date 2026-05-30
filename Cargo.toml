@@ -7,9 +7,12 @@ rust-version = "1.93"
 
 [dependencies]
 chrono = { version = "0.4", default-features = false, features = ["clock"] }
+dirs = "6"
 futures = "0.3"
 gtk4-layer-shell = "0.8"
 relm4 = "0.11"
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
 tracing = "0.1"
 tracing-subscriber = "0.3"
 wayle-battery = "0.1"
