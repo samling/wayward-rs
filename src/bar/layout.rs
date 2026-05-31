@@ -83,28 +83,6 @@ impl BarLayout {
         }
     }
 
-    pub(super) fn unique_items(&self) -> Vec<BarItem> {
-        let mut unique = Vec::new();
-
-        for item in self.items() {
-            if !unique.contains(&item) {
-                unique.push(item);
-            }
-        }
-
-        unique
-    }
-
-    pub(super) fn items(&self) -> Vec<BarItem> {
-        let mut items = Vec::new();
-
-        items.extend(self.start.iter().copied());
-        items.extend(self.center.iter().copied());
-        items.extend(self.end.iter().copied());
-
-        items
-    }
-
     pub(super) fn from_config(config: Option<&BarConfig>) -> Self {
         let default = Self::default_top_bar();
 
@@ -143,18 +121,4 @@ fn parse_item(item: &str) -> Option<BarItem> {
             None
         }
     }
-}
-
-#[test]
-fn unique_items_keeps_first_occurrence_order() {
-    let layout = BarLayout {
-        start: vec![BarItem::Clock],
-        center: vec![BarItem::Workspaces, BarItem::Clock],
-        end: vec![BarItem::Battery, BarItem::Workspaces],
-    };
-
-    assert_eq!(
-        layout.unique_items(),
-        vec![BarItem::Clock, BarItem::Workspaces, BarItem::Battery]
-    );
 }

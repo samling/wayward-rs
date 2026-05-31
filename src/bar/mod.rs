@@ -1,11 +1,14 @@
-mod battery;
-mod clock;
 mod item;
 mod layout;
 mod registry;
 mod workspaces;
 
+pub(crate) mod battery;
+pub(crate) mod clock;
+pub(crate) mod state;
+
 use layout::{BarEdge, BarItem, BarLayout};
+use state::{BarItemState, BatteryState, ClockState, WorkspaceState};
 
 use gtk::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
@@ -20,7 +23,6 @@ pub struct Bar {
     edge: BarEdge,
     monitor: Option<gtk::gdk::Monitor>,
     monitor_connector: Option<String>,
-    active_watchers: Vec<(BarItem, relm4::JoinHandle<()>)>,
     pub(super) workspaces: Vec<WorkspaceSummary>,
     pub(super) status: Option<String>,
     pub(super) clock_text: String,
@@ -56,12 +58,7 @@ impl BarInit {
 #[derive(Debug)]
 pub enum BarMsg {
     LayoutChanged { layout: BarLayout, edge: BarEdge },
-    WorkspacesChanged(Vec<WorkspaceSummary>),
-    BatteryChanged(String),
-    BatteryUnavailable,
-    ClockChanged(String),
-    NiriUnavailable(String),
-    UpdatesStopped,
+    ItemStateChanged(BarItemState),
 }
 
 impl Bar {
@@ -113,46 +110,6 @@ impl Bar {
         root.set_namespace(Some(name.unwrap_or("wayward")));
     }
 
-    fn start_missing_watchers(&mut self, sender: &ComponentSender<Self>) {
-        for item in self.layout.unique_items() {
-            let already_active = self
-                .active_watchers
-                .iter()
-                .any(|(active_item, _)| *active_item == item);
-
-            if already_active {
-                continue;
-            }
-
-            let handle = registry::start_item(item, sender);
-            self.active_watchers.push((item, handle));
-        }
-    }
-
-    fn stop_removed_watchers(&mut self) {
-        let active_layout_items = self.layout.unique_items();
-
-        let mut index = 0;
-
-        while index < self.active_watchers.len() {
-            let (item, _) = &self.active_watchers[index];
-
-            if active_layout_items.contains(item) {
-                index += 1;
-                continue;
-            }
-
-            let (item, handle) = self.active_watchers.remove(index);
-            handle.abort();
-            tracing::info!("Stopped watcher for {item:?}");
-        }
-    }
-
-    fn reconcile_watchers(&mut self, sender: &ComponentSender<Self>) {
-        self.stop_removed_watchers();
-        self.start_missing_watchers(sender);
-    }
-
     fn initial_model(init: BarInit) -> Self {
         Self {
             name: init.name,
@@ -160,7 +117,6 @@ impl Bar {
             edge: init.edge,
             monitor: init.monitor,
             monitor_connector: init.monitor_connector,
-            active_watchers: Vec::new(),
             workspaces: Vec::new(),
             status: Some("Connecting to Niri".to_string()),
             clock_text: registry::initial_clock_text(),
@@ -260,9 +216,9 @@ impl Component for Bar {
     fn init(
         init: Self::Init,
         root: Self::Root,
-        sender: ComponentSender<Self>,
+        _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let mut model = Self::initial_model(init);
+        let model = Self::initial_model(init);
 
         if let Some(name) = &model.name {
             tracing::info!("Starting bar {name}");
@@ -285,12 +241,10 @@ impl Component for Bar {
 
         root.present();
 
-        model.start_missing_watchers(&sender);
-
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
+    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>, root: &Self::Root) {
         match message {
             BarMsg::LayoutChanged { layout, edge } => {
                 self.layout = layout;
@@ -301,28 +255,39 @@ impl Component for Bar {
                     self.name.as_deref(),
                     self.monitor.as_ref(),
                 );
-                self.reconcile_watchers(&sender);
             }
-            BarMsg::WorkspacesChanged(workspaces) => {
-                self.workspaces = workspaces;
-                self.status = None;
-            }
-            BarMsg::BatteryChanged(battery_text) => {
-                self.battery_text = battery_text;
-            }
-            BarMsg::BatteryUnavailable => {
-                self.battery_text = registry::initial_battery_text();
-            }
-            BarMsg::ClockChanged(clock_text) => {
-                self.clock_text = clock_text;
-            }
-            BarMsg::NiriUnavailable(error) => {
-                self.workspaces.clear();
-                self.status = Some(format!("Niri unavailable: {error}"));
-            }
-            BarMsg::UpdatesStopped => {
-                self.status = Some("Niri updates stopped".to_string());
-            }
+            BarMsg::ItemStateChanged(state) => match state {
+                BarItemState::Workspaces(state) => match state {
+                    WorkspaceState::Connecting => {
+                        self.workspaces.clear();
+                        self.status = Some("Connecting to Niri".to_string());
+                    }
+                    WorkspaceState::Ready(workspaces) => {
+                        self.workspaces = workspaces;
+                        self.status = None;
+                    }
+                    WorkspaceState::Unavailable(error) => {
+                        self.workspaces.clear();
+                        self.status = Some(format!("Niri unavailable: {error}"));
+                    }
+                    WorkspaceState::UpdatesStopped => {
+                        self.status = Some("Niri updates stopped".to_string());
+                    }
+                },
+                BarItemState::Battery(state) => match state {
+                    BatteryState::Ready(text) => {
+                        self.battery_text = text;
+                    }
+                    BatteryState::Unavailable => {
+                        self.battery_text = registry::initial_battery_text();
+                    }
+                },
+                BarItemState::Clock(state) => match state {
+                    ClockState::Ready(text) => {
+                        self.clock_text = text;
+                    }
+                },
+            },
         }
     }
 

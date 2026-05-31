@@ -2,22 +2,25 @@ use futures::StreamExt;
 use relm4::Sender;
 use wayle_niri::NiriService;
 
-use crate::bar::BarMsg;
+use crate::bar::state::WorkspaceState;
+use crate::shell::ShellMsg;
 use crate::workspace::WorkspaceSummary;
 
 pub fn start_workspace_watcher(
-    sender: relm4::Sender<BarMsg>,
+    sender: relm4::Sender<ShellMsg>,
 ) -> relm4::tokio::task::JoinHandle<()> {
     relm4::spawn(async move {
         run_workspace_watcher(sender).await;
     })
 }
 
-pub async fn run_workspace_watcher(sender: Sender<BarMsg>) {
+pub async fn run_workspace_watcher(sender: Sender<ShellMsg>) {
     let service = match NiriService::new().await {
         Ok(service) => service,
         Err(error) => {
-            let _ = sender.send(BarMsg::NiriUnavailable(error.to_string()));
+            let _ = sender.send(workspace_message(WorkspaceState::Unavailable(
+                error.to_string(),
+            )));
             return;
         }
     };
@@ -31,10 +34,10 @@ pub async fn run_workspace_watcher(sender: Sender<BarMsg>) {
         }
     }
 
-    let _ = sender.send(BarMsg::UpdatesStopped);
+    let _ = sender.send(workspace_message(WorkspaceState::UpdatesStopped));
 }
 
-fn send_workspace_snapshot(sender: &Sender<BarMsg>, service: &NiriService) -> Result<(), ()> {
+fn send_workspace_snapshot(sender: &Sender<ShellMsg>, service: &NiriService) -> Result<(), ()> {
     let mut summaries: Vec<_> = service
         .workspaces
         .get()
@@ -49,6 +52,10 @@ fn send_workspace_snapshot(sender: &Sender<BarMsg>, service: &NiriService) -> Re
     });
 
     sender
-        .send(BarMsg::WorkspacesChanged(summaries))
+        .send(workspace_message(WorkspaceState::Ready(summaries)))
         .map_err(|_| ())
+}
+
+fn workspace_message(state: WorkspaceState) -> ShellMsg {
+    ShellMsg::ItemStateChanged(crate::bar::state::BarItemState::Workspaces(state))
 }

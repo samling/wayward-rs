@@ -1,4 +1,4 @@
-use relm4::{ComponentSender, gtk};
+use relm4::gtk;
 
 use super::{Bar, battery, clock, layout::BarItem};
 
@@ -9,15 +9,6 @@ pub(super) fn render_item(bar: &Bar, item: BarItem, container: &gtk::Box) {
         BarItem::Battery => battery::render(container, &bar.battery_text),
     }
 }
-
-pub(super) fn start_item(item: BarItem, sender: &ComponentSender<Bar>) -> relm4::JoinHandle<()> {
-    match item {
-        BarItem::Workspaces => crate::niri::start_workspace_watcher(sender.input_sender().clone()),
-        BarItem::Clock => clock::start(sender.input_sender().clone()),
-        BarItem::Battery => battery::start(sender.input_sender().clone()),
-    }
-}
-
 pub(super) fn initial_clock_text() -> String {
     clock::initial_text()
 }
