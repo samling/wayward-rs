@@ -5,7 +5,7 @@ mod layout;
 mod registry;
 mod workspaces;
 
-use layout::{BarItem, BarLayout};
+use layout::{BarEdge, BarItem, BarLayout};
 
 use gtk::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
@@ -16,7 +16,9 @@ use crate::config::AppConfig;
 use crate::workspace::WorkspaceSummary;
 
 pub struct Bar {
+    name: Option<String>,
     layout: BarLayout,
+    edge: BarEdge,
     active_watchers: Vec<(BarItem, relm4::JoinHandle<()>)>,
     pub(super) workspaces: Vec<WorkspaceSummary>,
     pub(super) status: Option<String>,
@@ -24,9 +26,25 @@ pub struct Bar {
     pub(super) battery_text: String,
 }
 
+pub struct BarInit {
+    pub(crate) name: Option<String>,
+    pub(crate) layout: BarLayout,
+    pub(crate) edge: BarEdge,
+}
+
+impl BarInit {
+    pub(crate) fn from_config(config: Option<&crate::config::BarConfig>) -> Self {
+        Self {
+            name: config.and_then(|bar| bar.name.clone()),
+            layout: BarLayout::from_config(config),
+            edge: BarEdge::from_config(config.and_then(|bar| bar.edge.as_deref())),
+        }
+    }
+}
+
 #[derive(Debug)]
 pub enum BarMsg {
-    LayoutChanged(BarLayout),
+    LayoutChanged { layout: BarLayout, edge: BarEdge },
     WorkspacesChanged(Vec<WorkspaceSummary>),
     BatteryChanged(String),
     BatteryUnavailable,
@@ -36,15 +54,46 @@ pub enum BarMsg {
 }
 
 impl Bar {
-    fn configure_window(root: &gtk::ApplicationWindow) {
+    fn configure_window(root: &gtk::ApplicationWindow, edge: BarEdge, name: Option<&str>) {
         root.init_layer_shell();
         root.set_layer(Layer::Top);
-        root.set_anchor(Edge::Top, true);
-        root.set_anchor(Edge::Left, true);
-        root.set_anchor(Edge::Right, true);
+
+        root.set_anchor(Edge::Top, false);
+        root.set_anchor(Edge::Bottom, false);
+        root.set_anchor(Edge::Left, false);
+        root.set_anchor(Edge::Right, false);
+        match edge {
+            BarEdge::Top => {
+                root.set_anchor(Edge::Top, true);
+                root.set_anchor(Edge::Left, true);
+                root.set_anchor(Edge::Right, true);
+            }
+            BarEdge::Bottom => {
+                root.set_anchor(Edge::Bottom, true);
+                root.set_anchor(Edge::Left, true);
+                root.set_anchor(Edge::Right, true);
+            }
+            BarEdge::Left => {
+                root.set_anchor(Edge::Left, true);
+                root.set_anchor(Edge::Top, true);
+                root.set_anchor(Edge::Bottom, true);
+            }
+            BarEdge::Right => {
+                root.set_anchor(Edge::Right, true);
+                root.set_anchor(Edge::Top, true);
+                root.set_anchor(Edge::Bottom, true);
+            }
+        }
+
+        if edge.is_vertical() {
+            root.set_size_request(32, -1);
+        } else {
+            root.set_size_request(-1, 32);
+        }
+
         root.auto_exclusive_zone_enable();
         root.set_keyboard_mode(KeyboardMode::None);
-        root.set_namespace(Some("wayward"));
+        root.set_namespace(Some(name.unwrap_or("wayward")));
     }
 
     fn start_missing_watchers(&mut self, sender: &ComponentSender<Self>) {
@@ -57,7 +106,7 @@ impl Bar {
             if already_active {
                 continue;
             }
-            
+
             let handle = registry::start_item(item, sender);
             self.active_watchers.push((item, handle));
         }
@@ -102,9 +151,15 @@ impl Bar {
 
         crate::file_watch::start_debounced_file_watch("config", dir, path, move || {
             let config = AppConfig::load();
-            let layout = BarLayout::from_config(config.bar.as_ref());
+            let init = BarInit::from_config(config.first_bar());
 
-            if input_sender.send(BarMsg::LayoutChanged(layout)).is_err() {
+            if input_sender
+                .send(BarMsg::LayoutChanged {
+                    layout: init.layout,
+                    edge: init.edge,
+                })
+                .is_err()
+            {
                 return;
             }
 
@@ -112,9 +167,11 @@ impl Bar {
         });
     }
 
-    fn initial_model(config: &AppConfig) -> Self {
+    fn initial_model(init: BarInit) -> Self {
         Self {
-            layout: BarLayout::from_config(config.bar.as_ref()),
+            name: init.name,
+            layout: init.layout,
+            edge: init.edge,
             active_watchers: Vec::new(),
             workspaces: Vec::new(),
             status: Some("Connecting to Niri".to_string()),
@@ -123,15 +180,10 @@ impl Bar {
         }
     }
 
-    fn render_layout(
-        &self,
-        left_items: &gtk::Box,
-        center_items: &gtk::Box,
-        right_items: &gtk::Box,
-    ) {
-        self.render_region(&self.layout.left, left_items);
+    fn render_layout(&self, start_items: &gtk::Box, center_items: &gtk::Box, end_items: &gtk::Box) {
+        self.render_region(&self.layout.start, start_items);
         self.render_region(&self.layout.center, center_items);
-        self.render_region(&self.layout.right, right_items);
+        self.render_region(&self.layout.end, end_items);
     }
 
     fn render_region(&self, items: &[BarItem], container: &gtk::Box) {
@@ -146,10 +198,11 @@ impl Bar {
 }
 
 #[relm4::component(pub)]
-impl SimpleComponent for Bar {
-    type Init = ();
+impl Component for Bar {
+    type Init = BarInit;
     type Input = BarMsg;
     type Output = ();
+    type CommandOutput = ();
 
     view! {
         gtk::ApplicationWindow {
@@ -158,14 +211,19 @@ impl SimpleComponent for Bar {
             set_resizable: true,
 
             gtk::CenterBox {
+                #[watch]
+                set_orientation: model.edge.orientation(),
                 #[wrap(Some)]
-                #[name = "left_region"]
+                #[name = "start_region"]
                 set_start_widget = &gtk::Box {
                     add_css_class: "bar-region",
 
-                    #[name = "left_items"]
+                    #[watch]
+                    set_orientation: model.edge.orientation(),
+                    #[name = "start_items"]
                     gtk::Box {
-                        set_orientation: gtk::Orientation::Horizontal,
+                        #[watch]
+                        set_orientation: model.edge.orientation(),
                         set_spacing: 4,
                     }
                 },
@@ -173,25 +231,37 @@ impl SimpleComponent for Bar {
                 #[wrap(Some)]
                 #[name = "center_region"]
                 set_center_widget = &gtk::Box {
-                    set_hexpand: true,
-                    set_halign: gtk::Align::Center,
+                    #[watch]
+                    set_hexpand: model.edge.center_hexpand(),
+                    #[watch]
+                    set_vexpand: model.edge.center_vexpand(),
+                    #[watch]
+                    set_halign: model.edge.center_halign(),
+                    #[watch]
+                    set_valign: model.edge.center_valign(),
                     add_css_class: "bar-region",
 
+                    #[watch]
+                    set_orientation: model.edge.orientation(),
                     #[name = "center_items"]
                     gtk::Box {
-                        set_orientation: gtk::Orientation::Horizontal,
+                        #[watch]
+                        set_orientation: model.edge.orientation(),
                         set_spacing: 4,
                     }
                 },
 
                 #[wrap(Some)]
-                #[name = "right_region"]
+                #[name = "end_region"]
                 set_end_widget = &gtk::Box {
                     add_css_class: "bar-region",
 
-                    #[name = "right_items"]
+                    #[watch]
+                    set_orientation: model.edge.orientation(),
+                    #[name = "end_items"]
                     gtk::Box {
-                        set_orientation: gtk::Orientation::Horizontal,
+                        #[watch]
+                        set_orientation: model.edge.orientation(),
                         set_spacing: 4,
                     }
                 }
@@ -200,20 +270,28 @@ impl SimpleComponent for Bar {
     }
 
     fn init(
-        _init: Self::Init,
+        init: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        Self::configure_window(&root);
-
         let config = AppConfig::load();
-        let mut model = Self::initial_model(&config);
+        if let Some(name) = config.first_bar().and_then(|bar| bar.name.as_deref()) {
+            tracing::info!("Starting bar {name}");
+        };
+        let mut model = Self::initial_model(init);
+
+        if let Some(name) = &model.name {
+            tracing::info!("Starting bar {name}");
+        }
+
+        Self::configure_window(&root, model.edge, model.name.as_deref());
+
         let widgets = view_output!();
 
         model.render_layout(
-            &widgets.left_items,
+            &widgets.start_items,
             &widgets.center_items,
-            &widgets.right_items,
+            &widgets.end_items,
         );
 
         model.start_missing_watchers(&sender);
@@ -222,10 +300,12 @@ impl SimpleComponent for Bar {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>) {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
         match message {
-            BarMsg::LayoutChanged(layout) => {
+            BarMsg::LayoutChanged { layout, edge } => {
                 self.layout = layout;
+                self.edge = edge;
+                Self::configure_window(root, self.edge, self.name.as_deref());
                 self.reconcile_watchers(&sender);
             }
             BarMsg::WorkspacesChanged(workspaces) => {
@@ -252,6 +332,6 @@ impl SimpleComponent for Bar {
     }
 
     fn pre_view() {
-        self.render_layout(&left_items, &center_items, &right_items);
+        self.render_layout(&start_items, &center_items, &end_items);
     }
 }

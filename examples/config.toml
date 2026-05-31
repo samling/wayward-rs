@@ -1,4 +1,6 @@
-[bar]
-left = ["workspaces"]
+[[bars]]
+name = "top"
+edge = "top"
+start = ["workspaces"]
 center = ["clock"]
-right = ["battery"]
+end = ["battery"]

@@ -3,14 +3,16 @@ use std::{fs, path::PathBuf};
 
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
-    pub bar: Option<BarConfig>,
+    pub bars: Vec<BarConfig>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct BarConfig {
-    pub left: Option<Vec<String>>,
+    pub name: Option<String>,
+    pub edge: Option<String>,
+    pub start: Option<Vec<String>>,
     pub center: Option<Vec<String>>,
-    pub right: Option<Vec<String>>,
+    pub end: Option<Vec<String>>,
 }
 
 impl AppConfig {
@@ -45,16 +47,26 @@ pub(crate) fn config_path() -> Option<PathBuf> {
 
 impl Default for AppConfig {
     fn default() -> Self {
-        Self { bar: None }
+        Self {
+            bars: vec![BarConfig::default()],
+        }
+    }
+}
+
+impl AppConfig {
+    pub fn first_bar(&self) -> Option<&BarConfig> {
+        self.bars.first()
     }
 }
 
 impl Default for BarConfig {
     fn default() -> Self {
         Self {
-            left: None,
+            name: None,
+            edge: None,
+            start: None,
             center: None,
-            right: None,
+            end: None,
         }
     }
 }

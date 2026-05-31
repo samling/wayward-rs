@@ -1,4 +1,5 @@
 use crate::config::BarConfig;
+use relm4::gtk;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum BarItem {
@@ -7,19 +8,78 @@ pub(crate) enum BarItem {
     Battery,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum BarEdge {
+    Top,
+    Bottom,
+    Left,
+    Right,
+}
+
+impl BarEdge {
+    pub(crate) fn from_config(value: Option<&str>) -> Self {
+        match value {
+            Some("top") | None => Self::Top,
+            Some("bottom") => Self::Bottom,
+            Some("left") => Self::Left,
+            Some("right") => Self::Right,
+            Some(unknown) => {
+                tracing::error!("Unknown bar edge in config: {unknown}");
+                Self::Top
+            }
+        }
+    }
+
+    pub(crate) fn is_vertical(self) -> bool {
+        matches!(self, Self::Left | Self::Right)
+    }
+
+    pub(crate) fn orientation(self) -> gtk::Orientation {
+        if self.is_vertical() {
+            gtk::Orientation::Vertical
+        } else {
+            gtk::Orientation::Horizontal
+        }
+    }
+
+    pub(crate) fn center_halign(self) -> gtk::Align {
+        if self.is_vertical() {
+            gtk::Align::Fill
+        } else {
+            gtk::Align::Center
+        }
+    }
+
+    pub(crate) fn center_valign(self) -> gtk::Align {
+        if self.is_vertical() {
+            gtk::Align::Center
+        } else {
+            gtk::Align::Fill
+        }
+    }
+
+    pub(crate) fn center_hexpand(self) -> bool {
+        !self.is_vertical()
+    }
+
+    pub(crate) fn center_vexpand(self) -> bool {
+        self.is_vertical()
+    }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct BarLayout {
-    pub(super) left: Vec<BarItem>,
+    pub(super) start: Vec<BarItem>,
     pub(super) center: Vec<BarItem>,
-    pub(super) right: Vec<BarItem>,
+    pub(super) end: Vec<BarItem>,
 }
 
 impl BarLayout {
     pub(super) fn default_top_bar() -> Self {
         Self {
-            left: vec![BarItem::Workspaces],
+            start: vec![BarItem::Workspaces],
             center: vec![],
-            right: vec![BarItem::Clock, BarItem::Battery],
+            end: vec![BarItem::Clock, BarItem::Battery],
         }
     }
 
@@ -38,9 +98,9 @@ impl BarLayout {
     pub(super) fn items(&self) -> Vec<BarItem> {
         let mut items = Vec::new();
 
-        items.extend(self.left.iter().copied());
+        items.extend(self.start.iter().copied());
         items.extend(self.center.iter().copied());
-        items.extend(self.right.iter().copied());
+        items.extend(self.end.iter().copied());
 
         items
     }
@@ -53,18 +113,18 @@ impl BarLayout {
         };
 
         Self {
-            left: config
-                .left
+            start: config
+                .start
                 .as_ref()
-                .map_or(default.left, |items| parse_items(items)),
+                .map_or(default.start, |items| parse_items(items)),
             center: config
                 .center
                 .as_ref()
                 .map_or(default.center, |items| parse_items(items)),
-            right: config
-                .right
+            end: config
+                .end
                 .as_ref()
-                .map_or(default.right, |items| parse_items(items)),
+                .map_or(default.end, |items| parse_items(items)),
         }
     }
 }
@@ -88,9 +148,9 @@ fn parse_item(item: &str) -> Option<BarItem> {
 #[test]
 fn unique_items_keeps_first_occurrence_order() {
     let layout = BarLayout {
-        left: vec![BarItem::Clock],
+        start: vec![BarItem::Clock],
         center: vec![BarItem::Workspaces, BarItem::Clock],
-        right: vec![BarItem::Battery, BarItem::Workspaces],
+        end: vec![BarItem::Battery, BarItem::Workspaces],
     };
 
     assert_eq!(

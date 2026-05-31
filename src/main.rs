@@ -14,5 +14,8 @@ fn main() {
     let app = RelmApp::new("dev.sboynton.wayward");
     style::apply_initial_css();
     style::start_hot_reload();
-    app.run::<bar::Bar>(());
+
+    let config = config::AppConfig::load();
+    let init = bar::BarInit::from_config(config.first_bar());
+    app.run::<bar::Bar>(init);
 }
