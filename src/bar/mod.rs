@@ -18,6 +18,8 @@ pub struct Bar {
     name: Option<String>,
     layout: BarLayout,
     edge: BarEdge,
+    monitor: Option<gtk::gdk::Monitor>,
+    monitor_connector: Option<String>,
     active_watchers: Vec<(BarItem, relm4::JoinHandle<()>)>,
     pub(super) workspaces: Vec<WorkspaceSummary>,
     pub(super) status: Option<String>,
@@ -29,14 +31,24 @@ pub struct BarInit {
     pub(crate) name: Option<String>,
     pub(crate) layout: BarLayout,
     pub(crate) edge: BarEdge,
+    pub(crate) monitor: Option<gtk::gdk::Monitor>,
+    pub(crate) monitor_connector: Option<String>,
 }
 
 impl BarInit {
-    pub(crate) fn from_config(config: Option<&crate::config::BarConfig>) -> Self {
+    pub(crate) fn from_config(
+        config: Option<&crate::config::BarConfig>,
+        monitor: Option<gtk::gdk::Monitor>,
+    ) -> Self {
+        let monitor_connector = monitor
+            .as_ref()
+            .and_then(|monitor| monitor.connector().map(|connector| connector.to_string()));
         Self {
             name: config.and_then(|bar| bar.name.clone()),
             layout: BarLayout::from_config(config),
             edge: BarEdge::from_config(config.and_then(|bar| bar.edge.as_deref())),
+            monitor,
+            monitor_connector,
         }
     }
 }
@@ -53,8 +65,14 @@ pub enum BarMsg {
 }
 
 impl Bar {
-    fn configure_window(root: &gtk::ApplicationWindow, edge: BarEdge, name: Option<&str>) {
+    fn configure_window(
+        root: &gtk::ApplicationWindow,
+        edge: BarEdge,
+        name: Option<&str>,
+        monitor: Option<&gtk::gdk::Monitor>,
+    ) {
         root.init_layer_shell();
+        root.set_monitor(monitor);
         root.set_layer(Layer::Top);
 
         root.set_anchor(Edge::Top, false);
@@ -140,6 +158,8 @@ impl Bar {
             name: init.name,
             layout: init.layout,
             edge: init.edge,
+            monitor: init.monitor,
+            monitor_connector: init.monitor_connector,
             active_watchers: Vec::new(),
             workspaces: Vec::new(),
             status: Some("Connecting to Niri".to_string()),
@@ -248,7 +268,12 @@ impl Component for Bar {
             tracing::info!("Starting bar {name}");
         }
 
-        Self::configure_window(&root, model.edge, model.name.as_deref());
+        Self::configure_window(
+            &root,
+            model.edge,
+            model.name.as_deref(),
+            model.monitor.as_ref(),
+        );
 
         let widgets = view_output!();
 
@@ -270,7 +295,12 @@ impl Component for Bar {
             BarMsg::LayoutChanged { layout, edge } => {
                 self.layout = layout;
                 self.edge = edge;
-                Self::configure_window(root, self.edge, self.name.as_deref());
+                Self::configure_window(
+                    root,
+                    self.edge,
+                    self.name.as_deref(),
+                    self.monitor.as_ref(),
+                );
                 self.reconcile_watchers(&sender);
             }
             BarMsg::WorkspacesChanged(workspaces) => {

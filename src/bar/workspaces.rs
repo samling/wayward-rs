@@ -16,7 +16,15 @@ impl Bar {
             return;
         }
 
-        for workspace in &self.workspaces {
+        let workspaces = self.workspaces.iter().filter(|workspace| {
+            let Some(monitor_connector) = &self.monitor_connector else {
+                return true;
+            };
+
+            workspace.output.as_deref() == Some(monitor_connector.as_str())
+        });
+
+        for workspace in workspaces {
             let label = gtk::Label::new(Some(&workspace.label()));
 
             for class_name in workspace.css_classes() {
