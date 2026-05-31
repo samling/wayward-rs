@@ -8,6 +8,7 @@ use crate::{bar, config::AppConfig};
 pub struct Shell {
     bars: Vec<RunningBar>,
     config: AppConfig,
+    item_states: Vec<bar::state::BarItemState>,
 }
 
 #[derive(Debug)]
@@ -15,6 +16,7 @@ pub enum ShellMsg {
     ConfigChanged(AppConfig),
     MonitorsChanged,
     ReconcileMonitors,
+    ItemStateChanged(bar::state::BarItemState),
 }
 
 struct RunningBar {
@@ -120,7 +122,10 @@ impl Shell {
 
         for desired_bar in desired_bars {
             let Some(running_bar) = self.bars.iter().find(|bar| bar.key == desired_bar.key) else {
-                if let Some(running_bar) = Self::launch_bar(&desired_bar.config, desired_bar.monitor) {
+                if let Some(running_bar) =
+                    Self::launch_bar(&desired_bar.config, desired_bar.monitor)
+                {
+                    self.send_item_states_to_bar(&running_bar);
                     self.bars.push(running_bar);
                 }
 
@@ -222,6 +227,15 @@ impl Shell {
 
         Some(RunningBar { key, controller })
     }
+
+    fn send_item_states_to_bar(&self, running_bar: &RunningBar) {
+        for state in &self.item_states {
+            let _ = running_bar
+                .controller
+                .sender()
+                .send(bar::BarMsg::ItemStateChanged(state.clone()));
+        }
+    }
 }
 
 #[relm4::component(pub)]
@@ -246,12 +260,22 @@ impl SimpleComponent for Shell {
         let mut model = Shell {
             bars: Vec::new(),
             config,
+            item_states: vec![
+                bar::state::BarItemState::Workspaces(bar::state::WorkspaceState::Connecting),
+                bar::state::BarItemState::Battery(bar::state::BatteryState::Unavailable),
+                bar::state::BarItemState::Clock(bar::state::ClockState::Ready(
+                    bar::clock::initial_text(),
+                )),
+            ],
         };
 
         model.reconcile_bars();
 
         Self::start_config_hot_reload(&sender);
         Self::start_monitor_watch(&sender);
+        crate::niri::start_workspace_watcher(sender.input_sender().clone());
+        crate::bar::battery::start(sender.input_sender().clone());
+        crate::bar::clock::start(sender.input_sender().clone());
 
         let widgets = view_output!();
 
@@ -266,13 +290,12 @@ impl SimpleComponent for Shell {
             }
             ShellMsg::MonitorsChanged => {
                 tracing::info!("Monitors changed");
-                
+
                 let input_sender = _sender.input_sender().clone();
 
                 gtk::glib::timeout_add_once(std::time::Duration::from_millis(500), move || {
                     let _ = input_sender.send(ShellMsg::ReconcileMonitors);
                 });
-
             }
             ShellMsg::ReconcileMonitors => {
                 self.reconcile_bars();
@@ -283,6 +306,19 @@ impl SimpleComponent for Shell {
                     gtk::glib::timeout_add_once(std::time::Duration::from_millis(500), move || {
                         let _ = input_sender.send(ShellMsg::ReconcileMonitors);
                     });
+                }
+            }
+            ShellMsg::ItemStateChanged(state) => {
+                self.item_states
+                    .retain(|existing_state| !existing_state.same_item_as(&state));
+
+                self.item_states.push(state.clone());
+
+                for running_bar in &self.bars {
+                    let _ = running_bar
+                        .controller
+                        .sender()
+                        .send(bar::BarMsg::ItemStateChanged(state.clone()));
                 }
             }
         }
