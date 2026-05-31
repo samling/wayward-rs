@@ -12,7 +12,6 @@ use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::config::AppConfig;
 use crate::workspace::WorkspaceSummary;
 
 pub struct Bar {
@@ -136,37 +135,6 @@ impl Bar {
         self.start_missing_watchers(sender);
     }
 
-    fn start_config_hot_reload(sender: &ComponentSender<Self>) {
-        let Some(dir) = crate::config::config_dir() else {
-            tracing::info!("Could not determine config directory, config hot reload disabled");
-            return;
-        };
-
-        let Some(path) = crate::config::config_path() else {
-            tracing::info!("Could not determine config path, config hot reload disabled");
-            return;
-        };
-
-        let input_sender = sender.input_sender().clone();
-
-        crate::file_watch::start_debounced_file_watch("config", dir, path, move || {
-            let config = AppConfig::load();
-            let init = BarInit::from_config(config.first_bar());
-
-            if input_sender
-                .send(BarMsg::LayoutChanged {
-                    layout: init.layout,
-                    edge: init.edge,
-                })
-                .is_err()
-            {
-                return;
-            }
-
-            tracing::info!("Reloaded config");
-        });
-    }
-
     fn initial_model(init: BarInit) -> Self {
         Self {
             name: init.name,
@@ -274,10 +242,6 @@ impl Component for Bar {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let config = AppConfig::load();
-        if let Some(name) = config.first_bar().and_then(|bar| bar.name.as_deref()) {
-            tracing::info!("Starting bar {name}");
-        };
         let mut model = Self::initial_model(init);
 
         if let Some(name) = &model.name {
@@ -294,8 +258,9 @@ impl Component for Bar {
             &widgets.end_items,
         );
 
+        root.present();
+
         model.start_missing_watchers(&sender);
-        Self::start_config_hot_reload(&sender);
 
         ComponentParts { model, widgets }
     }

@@ -53,12 +53,6 @@ impl Default for AppConfig {
     }
 }
 
-impl AppConfig {
-    pub fn first_bar(&self) -> Option<&BarConfig> {
-        self.bars.first()
-    }
-}
-
 impl Default for BarConfig {
     fn default() -> Self {
         Self {
