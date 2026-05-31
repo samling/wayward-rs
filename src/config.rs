@@ -2,15 +2,20 @@ use serde::Deserialize;
 use std::{fs, path::PathBuf};
 
 #[derive(Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct AppConfig {
-    pub bar: Option<BarConfig>,
+    pub bars: Vec<BarConfig>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct BarConfig {
-    pub left: Option<Vec<String>>,
+    pub name: Option<String>,
+    pub edge: Option<String>,
+    pub monitors: Option<Vec<String>>,
+    pub start: Option<Vec<String>>,
     pub center: Option<Vec<String>>,
-    pub right: Option<Vec<String>>,
+    pub end: Option<Vec<String>>,
 }
 
 impl AppConfig {
@@ -45,16 +50,21 @@ pub(crate) fn config_path() -> Option<PathBuf> {
 
 impl Default for AppConfig {
     fn default() -> Self {
-        Self { bar: None }
+        Self {
+            bars: vec![BarConfig::default()],
+        }
     }
 }
 
 impl Default for BarConfig {
     fn default() -> Self {
         Self {
-            left: None,
+            name: None,
+            edge: None,
+            monitors: None,
+            start: None,
             center: None,
-            right: None,
+            end: None,
         }
     }
 }
