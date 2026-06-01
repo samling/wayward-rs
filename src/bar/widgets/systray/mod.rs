@@ -8,6 +8,7 @@ use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
 use relm4::gtk::prelude::{BoxExt, GestureSingleExt, PopoverExt, WidgetExt};
 use std::collections::{HashMap, HashSet};
+use std::sync::atomic::{AtomicUsize, Ordering};
 use wayle_systray::adapters::gtk4::Adapter;
 
 use self::model::SystrayItemSummary;
@@ -18,7 +19,10 @@ use crate::bar::widget::{
 };
 use crate::shell::ShellMsg;
 
+static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(1);
+
 struct SystrayRuntime {
+    id: usize,
     root: gtk::Box,
     sender: relm4::Sender<BarMsg>,
     items: HashMap<String, SystrayItemRuntime>,
@@ -58,6 +62,7 @@ impl SystrayRuntime {
         }
 
         tracing::debug!(
+            runtime_id = self.id,
             runtime_count = self.items.len(),
             root_children = count_children(&self.root),
             "Systray runtime reconciled"
@@ -157,8 +162,11 @@ impl BarWidget for SystrayWidget {
         sender: &relm4::Sender<BarMsg>,
     ) -> Box<dyn BarWidgetRuntime> {
         let root = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        let id = NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed);
+        tracing::debug!(runtime_id = id, "Creating systray runtime");
 
         Box::new(SystrayRuntime {
+            id,
             root,
             sender: sender.clone(),
             items: HashMap::new(),
