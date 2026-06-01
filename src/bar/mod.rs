@@ -92,6 +92,25 @@ impl Bar {
             .chain(self.mounted_layout.end.iter_mut())
     }
 
+    fn apply_state_to_mounted_widgets(&mut self, state: &BarItemState) {
+        let context = self.context();
+        let widget_id = state.widget_id();
+
+        for mounted in self.mounted_widgets_mut() {
+            if mounted.widget_id == widget_id {
+                mounted.runtime.update(state, &context);
+            }
+        }
+    }
+
+    fn apply_all_states_to_mounted_widgets(&mut self) {
+        let states = self.item_states.clone();
+
+        for state in states {
+            self.apply_state_to_mounted_widgets(&state);
+        }
+    }
+
     fn configure_window(
         root: &gtk::ApplicationWindow,
         edge: BarEdge,
@@ -292,36 +311,46 @@ impl Component for Bar {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>, root: &Self::Root) {
+    fn update_with_view(
+        &mut self,
+        widgets: &mut Self::Widgets,
+        message: Self::Input,
+        sender: ComponentSender<Self>,
+        root: &Self::Root
+    ) {
         match message {
             BarMsg::LayoutChanged { layout, edge } => {
                 self.layout = layout;
                 self.edge = edge;
+
                 Self::configure_window(
                     root,
                     self.edge,
                     self.name.as_deref(),
                     self.monitor.as_ref(),
                 );
+
+                self.mount_layout(
+                    &widgets.start_items,
+                    &widgets.center_items,
+                    &widgets.end_items,
+                );
+
+                self.apply_all_states_to_mounted_widgets();
             }
             BarMsg::ItemStateChanged(state) => {
                 self.item_states
                     .retain(|existing_state| !existing_state.same_widget_as(&state));
 
                 self.item_states.push(state.clone());
-
-                let context = self.context();
-
-                for mounted in self.mounted_widgets_mut() {
-                    if mounted.widget_id == state.widget_id() {
-                        mounted.runtime.update(&state, &context);
-                    }
-                }
+                self.apply_all_states_to_mounted_widgets();
             }
             BarMsg::WidgetEvent(event) => {
-                let _ = _sender.output(BarOutput::WidgetEvent(event));
+                let _ = sender.output(BarOutput::WidgetEvent(event));
             }
         }
+
+        self.update_view(widgets, sender);
     }
 
     fn pre_view() {}
