@@ -44,7 +44,7 @@ impl SystrayRuntime {
                 continue;
             }
 
-            if let Some(runtime) = self.items.get_mut(&item.bus_name) {
+            if let Some(runtime) = self.items.get_mut(&key) {
                 tracing::debug!(
                     id = %item.id,
                     bus_name = %item.bus_name,
@@ -65,13 +65,6 @@ impl SystrayRuntime {
             }
         }
 
-        tracing::debug!(
-            runtime_id = self.id,
-            runtime_count = self.items.len(),
-            root_children = count_children(&self.root),
-            "Systray runtime reconciled"
-        );
-
         let mut ids = std::collections::HashMap::new();
         for item in items {
             *ids.entry(item.id.as_str()).or_insert(0usize) += 1;
@@ -90,7 +83,15 @@ impl SystrayRuntime {
                 self.root.remove(&runtime.root);
                 false
             }
-        })
+        });
+
+        tracing::debug!(
+            runtime_id = self.id,
+            runtime_count = self.items.len(),
+            root_children = count_children(&self.root),
+            "Systray runtime reconciled"
+        );
+
     }
 }
 
