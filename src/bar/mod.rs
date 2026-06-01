@@ -8,7 +8,7 @@ pub(crate) mod widgets;
 
 use layout::{BarEdge, BarLayout};
 use state::BarItemState;
-use widget::BarWidget;
+use widget::WidgetInstance;
 
 use gtk::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
@@ -34,6 +34,7 @@ pub struct BarInit {
 
 impl BarInit {
     pub(crate) fn from_config(
+        app_config: &crate::config::AppConfig,
         config: Option<&crate::config::BarConfig>,
         monitor: Option<gtk::gdk::Monitor>,
     ) -> Self {
@@ -42,7 +43,7 @@ impl BarInit {
             .and_then(|monitor| monitor.connector().map(|connector| connector.to_string()));
         Self {
             name: config.and_then(|bar| bar.name.clone()),
-            layout: BarLayout::from_config(config),
+            layout: BarLayout::from_config(app_config, config),
             edge: BarEdge::from_config(config.and_then(|bar| bar.edge.as_deref())),
             monitor,
             monitor_connector,
@@ -125,13 +126,13 @@ impl Bar {
         self.render_region(&self.layout.end, end_items);
     }
 
-    fn render_region(&self, widgets: &[&'static dyn BarWidget], container: &gtk::Box) {
+    fn render_region(&self, widgets: &[WidgetInstance], container: &gtk::Box) {
         while let Some(child) = container.first_child() {
             container.remove(&child);
         }
 
-        for widget in widgets {
-            widget.render(self, container);
+        for instance in widgets {
+            instance.widget.render(self, instance, container);
         }
     }
 

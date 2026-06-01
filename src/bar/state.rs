@@ -23,7 +23,7 @@ pub(crate) enum BatteryState {
 
 #[derive(Clone, Debug)]
 pub(crate) enum ClockState {
-    Ready(String),
+    Ready,
 }
 
 impl BarItemState {
