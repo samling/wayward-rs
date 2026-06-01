@@ -38,12 +38,6 @@ impl SystrayRuntime {
                 continue;
             }
 
-            if !self.items.contains_key(&item.bus_name) {
-                let runtime = SystrayItemRuntime::new(&self.sender, item);
-                self.root.append(&runtime.root);
-                self.items.insert(item.bus_name.clone(), runtime);
-            }
-
             if let Some(runtime) = self.items.get_mut(&item.bus_name) {
                 tracing::debug!(
                     id = %item.id,
@@ -62,6 +56,12 @@ impl SystrayRuntime {
                 self.items.insert(item.bus_name.clone(), runtime);
             }
         }
+
+        tracing::debug!(
+            runtime_count = self.items.len(),
+            root_children = count_children(&self.root),
+            "Systray runtime reconciled"
+        );
 
         self.items.retain(|key, runtime| {
             if desired_keys.contains(key) {
@@ -120,6 +120,13 @@ impl SystrayItemRuntime {
 
         let child = systray_item_content(item);
         self.root.append(&child);
+
+        tracing::debug!(
+            id = %item.id,
+            bus_name = %item.bus_name,
+            child_count = count_children(&self.root),
+            "Systray item runtime updated"
+        );
     }
 }
 
@@ -264,4 +271,16 @@ fn systray_item_content(item: &SystrayItemSummary) -> gtk::Widget {
     };
 
     gtk::Label::new(Some(text)).upcast()
+}
+
+fn count_children(widget: &gtk::Box) -> usize {
+    let mut count = 0;
+    let mut child = widget.first_child();
+
+    while let Some(current) = child {
+        count += 1;
+        child = current.next_sibling();
+    }
+
+    count
 }
