@@ -8,21 +8,17 @@ use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
 use relm4::gtk::prelude::{BoxExt, GestureSingleExt, PopoverExt, WidgetExt};
 use std::collections::{HashMap, HashSet};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use wayle_systray::adapters::gtk4::Adapter;
 
 use self::model::SystrayItemSummary;
 use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, SystrayState};
 use crate::bar::widget::{
-    BarContext, BarWidget, BarWidgetRuntime, WidgetAction, WidgetEvent, WidgetInstance
+    BarContext, BarWidget, BarWidgetRuntime, WidgetAction, WidgetEvent, WidgetInstance,
 };
 use crate::shell::ShellMsg;
 
-static NEXT_RUNTIME_ID: AtomicUsize = AtomicUsize::new(1);
-
 struct SystrayRuntime {
-    id: usize,
     root: gtk::Box,
     sender: relm4::Sender<BarMsg>,
     items: HashMap<String, SystrayItemRuntime>,
@@ -45,34 +41,11 @@ impl SystrayRuntime {
             }
 
             if let Some(runtime) = self.items.get_mut(&key) {
-                tracing::debug!(
-                    id = %item.id,
-                    bus_name = %item.bus_name,
-                    key = %key,
-                    "Updating systray item runtime"
-                );
                 runtime.update(item);
             } else {
-                tracing::debug!(
-                    id = %item.id,
-                    bus_name = %item.bus_name,
-                    key = %key,
-                    "Creating systray item runtime"
-                );
                 let runtime = SystrayItemRuntime::new(&self.sender, item);
                 self.root.append(&runtime.root);
                 self.items.insert(key, runtime);
-            }
-        }
-
-        let mut ids = std::collections::HashMap::new();
-        for item in items {
-            *ids.entry(item.id.as_str()).or_insert(0usize) += 1;
-        }
-
-        for (id, count) in ids {
-            if count > 1 {
-                tracing::warn!(id, count, "Duplicate system tray id in snapshot");
             }
         }
 
@@ -84,14 +57,6 @@ impl SystrayRuntime {
                 false
             }
         });
-
-        tracing::debug!(
-            runtime_id = self.id,
-            runtime_count = self.items.len(),
-            root_children = count_children(&self.root),
-            "Systray runtime reconciled"
-        );
-
     }
 }
 
@@ -142,16 +107,8 @@ impl SystrayItemRuntime {
 
         let child = systray_item_content(item);
         self.root.append(&child);
-
-        tracing::debug!(
-            id = %item.id,
-            bus_name = %item.bus_name,
-            child_count = count_children(&self.root),
-            "Systray item runtime updated"
-        );
     }
 }
-
 
 impl BarWidgetRuntime for SystrayRuntime {
     fn root(&self) -> gtk::Widget {
@@ -179,11 +136,7 @@ impl BarWidget for SystrayWidget {
         sender: &relm4::Sender<BarMsg>,
     ) -> Box<dyn BarWidgetRuntime> {
         let root = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-        let id = NEXT_RUNTIME_ID.fetch_add(1, Ordering::Relaxed);
-        tracing::debug!(runtime_id = id, "Creating systray runtime");
-
         Box::new(SystrayRuntime {
-            id,
             root,
             sender: sender.clone(),
             items: HashMap::new(),
@@ -226,14 +179,14 @@ fn attach_click_handler(
         }
 
         let _ = sender.send(BarMsg::WidgetEvent(WidgetEvent {
-                widget_id: ID,
-                action: WidgetAction::Clicked {
-                    item_id: bus_name.clone(),
-                    button: gesture.current_button(),
-                    x: x as i32,
-                    y: y as i32,
-                },
-            }));
+            widget_id: ID,
+            action: WidgetAction::Clicked {
+                item_id: bus_name.clone(),
+                button: gesture.current_button(),
+                x: x as i32,
+                y: y as i32,
+            },
+        }));
     });
 
     widget.add_controller(click)
@@ -282,11 +235,11 @@ fn systray_item_content(item: &SystrayItemSummary) -> gtk::Widget {
     if let Some(icon_name) = &item.icon_name {
         let image = gtk::Image::from_icon_name(icon_name);
         image.set_pixel_size(16);
-        return image.upcast()
+        return image.upcast();
     }
 
     if let Some(pixmap) = item.icon_pixmaps.first() {
-        return image_from_pixmap(pixmap).upcast()
+        return image_from_pixmap(pixmap).upcast();
     }
 
     let text = if !item.title.is_empty() {
@@ -304,16 +257,4 @@ fn logical_item_key(item: &SystrayItemSummary) -> String {
     }
 
     format!("bus:{}", item.bus_name)
-}
-
-fn count_children(widget: &gtk::Box) -> usize {
-    let mut count = 0;
-    let mut child = widget.first_child();
-
-    while let Some(current) = child {
-        count += 1;
-        child = current.next_sibling();
-    }
-
-    count
 }

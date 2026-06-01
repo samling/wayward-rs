@@ -316,7 +316,7 @@ impl Component for Bar {
         widgets: &mut Self::Widgets,
         message: Self::Input,
         sender: ComponentSender<Self>,
-        root: &Self::Root
+        root: &Self::Root,
     ) {
         match message {
             BarMsg::LayoutChanged { layout, edge } => {

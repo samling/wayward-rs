@@ -324,7 +324,7 @@ impl SimpleComponent for Shell {
             ShellMsg::BarOutput(output) => match output {
                 bar::BarOutput::WidgetEvent(event) => {
                     bar::registry::handle_widget_event(event);
-                },
+                }
             },
         }
     }
