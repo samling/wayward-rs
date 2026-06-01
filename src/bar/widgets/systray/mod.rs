@@ -33,10 +33,12 @@ impl SystrayRuntime {
         let mut desired_keys = HashSet::new();
 
         for item in items {
-            if !desired_keys.insert(item.bus_name.clone()) {
+            let key = logical_item_key(item);
+            if !desired_keys.insert(key.clone()) {
                 tracing::warn!(
                     id = %item.id,
                     bus_name = %item.bus_name,
+                    key = %key,
                     "Skipping duplicate systray item"
                 );
                 continue;
@@ -46,6 +48,7 @@ impl SystrayRuntime {
                 tracing::debug!(
                     id = %item.id,
                     bus_name = %item.bus_name,
+                    key = %key,
                     "Updating systray item runtime"
                 );
                 runtime.update(item);
@@ -53,11 +56,12 @@ impl SystrayRuntime {
                 tracing::debug!(
                     id = %item.id,
                     bus_name = %item.bus_name,
+                    key = %key,
                     "Creating systray item runtime"
                 );
                 let runtime = SystrayItemRuntime::new(&self.sender, item);
                 self.root.append(&runtime.root);
-                self.items.insert(item.bus_name.clone(), runtime);
+                self.items.insert(key, runtime);
             }
         }
 
@@ -291,6 +295,14 @@ fn systray_item_content(item: &SystrayItemSummary) -> gtk::Widget {
     };
 
     gtk::Label::new(Some(text)).upcast()
+}
+
+fn logical_item_key(item: &SystrayItemSummary) -> String {
+    if !item.id.is_empty() {
+        return format!("id:{}", item.id);
+    }
+
+    format!("bus:{}", item.bus_name)
 }
 
 fn count_children(widget: &gtk::Box) -> usize {
