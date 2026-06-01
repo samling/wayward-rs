@@ -68,6 +68,17 @@ impl SystrayRuntime {
             "Systray runtime reconciled"
         );
 
+        let mut ids = std::collections::HashMap::new();
+        for item in items {
+            *ids.entry(item.id.as_str()).or_insert(0usize) += 1;
+        }
+
+        for (id, count) in ids {
+            if count > 1 {
+                tracing::warn!(id, count, "Duplicate system tray id in snapshot");
+            }
+        }
+
         self.items.retain(|key, runtime| {
             if desired_keys.contains(key) {
                 true
@@ -121,7 +132,8 @@ impl SystrayItemRuntime {
         self.root.add_css_class(&status_class);
         self.status_class = Some(status_class);
 
-        self.root.set_tooltip_text(Some(&item.title));
+        self.root
+            .set_tooltip_text(Some(&format!("{} | {}", item.id, item.bus_name)));
 
         let child = systray_item_content(item);
         self.root.append(&child);
