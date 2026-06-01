@@ -302,7 +302,7 @@ impl SimpleComponent for Shell {
             }
             ShellMsg::ItemStateChanged(state) => {
                 self.item_states
-                    .retain(|existing_state| !existing_state.same_item_as(&state));
+                    .retain(|existing_state| !existing_state.same_widget_as(&state));
 
                 self.item_states.push(state.clone());
 

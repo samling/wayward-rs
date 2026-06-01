@@ -7,13 +7,6 @@ pub(crate) enum BarItemState {
     Clock(ClockState),
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum BarItemStateKey {
-    Workspaces,
-    Battery,
-    Clock,
-}
-
 #[derive(Clone, Debug)]
 pub(crate) enum WorkspaceState {
     Connecting,
@@ -34,15 +27,15 @@ pub(crate) enum ClockState {
 }
 
 impl BarItemState {
-    pub(crate) fn key(&self) -> BarItemStateKey {
+    pub(crate) fn widget_id(&self) -> &'static str {
         match self {
-            Self::Workspaces(_) => BarItemStateKey::Workspaces,
-            Self::Battery(_) => BarItemStateKey::Battery,
-            Self::Clock(_) => BarItemStateKey::Clock,
+            Self::Workspaces(_) => "workspaces",
+            Self::Battery(_) => "battery",
+            Self::Clock(_) => "clock",
         }
     }
 
-    pub(crate) fn same_item_as(&self, other: &Self) -> bool {
-        self.key() == other.key()
+    pub(crate) fn same_widget_as(&self, other: &Self) -> bool {
+        self.widget_id() == other.widget_id()
     }
 }

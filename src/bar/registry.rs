@@ -1,18 +1,14 @@
-use relm4::gtk;
+use super::widget::BarWidget;
+use super::widgets::battery::BatteryWidget;
+use super::widgets::clock::ClockWidget;
+use super::widgets::workspaces::WorkspacesWidget;
 
-use super::{Bar, battery, clock, layout::BarItem};
+static BATTERY: BatteryWidget = BatteryWidget;
+static CLOCK: ClockWidget = ClockWidget;
+static WORKSPACES: WorkspacesWidget = WorkspacesWidget;
 
-pub(super) fn render_item(bar: &Bar, item: BarItem, container: &gtk::Box) {
-    match item {
-        BarItem::Workspaces => bar.render_workspace_row(container),
-        BarItem::Clock => clock::render(container, &bar.clock_text),
-        BarItem::Battery => battery::render(container, &bar.battery_text),
-    }
-}
-pub(super) fn initial_clock_text() -> String {
-    clock::initial_text()
-}
+pub(crate) static WIDGETS: &[&dyn BarWidget] = &[&WORKSPACES, &CLOCK, &BATTERY];
 
-pub(super) fn initial_battery_text() -> String {
-    battery::initial_text()
+pub(crate) fn widget_by_id(id: &str) -> Option<&'static dyn BarWidget> {
+    WIDGETS.iter().copied().find(|widget| widget.id() == id)
 }
