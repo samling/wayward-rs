@@ -1,6 +1,6 @@
 use relm4::gtk;
 
-use super::Bar;
+use super::BarMsg;
 use super::state::BarItemState;
 use crate::shell::ShellMsg;
 
@@ -21,10 +21,31 @@ impl std::fmt::Debug for WidgetInstance {
             .finish()
     }
 }
+
+#[derive(Clone, Debug)]
+pub(crate) struct WidgetEvent {
+    pub(crate) widget_id: &'static str,
+    pub(crate) action: WidgetAction,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum WidgetAction {
+    Clicked {
+        item_id: String,
+        button: u32,
+        x: i32,
+        y: i32,
+    },
+}
+
 pub(crate) trait BarWidget: Sync {
     fn id(&self) -> &'static str;
 
-    fn render(&self, bar: &Bar, instance: &WidgetInstance, container: &gtk::Box);
+    fn build(
+        &self,
+        instance: &WidgetInstance,
+        sender: &relm4::Sender<BarMsg>,
+    ) -> Box<dyn BarWidgetRuntime>;
 
     fn initial_state(&self) -> Option<BarItemState> {
         None
@@ -33,4 +54,15 @@ pub(crate) trait BarWidget: Sync {
     fn start(&self, _sender: relm4::Sender<ShellMsg>) -> Option<relm4::JoinHandle<()>> {
         None
     }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct BarContext {
+    pub(crate) monitor_connector: Option<String>,
+}
+
+pub(crate) trait BarWidgetRuntime {
+    fn root(&self) -> gtk::Widget;
+
+    fn update(&mut self, state: &BarItemState, context: &BarContext);
 }

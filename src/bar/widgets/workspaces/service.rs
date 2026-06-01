@@ -3,8 +3,8 @@ use relm4::Sender;
 use wayle_niri::NiriService;
 
 use crate::bar::state::WorkspaceState;
+use crate::bar::widgets::workspaces::model::WorkspaceSummary;
 use crate::shell::ShellMsg;
-use crate::workspace::WorkspaceSummary;
 
 pub fn start_workspace_watcher(
     sender: relm4::Sender<ShellMsg>,

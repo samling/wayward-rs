@@ -1,13 +1,33 @@
 use crate::bar::state::{BarItemState, BatteryState};
-use crate::bar::widget::{BarWidget, WidgetInstance};
-use crate::bar::{Bar, style};
+use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance};
+use crate::bar::{BarMsg, style};
 use crate::shell::ShellMsg;
 use futures::{StreamExt, select};
 use relm4::Sender;
 use relm4::gtk;
-use relm4::gtk::prelude::BoxExt;
+use relm4::gtk::glib::object::Cast;
 use wayle_battery::BatteryService;
 use wayle_battery::types::DeviceState;
+
+struct BatteryRuntime {
+    root: gtk::Label,
+}
+
+impl BarWidgetRuntime for BatteryRuntime {
+    fn root(&self) -> gtk::Widget {
+        self.root.clone().upcast()
+    }
+
+    fn update(&mut self, state: &BarItemState, _context: &BarContext) {
+        let text = match state {
+            BarItemState::Battery(BatteryState::Ready(text)) => text.as_str(),
+            BarItemState::Battery(BatteryState::Unavailable) => "NaN",
+            _ => return,
+        };
+
+        self.root.set_text(text);
+    }
+}
 
 pub(crate) struct BatteryWidget;
 
@@ -16,19 +36,15 @@ impl BarWidget for BatteryWidget {
         "battery"
     }
 
-    fn render(&self, bar: &Bar, _instance: &WidgetInstance, container: &gtk::Box) {
-        let fallback = initial_text();
+    fn build(
+        &self,
+        _instance: &WidgetInstance,
+        _sender: &relm4::Sender<BarMsg>,
+    ) -> Box<dyn BarWidgetRuntime> {
+        let label = gtk::Label::new(Some(&initial_text()));
+        style::style_label(&label, "battery");
 
-        let text = bar
-            .item_states()
-            .iter()
-            .find_map(|state| match state {
-                BarItemState::Battery(BatteryState::Ready(text)) => Some(text.as_str()),
-                _ => None,
-            })
-            .unwrap_or(fallback.as_str());
-
-        render(container, text);
+        Box::new(BatteryRuntime { root: label })
     }
 
     fn initial_state(&self) -> Option<BarItemState> {
@@ -92,12 +108,6 @@ fn send_battery_snapshot(sender: &Sender<ShellMsg>, service: &BatteryService) {
     let text = battery_text(percentage, state);
 
     let _ = sender.send(battery_message(BatteryState::Ready(text)));
-}
-
-pub(super) fn render(container: &gtk::Box, text: &str) {
-    let label = gtk::Label::new(Some(text));
-    style::style_label(&label, "battery");
-    container.append(&label);
 }
 
 fn battery_message(state: BatteryState) -> ShellMsg {

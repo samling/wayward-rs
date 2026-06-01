@@ -17,6 +17,7 @@ pub enum ShellMsg {
     MonitorsChanged,
     ReconcileMonitors,
     ItemStateChanged(bar::state::BarItemState),
+    BarOutput(bar::BarOutput),
 }
 
 struct RunningBar {
@@ -104,7 +105,7 @@ impl Shell {
         desired
     }
 
-    fn reconcile_bars(&mut self) {
+    fn reconcile_bars(&mut self, sender: &ComponentSender<Self>) {
         let desired_bars = self.desired_bars();
 
         self.bars.retain(|running_bar| {
@@ -122,9 +123,12 @@ impl Shell {
 
         for desired_bar in desired_bars {
             let Some(running_bar) = self.bars.iter().find(|bar| bar.key == desired_bar.key) else {
-                if let Some(running_bar) =
-                    Self::launch_bar(&self.config, &desired_bar.config, desired_bar.monitor)
-                {
+                if let Some(running_bar) = Self::launch_bar(
+                    &self.config,
+                    &desired_bar.config,
+                    desired_bar.monitor,
+                    sender,
+                ) {
                     self.send_item_states_to_bar(&running_bar);
                     self.bars.push(running_bar);
                 }
@@ -208,6 +212,7 @@ impl Shell {
         app_config: &AppConfig,
         bar_config: &crate::config::BarConfig,
         monitor: gdk::Monitor,
+        sender: &ComponentSender<Self>,
     ) -> Option<RunningBar> {
         let Some(name) = bar_name(bar_config) else {
             tracing::error!("Skipping bar without a name");
@@ -224,7 +229,9 @@ impl Shell {
         tracing::info!("Launching bar {key}");
 
         let init = bar::BarInit::from_config(app_config, Some(bar_config), Some(monitor));
-        let controller = bar::Bar::builder().launch(init).detach();
+        let controller = bar::Bar::builder()
+            .launch(init)
+            .forward(sender.input_sender(), ShellMsg::BarOutput);
 
         Some(RunningBar { key, controller })
     }
@@ -264,7 +271,7 @@ impl SimpleComponent for Shell {
             item_states: crate::services::initial_item_states(),
         };
 
-        model.reconcile_bars();
+        model.reconcile_bars(&sender);
 
         Self::start_config_hot_reload(&sender);
         Self::start_monitor_watch(&sender);
@@ -279,7 +286,7 @@ impl SimpleComponent for Shell {
         match message {
             ShellMsg::ConfigChanged(config) => {
                 self.config = config;
-                self.reconcile_bars();
+                self.reconcile_bars(&_sender);
             }
             ShellMsg::MonitorsChanged => {
                 tracing::info!("Monitors changed");
@@ -291,7 +298,7 @@ impl SimpleComponent for Shell {
                 });
             }
             ShellMsg::ReconcileMonitors => {
-                self.reconcile_bars();
+                self.reconcile_bars(&_sender);
 
                 if Self::has_monitor_without_connector() {
                     let input_sender = _sender.input_sender().clone();
@@ -314,6 +321,11 @@ impl SimpleComponent for Shell {
                         .send(bar::BarMsg::ItemStateChanged(state.clone()));
                 }
             }
+            ShellMsg::BarOutput(output) => match output {
+                bar::BarOutput::WidgetEvent(event) => {
+                    bar::registry::handle_widget_event(event);
+                },
+            },
         }
     }
 }
