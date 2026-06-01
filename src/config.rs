@@ -1,9 +1,11 @@
 use serde::Deserialize;
-use std::{fs, path::PathBuf};
+use std::{collections::BTreeMap, fs, path::PathBuf};
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AppConfig {
+    #[serde(default)]
+    pub widgets: BTreeMap<String, toml::value::Table>,
     pub bars: Vec<BarConfig>,
 }
 
@@ -51,6 +53,7 @@ pub(crate) fn config_path() -> Option<PathBuf> {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
+            widgets: BTreeMap::new(),
             bars: vec![BarConfig::default()],
         }
     }

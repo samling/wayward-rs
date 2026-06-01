@@ -1,6 +1,19 @@
+[widgets.clock]
+format = "%H:%M"
+
+[widgets.clock.seconds]
+format = "%H:%M:%S"
+
 [[bars]]
 name = "top"
 edge = "top"
 start = ["workspaces"]
 center = ["clock"]
 end = ["battery"]
+
+[[bars]]
+name = "bottom"
+edge = "bottom"
+start = ["workspaces"]
+center = []
+end = ["clock.seconds"]

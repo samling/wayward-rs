@@ -123,7 +123,7 @@ impl Shell {
         for desired_bar in desired_bars {
             let Some(running_bar) = self.bars.iter().find(|bar| bar.key == desired_bar.key) else {
                 if let Some(running_bar) =
-                    Self::launch_bar(&desired_bar.config, desired_bar.monitor)
+                    Self::launch_bar(&self.config, &desired_bar.config, desired_bar.monitor)
                 {
                     self.send_item_states_to_bar(&running_bar);
                     self.bars.push(running_bar);
@@ -132,7 +132,7 @@ impl Shell {
                 continue;
             };
 
-            let init = bar::BarInit::from_config(Some(&desired_bar.config), None);
+            let init = bar::BarInit::from_config(&self.config, Some(&desired_bar.config), None);
 
             if running_bar
                 .controller
@@ -205,6 +205,7 @@ impl Shell {
     }
 
     fn launch_bar(
+        app_config: &AppConfig,
         bar_config: &crate::config::BarConfig,
         monitor: gdk::Monitor,
     ) -> Option<RunningBar> {
@@ -222,7 +223,7 @@ impl Shell {
 
         tracing::info!("Launching bar {key}");
 
-        let init = bar::BarInit::from_config(Some(bar_config), Some(monitor));
+        let init = bar::BarInit::from_config(app_config, Some(bar_config), Some(monitor));
         let controller = bar::Bar::builder().launch(init).detach();
 
         Some(RunningBar { key, controller })

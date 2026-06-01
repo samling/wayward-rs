@@ -3,7 +3,7 @@ use relm4::gtk;
 
 use crate::bar::Bar;
 use crate::bar::state::{BarItemState, WorkspaceState};
-use crate::bar::widget::BarWidget;
+use crate::bar::widget::{BarWidget, WidgetInstance};
 use crate::shell::ShellMsg;
 use crate::workspace::WorkspaceSummary;
 
@@ -14,7 +14,7 @@ impl BarWidget for WorkspacesWidget {
         "workspaces"
     }
 
-    fn render(&self, bar: &Bar, container: &gtk::Box) {
+    fn render(&self, bar: &Bar, _instance: &WidgetInstance, container: &gtk::Box) {
         render_workspace_row(bar, container);
     }
 
