@@ -30,7 +30,11 @@ impl SystrayRuntime {
 
         for item in items {
             if !desired_keys.insert(item.bus_name.clone()) {
-                tracing::warn!("Skipping duplicate systray item: {}", item.bus_name);
+                tracing::warn!(
+                    id = %item.id,
+                    bus_name = %item.bus_name,
+                    "Skipping duplicate systray item"
+                );
                 continue;
             }
 
@@ -41,8 +45,18 @@ impl SystrayRuntime {
             }
 
             if let Some(runtime) = self.items.get_mut(&item.bus_name) {
+                tracing::debug!(
+                    id = %item.id,
+                    bus_name = %item.bus_name,
+                    "Updating systray item runtime"
+                );
                 runtime.update(item);
             } else {
+                tracing::debug!(
+                    id = %item.id,
+                    bus_name = %item.bus_name,
+                    "Creating systray item runtime"
+                );
                 let runtime = SystrayItemRuntime::new(&self.sender, item);
                 self.root.append(&runtime.root);
                 self.items.insert(item.bus_name.clone(), runtime);

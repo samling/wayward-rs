@@ -17,6 +17,7 @@ impl SystrayItemSummary {
         tracing::debug!(
             id = %item.id.get(),
             title = %item.title.get(),
+            bus_name = %item.bus_name.get(),
             icon_name = ?item.icon_name.get(),
             icon_pixmap_count = item.icon_pixmap.get().len(),
             icon_theme_path = ?item.icon_theme_path.get(),
