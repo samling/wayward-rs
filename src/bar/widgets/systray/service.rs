@@ -4,8 +4,9 @@ use std::sync::{Arc, Mutex};
 use wayle_systray::SystemTrayService;
 use wayle_systray::types::Coordinates;
 
-use super::model::{SystrayEvent, SystrayItemSummary};
+use super::model::SystrayItemSummary;
 use crate::bar::state::{BarItemState, SystrayState};
+use crate::bar::widget::{WidgetAction, WidgetEvent};
 use crate::shell::ShellMsg;
 
 static SERVICE: Mutex<Option<Arc<SystemTrayService>>> = Mutex::new(None);
@@ -35,14 +36,15 @@ pub async fn run_systray_watcher(sender: Sender<ShellMsg>) {
     let _ = sender.send(systray_message(SystrayState::Unavailable));
 }
 
-pub(crate) fn handle_event(event: SystrayEvent) {
-    match event {
-        SystrayEvent::Clicked {
-            bus_name,
+pub(crate) fn handle_event(event: WidgetEvent) {
+    match event.action {
+        WidgetAction::Clicked {
+            item_id,
             button,
             x,
             y,
         } => {
+            let bus_name = item_id;
             handle_click(bus_name, button, x, y);
         }
     }

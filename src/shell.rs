@@ -3,7 +3,6 @@ use gtk::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::bar::widget::WidgetEvent;
 use crate::{bar, config::AppConfig};
 
 pub struct Shell {
@@ -323,10 +322,8 @@ impl SimpleComponent for Shell {
                 }
             }
             ShellMsg::BarOutput(output) => match output {
-                bar::BarOutput::WidgetEvent(event) => match event {
-                    WidgetEvent::Systray(event) => {
-                        crate::bar::widgets::systray::service::handle_event(event);
-                    }
+                bar::BarOutput::WidgetEvent(event) => {
+                    bar::registry::handle_widget_event(event);
                 },
             },
         }

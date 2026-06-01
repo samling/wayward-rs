@@ -20,13 +20,3 @@ impl SystrayItemSummary {
         }
     }
 }
-
-#[derive(Clone, Debug)]
-pub(crate) enum SystrayEvent {
-    Clicked {
-        bus_name: String,
-        button: u32,
-        x: i32,
-        y: i32,
-    },
-}

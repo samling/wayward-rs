@@ -1,16 +1,20 @@
 pub(crate) mod model;
 pub(crate) mod service;
 
+pub(crate) const ID: &str = "systray";
+
 use relm4::Sender;
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
 use relm4::gtk::prelude::{BoxExt, GestureSingleExt, PopoverExt, WidgetExt};
 use wayle_systray::adapters::gtk4::Adapter;
 
-use self::model::{SystrayEvent, SystrayItemSummary};
+use self::model::SystrayItemSummary;
 use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, SystrayState};
-use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetEvent, WidgetInstance};
+use crate::bar::widget::{
+    BarContext, BarWidget, BarWidgetRuntime, WidgetAction, WidgetEvent, WidgetInstance
+};
 use crate::shell::ShellMsg;
 
 struct SystrayRuntime {
@@ -35,7 +39,7 @@ pub(crate) struct SystrayWidget;
 
 impl BarWidget for SystrayWidget {
     fn id(&self) -> &'static str {
-        "systray"
+        ID
     }
 
     fn build(
@@ -120,14 +124,15 @@ fn attach_click_handler(
             return;
         }
 
-        let _ = sender.send(BarMsg::WidgetEvent(WidgetEvent::Systray(
-            SystrayEvent::Clicked {
-                bus_name: bus_name.clone(),
-                button: gesture.current_button(),
-                x: x as i32,
-                y: y as i32,
-            },
-        )));
+        let _ = sender.send(BarMsg::WidgetEvent(WidgetEvent {
+                widget_id: ID,
+                action: WidgetAction::Clicked {
+                    item_id: bus_name.clone(),
+                    button: gesture.current_button(),
+                    x: x as i32,
+                    y: y as i32,
+                },
+            }));
     });
 
     widget.add_controller(click)

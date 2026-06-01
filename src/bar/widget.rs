@@ -2,7 +2,6 @@ use relm4::gtk;
 
 use super::BarMsg;
 use super::state::BarItemState;
-use crate::bar::widgets::systray::model::SystrayEvent;
 use crate::shell::ShellMsg;
 
 #[derive(Clone)]
@@ -24,8 +23,19 @@ impl std::fmt::Debug for WidgetInstance {
 }
 
 #[derive(Clone, Debug)]
-pub(crate) enum WidgetEvent {
-    Systray(SystrayEvent),
+pub(crate) struct WidgetEvent {
+    pub(crate) widget_id: &'static str,
+    pub(crate) action: WidgetAction,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum WidgetAction {
+    Clicked {
+        item_id: String,
+        button: u32,
+        x: i32,
+        y: i32,
+    },
 }
 
 pub(crate) trait BarWidget: Sync {
