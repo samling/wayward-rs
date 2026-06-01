@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use crate::bar::state::{BarItemState, ClockState};
 use crate::bar::widget::{BarWidget, WidgetInstance};
-use crate::bar::{Bar, style};
+use crate::bar::{Bar, BarMsg, style};
 use crate::shell::ShellMsg;
 
 pub(crate) struct ClockWidget;
@@ -16,7 +16,13 @@ impl BarWidget for ClockWidget {
         "clock"
     }
 
-    fn render(&self, bar: &Bar, instance: &WidgetInstance, container: &gtk::Box) {
+    fn render(
+        &self,
+        bar: &Bar,
+        instance: &WidgetInstance,
+        container: &gtk::Box,
+        _sender: &relm4::Sender<BarMsg>,
+    ) {
         let format = instance
             .config
             .get("format")

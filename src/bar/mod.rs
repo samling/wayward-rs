@@ -1,28 +1,19 @@
 mod style;
-mod widget;
 
 pub(crate) mod layout;
 pub(crate) mod registry;
 pub(crate) mod state;
+pub(crate) mod widget;
 pub(crate) mod widgets;
 
 use layout::{BarEdge, BarLayout};
 use state::BarItemState;
-use widget::WidgetInstance;
+use widget::{WidgetEvent, WidgetInstance};
 
 use gtk::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use relm4::gtk;
 use relm4::prelude::*;
-
-pub struct Bar {
-    name: Option<String>,
-    layout: BarLayout,
-    edge: BarEdge,
-    monitor: Option<gtk::gdk::Monitor>,
-    monitor_connector: Option<String>,
-    pub(super) item_states: Vec<BarItemState>,
-}
 
 pub struct BarInit {
     pub(crate) name: Option<String>,
@@ -55,6 +46,22 @@ impl BarInit {
 pub enum BarMsg {
     LayoutChanged { layout: BarLayout, edge: BarEdge },
     ItemStateChanged(BarItemState),
+    WidgetEvent(WidgetEvent),
+}
+
+#[derive(Debug)]
+pub enum BarOutput {
+    WidgetEvent(WidgetEvent),
+}
+
+pub struct Bar {
+    name: Option<String>,
+    layout: BarLayout,
+    edge: BarEdge,
+    monitor: Option<gtk::gdk::Monitor>,
+    monitor_connector: Option<String>,
+    input_sender: relm4::Sender<BarMsg>,
+    pub(super) item_states: Vec<BarItemState>,
 }
 
 impl Bar {
@@ -106,13 +113,14 @@ impl Bar {
         root.set_namespace(Some(name.unwrap_or("wayward")));
     }
 
-    fn initial_model(init: BarInit) -> Self {
+    fn initial_model(init: BarInit, input_sender: relm4::Sender<BarMsg>) -> Self {
         Self {
             name: init.name,
             layout: init.layout,
             edge: init.edge,
             monitor: init.monitor,
             monitor_connector: init.monitor_connector,
+            input_sender,
             item_states: registry::WIDGETS
                 .iter()
                 .filter_map(|widget| widget.initial_state())
@@ -132,7 +140,9 @@ impl Bar {
         }
 
         for instance in widgets {
-            instance.widget.render(self, instance, container);
+            instance
+                .widget
+                .render(self, instance, container, &self.input_sender);
         }
     }
 
@@ -149,7 +159,7 @@ impl Bar {
 impl Component for Bar {
     type Init = BarInit;
     type Input = BarMsg;
-    type Output = ();
+    type Output = BarOutput;
     type CommandOutput = ();
 
     view! {
@@ -220,9 +230,9 @@ impl Component for Bar {
     fn init(
         init: Self::Init,
         root: Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = Self::initial_model(init);
+        let model = Self::initial_model(init, sender.input_sender().clone());
 
         if let Some(name) = &model.name {
             tracing::info!("Starting bar {name}");
@@ -265,6 +275,9 @@ impl Component for Bar {
                     .retain(|existing_state| !existing_state.same_widget_as(&state));
 
                 self.item_states.push(state);
+            }
+            BarMsg::WidgetEvent(event) => {
+                let _ = _sender.output(BarOutput::WidgetEvent(event));
             }
         }
     }

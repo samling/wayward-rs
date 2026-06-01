@@ -1,11 +1,14 @@
+pub(crate) mod model;
+pub(crate) mod service;
+
 use gtk::prelude::*;
 use relm4::gtk;
 
-use crate::bar::Bar;
+use self::model::WorkspaceSummary;
 use crate::bar::state::{BarItemState, WorkspaceState};
 use crate::bar::widget::{BarWidget, WidgetInstance};
+use crate::bar::{Bar, BarMsg};
 use crate::shell::ShellMsg;
-use crate::workspace::WorkspaceSummary;
 
 pub(crate) struct WorkspacesWidget;
 
@@ -14,7 +17,13 @@ impl BarWidget for WorkspacesWidget {
         "workspaces"
     }
 
-    fn render(&self, bar: &Bar, _instance: &WidgetInstance, container: &gtk::Box) {
+    fn render(
+        &self,
+        bar: &Bar,
+        _instance: &WidgetInstance,
+        container: &gtk::Box,
+        _sender: &relm4::Sender<BarMsg>,
+    ) {
         render_workspace_row(bar, container);
     }
 
@@ -23,7 +32,7 @@ impl BarWidget for WorkspacesWidget {
     }
 
     fn start(&self, sender: relm4::Sender<ShellMsg>) -> Option<relm4::JoinHandle<()>> {
-        Some(crate::niri::start_workspace_watcher(sender))
+        Some(service::start_workspace_watcher(sender))
     }
 }
 

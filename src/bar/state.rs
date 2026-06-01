@@ -1,10 +1,12 @@
-use crate::workspace::WorkspaceSummary;
+use crate::bar::widgets::systray::model::SystrayItemSummary;
+use crate::bar::widgets::workspaces::model::WorkspaceSummary;
 
 #[derive(Clone, Debug)]
 pub(crate) enum BarItemState {
     Workspaces(WorkspaceState),
     Battery(BatteryState),
     Clock(ClockState),
+    Systray(SystrayState),
 }
 
 #[derive(Clone, Debug)]
@@ -26,12 +28,19 @@ pub(crate) enum ClockState {
     Ready,
 }
 
+#[derive(Clone, Debug)]
+pub(crate) enum SystrayState {
+    Ready(Vec<SystrayItemSummary>),
+    Unavailable,
+}
+
 impl BarItemState {
     pub(crate) fn widget_id(&self) -> &'static str {
         match self {
             Self::Workspaces(_) => "workspaces",
             Self::Battery(_) => "battery",
             Self::Clock(_) => "clock",
+            Self::Systray(_) => "systray",
         }
     }
 

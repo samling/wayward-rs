@@ -1,6 +1,6 @@
 use crate::bar::state::{BarItemState, BatteryState};
 use crate::bar::widget::{BarWidget, WidgetInstance};
-use crate::bar::{Bar, style};
+use crate::bar::{Bar, BarMsg, style};
 use crate::shell::ShellMsg;
 use futures::{StreamExt, select};
 use relm4::Sender;
@@ -16,7 +16,13 @@ impl BarWidget for BatteryWidget {
         "battery"
     }
 
-    fn render(&self, bar: &Bar, _instance: &WidgetInstance, container: &gtk::Box) {
+    fn render(
+        &self,
+        bar: &Bar,
+        _instance: &WidgetInstance,
+        container: &gtk::Box,
+        _sender: &relm4::Sender<BarMsg>,
+    ) {
         let fallback = initial_text();
 
         let text = bar
