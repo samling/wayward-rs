@@ -260,22 +260,14 @@ impl SimpleComponent for Shell {
         let mut model = Shell {
             bars: Vec::new(),
             config,
-            item_states: vec![
-                bar::state::BarItemState::Workspaces(bar::state::WorkspaceState::Connecting),
-                bar::state::BarItemState::Battery(bar::state::BatteryState::Unavailable),
-                bar::state::BarItemState::Clock(bar::state::ClockState::Ready(
-                    bar::clock::initial_text(),
-                )),
-            ],
+            item_states: crate::services::initial_item_states(),
         };
 
         model.reconcile_bars();
 
         Self::start_config_hot_reload(&sender);
         Self::start_monitor_watch(&sender);
-        crate::niri::start_workspace_watcher(sender.input_sender().clone());
-        crate::bar::battery::start(sender.input_sender().clone());
-        crate::bar::clock::start(sender.input_sender().clone());
+        crate::services::start_all(&sender);
 
         let widgets = view_output!();
 
@@ -310,7 +302,7 @@ impl SimpleComponent for Shell {
             }
             ShellMsg::ItemStateChanged(state) => {
                 self.item_states
-                    .retain(|existing_state| !existing_state.same_item_as(&state));
+                    .retain(|existing_state| !existing_state.same_widget_as(&state));
 
                 self.item_states.push(state.clone());
 

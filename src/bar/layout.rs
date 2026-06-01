@@ -1,12 +1,7 @@
+use super::registry;
+use super::widget::BarWidget;
 use crate::config::BarConfig;
 use relm4::gtk;
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(crate) enum BarItem {
-    Workspaces,
-    Clock,
-    Battery,
-}
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(crate) enum BarEdge {
@@ -67,19 +62,22 @@ impl BarEdge {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone)]
 pub(crate) struct BarLayout {
-    pub(super) start: Vec<BarItem>,
-    pub(super) center: Vec<BarItem>,
-    pub(super) end: Vec<BarItem>,
+    pub(super) start: Vec<&'static dyn BarWidget>,
+    pub(super) center: Vec<&'static dyn BarWidget>,
+    pub(super) end: Vec<&'static dyn BarWidget>,
 }
 
 impl BarLayout {
     pub(super) fn default_top_bar() -> Self {
         Self {
-            start: vec![BarItem::Workspaces],
+            start: vec![registry::widget_by_id("workspaces").unwrap()],
             center: vec![],
-            end: vec![BarItem::Clock, BarItem::Battery],
+            end: vec![
+                registry::widget_by_id("clock").unwrap(),
+                registry::widget_by_id("battery").unwrap(),
+            ],
         }
     }
 
@@ -107,18 +105,30 @@ impl BarLayout {
     }
 }
 
-fn parse_items(items: &[String]) -> Vec<BarItem> {
+impl std::fmt::Debug for BarLayout {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("BarLayout")
+            .field("start", &widget_ids(&self.start))
+            .field("center", &widget_ids(&self.center))
+            .field("end", &widget_ids(&self.end))
+            .finish()
+    }
+}
+
+fn widget_ids(widgets: &[&'static dyn BarWidget]) -> Vec<&'static str> {
+    widgets.iter().map(|widget| widget.id()).collect()
+}
+
+fn parse_items(items: &[String]) -> Vec<&'static dyn BarWidget> {
     items.iter().filter_map(|item| parse_item(item)).collect()
 }
 
-fn parse_item(item: &str) -> Option<BarItem> {
-    match item {
-        "workspaces" => Some(BarItem::Workspaces),
-        "clock" => Some(BarItem::Clock),
-        "battery" => Some(BarItem::Battery),
-        unknown => {
-            tracing::error!("Unknown bar item in config: {unknown}");
-            None
-        }
-    }
+fn parse_item(item: &str) -> Option<&'static dyn BarWidget> {
+    let Some(bar_item) = registry::widget_by_id(item) else {
+        tracing::error!("Unknown bar item in config: {item}");
+        return None;
+    };
+
+    Some(bar_item)
 }

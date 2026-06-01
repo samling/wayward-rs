@@ -2,6 +2,7 @@ mod bar;
 mod config;
 mod file_watch;
 mod niri;
+mod services;
 mod shell;
 mod style;
 mod workspace;

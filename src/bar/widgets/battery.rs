@@ -1,5 +1,6 @@
-use crate::bar::item;
 use crate::bar::state::{BarItemState, BatteryState};
+use crate::bar::widget::BarWidget;
+use crate::bar::{Bar, style};
 use crate::shell::ShellMsg;
 use futures::{StreamExt, select};
 use relm4::Sender;
@@ -7,6 +8,37 @@ use relm4::gtk;
 use relm4::gtk::prelude::BoxExt;
 use wayle_battery::BatteryService;
 use wayle_battery::types::DeviceState;
+
+pub(crate) struct BatteryWidget;
+
+impl BarWidget for BatteryWidget {
+    fn id(&self) -> &'static str {
+        "battery"
+    }
+
+    fn render(&self, bar: &Bar, container: &gtk::Box) {
+        let fallback = initial_text();
+
+        let text = bar
+            .item_states()
+            .iter()
+            .find_map(|state| match state {
+                BarItemState::Battery(BatteryState::Ready(text)) => Some(text.as_str()),
+                _ => None,
+            })
+            .unwrap_or(fallback.as_str());
+
+        render(container, text);
+    }
+
+    fn initial_state(&self) -> Option<BarItemState> {
+        Some(BarItemState::Battery(BatteryState::Unavailable))
+    }
+
+    fn start(&self, sender: Sender<ShellMsg>) -> Option<relm4::JoinHandle<()>> {
+        Some(start(sender))
+    }
+}
 
 pub(super) fn initial_text() -> String {
     "NaN".to_string()
@@ -64,7 +96,7 @@ fn send_battery_snapshot(sender: &Sender<ShellMsg>, service: &BatteryService) {
 
 pub(super) fn render(container: &gtk::Box, text: &str) {
     let label = gtk::Label::new(Some(text));
-    item::style_label(&label, "battery");
+    style::style_label(&label, "battery");
     container.append(&label);
 }
 

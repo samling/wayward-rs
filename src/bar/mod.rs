@@ -1,21 +1,19 @@
-mod item;
-mod layout;
-mod registry;
-mod workspaces;
+mod style;
+mod widget;
 
-pub(crate) mod battery;
-pub(crate) mod clock;
+pub(crate) mod layout;
+pub(crate) mod registry;
 pub(crate) mod state;
+pub(crate) mod widgets;
 
-use layout::{BarEdge, BarItem, BarLayout};
-use state::{BarItemState, BatteryState, ClockState, WorkspaceState};
+use layout::{BarEdge, BarLayout};
+use state::BarItemState;
+use widget::BarWidget;
 
 use gtk::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use relm4::gtk;
 use relm4::prelude::*;
-
-use crate::workspace::WorkspaceSummary;
 
 pub struct Bar {
     name: Option<String>,
@@ -23,10 +21,7 @@ pub struct Bar {
     edge: BarEdge,
     monitor: Option<gtk::gdk::Monitor>,
     monitor_connector: Option<String>,
-    pub(super) workspaces: Vec<WorkspaceSummary>,
-    pub(super) status: Option<String>,
-    pub(super) clock_text: String,
-    pub(super) battery_text: String,
+    pub(super) item_states: Vec<BarItemState>,
 }
 
 pub struct BarInit {
@@ -117,10 +112,10 @@ impl Bar {
             edge: init.edge,
             monitor: init.monitor,
             monitor_connector: init.monitor_connector,
-            workspaces: Vec::new(),
-            status: Some("Connecting to Niri".to_string()),
-            clock_text: registry::initial_clock_text(),
-            battery_text: registry::initial_battery_text(),
+            item_states: registry::WIDGETS
+                .iter()
+                .filter_map(|widget| widget.initial_state())
+                .collect(),
         }
     }
 
@@ -130,14 +125,22 @@ impl Bar {
         self.render_region(&self.layout.end, end_items);
     }
 
-    fn render_region(&self, items: &[BarItem], container: &gtk::Box) {
+    fn render_region(&self, widgets: &[&'static dyn BarWidget], container: &gtk::Box) {
         while let Some(child) = container.first_child() {
             container.remove(&child);
         }
 
-        for item in items {
-            registry::render_item(self, *item, container);
+        for widget in widgets {
+            widget.render(self, container);
         }
+    }
+
+    pub(super) fn item_states(&self) -> &[BarItemState] {
+        &self.item_states
+    }
+
+    pub(super) fn monitor_connector(&self) -> Option<&str> {
+        self.monitor_connector.as_deref()
     }
 }
 
@@ -256,38 +259,12 @@ impl Component for Bar {
                     self.monitor.as_ref(),
                 );
             }
-            BarMsg::ItemStateChanged(state) => match state {
-                BarItemState::Workspaces(state) => match state {
-                    WorkspaceState::Connecting => {
-                        self.workspaces.clear();
-                        self.status = Some("Connecting to Niri".to_string());
-                    }
-                    WorkspaceState::Ready(workspaces) => {
-                        self.workspaces = workspaces;
-                        self.status = None;
-                    }
-                    WorkspaceState::Unavailable(error) => {
-                        self.workspaces.clear();
-                        self.status = Some(format!("Niri unavailable: {error}"));
-                    }
-                    WorkspaceState::UpdatesStopped => {
-                        self.status = Some("Niri updates stopped".to_string());
-                    }
-                },
-                BarItemState::Battery(state) => match state {
-                    BatteryState::Ready(text) => {
-                        self.battery_text = text;
-                    }
-                    BatteryState::Unavailable => {
-                        self.battery_text = registry::initial_battery_text();
-                    }
-                },
-                BarItemState::Clock(state) => match state {
-                    ClockState::Ready(text) => {
-                        self.clock_text = text;
-                    }
-                },
-            },
+            BarMsg::ItemStateChanged(state) => {
+                self.item_states
+                    .retain(|existing_state| !existing_state.same_widget_as(&state));
+
+                self.item_states.push(state);
+            }
         }
     }
 

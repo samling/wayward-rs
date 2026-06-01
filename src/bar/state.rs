@@ -27,12 +27,15 @@ pub(crate) enum ClockState {
 }
 
 impl BarItemState {
-    pub(crate) fn same_item_as(&self, other: &Self) -> bool {
-        matches!(
-            (self, other),
-            (Self::Workspaces(_), Self::Workspaces(_))
-                | (Self::Battery(_), Self::Battery(_))
-                | (Self::Clock(_), Self::Clock(_))
-        )
+    pub(crate) fn widget_id(&self) -> &'static str {
+        match self {
+            Self::Workspaces(_) => "workspaces",
+            Self::Battery(_) => "battery",
+            Self::Clock(_) => "clock",
+        }
+    }
+
+    pub(crate) fn same_widget_as(&self, other: &Self) -> bool {
+        self.widget_id() == other.widget_id()
     }
 }
