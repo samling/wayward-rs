@@ -8,7 +8,7 @@ pub(crate) mod widgets;
 
 use layout::{BarEdge, BarLayout};
 use state::BarItemState;
-use widget::{WidgetEvent, WidgetInstance};
+use widget::{BarContext, BarWidgetRuntime, WidgetEvent, WidgetInstance};
 
 use gtk::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
@@ -54,9 +54,22 @@ pub enum BarOutput {
     WidgetEvent(WidgetEvent),
 }
 
+struct MountedWidget {
+    widget_id: &'static str,
+    runtime: Box<dyn BarWidgetRuntime>,
+}
+
+#[derive(Default)]
+struct MountedLayout {
+    start: Vec<MountedWidget>,
+    center: Vec<MountedWidget>,
+    end: Vec<MountedWidget>,
+}
+
 pub struct Bar {
     name: Option<String>,
     layout: BarLayout,
+    mounted_layout: MountedLayout,
     edge: BarEdge,
     monitor: Option<gtk::gdk::Monitor>,
     monitor_connector: Option<String>,
@@ -65,6 +78,20 @@ pub struct Bar {
 }
 
 impl Bar {
+    fn context(&self) -> BarContext {
+        BarContext {
+            monitor_connector: self.monitor_connector.clone(),
+        }
+    }
+
+    fn mounted_widgets_mut(&mut self) -> impl Iterator<Item = &mut MountedWidget> {
+        self.mounted_layout
+            .start
+            .iter_mut()
+            .chain(self.mounted_layout.center.iter_mut())
+            .chain(self.mounted_layout.end.iter_mut())
+    }
+
     fn configure_window(
         root: &gtk::ApplicationWindow,
         edge: BarEdge,
@@ -117,6 +144,7 @@ impl Bar {
         Self {
             name: init.name,
             layout: init.layout,
+            mounted_layout: MountedLayout::default(),
             edge: init.edge,
             monitor: init.monitor,
             monitor_connector: init.monitor_connector,
@@ -128,30 +156,36 @@ impl Bar {
         }
     }
 
-    fn render_layout(&self, start_items: &gtk::Box, center_items: &gtk::Box, end_items: &gtk::Box) {
-        self.render_region(&self.layout.start, start_items);
-        self.render_region(&self.layout.center, center_items);
-        self.render_region(&self.layout.end, end_items);
+    fn mount_layout(
+        &mut self,
+        start_items: &gtk::Box,
+        center_items: &gtk::Box,
+        end_items: &gtk::Box,
+    ) {
+        self.mounted_layout.start = self.mount_region(&self.layout.start, start_items);
+        self.mounted_layout.center = self.mount_region(&self.layout.center, center_items);
+        self.mounted_layout.end = self.mount_region(&self.layout.end, end_items);
     }
 
-    fn render_region(&self, widgets: &[WidgetInstance], container: &gtk::Box) {
+    fn mount_region(&self, widgets: &[WidgetInstance], container: &gtk::Box) -> Vec<MountedWidget> {
         while let Some(child) = container.first_child() {
             container.remove(&child);
         }
 
-        for instance in widgets {
-            instance
-                .widget
-                .render(self, instance, container, &self.input_sender);
-        }
-    }
+        widgets
+            .iter()
+            .map(|instance| {
+                let runtime = instance.widget.build(instance, &self.input_sender.clone());
+                let root = runtime.root();
 
-    pub(super) fn item_states(&self) -> &[BarItemState] {
-        &self.item_states
-    }
+                container.append(&root);
 
-    pub(super) fn monitor_connector(&self) -> Option<&str> {
-        self.monitor_connector.as_deref()
+                MountedWidget {
+                    widget_id: instance.widget.id(),
+                    runtime,
+                }
+            })
+            .collect()
     }
 }
 
@@ -232,7 +266,7 @@ impl Component for Bar {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = Self::initial_model(init, sender.input_sender().clone());
+        let mut model = Self::initial_model(init, sender.input_sender().clone());
 
         if let Some(name) = &model.name {
             tracing::info!("Starting bar {name}");
@@ -247,7 +281,7 @@ impl Component for Bar {
 
         let widgets = view_output!();
 
-        model.render_layout(
+        model.mount_layout(
             &widgets.start_items,
             &widgets.center_items,
             &widgets.end_items,
@@ -274,7 +308,15 @@ impl Component for Bar {
                 self.item_states
                     .retain(|existing_state| !existing_state.same_widget_as(&state));
 
-                self.item_states.push(state);
+                self.item_states.push(state.clone());
+
+                let context = self.context();
+
+                for mounted in self.mounted_widgets_mut() {
+                    if mounted.widget_id == state.widget_id() {
+                        mounted.runtime.update(&state, &context);
+                    }
+                }
             }
             BarMsg::WidgetEvent(event) => {
                 let _ = _sender.output(BarOutput::WidgetEvent(event));
@@ -282,7 +324,5 @@ impl Component for Bar {
         }
     }
 
-    fn pre_view() {
-        self.render_layout(&start_items, &center_items, &end_items);
-    }
+    fn pre_view() {}
 }

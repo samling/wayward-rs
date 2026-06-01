@@ -3,12 +3,31 @@ pub(crate) mod service;
 
 use gtk::prelude::*;
 use relm4::gtk;
+use relm4::gtk::glib::object::Cast;
 
 use self::model::WorkspaceSummary;
+use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, WorkspaceState};
-use crate::bar::widget::{BarWidget, WidgetInstance};
-use crate::bar::{Bar, BarMsg};
+use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance};
 use crate::shell::ShellMsg;
+
+struct WorkspacesRuntime {
+    root: gtk::Box,
+}
+
+impl BarWidgetRuntime for WorkspacesRuntime {
+    fn root(&self) -> gtk::Widget {
+        self.root.clone().upcast()
+    }
+
+    fn update(&mut self, state: &BarItemState, context: &BarContext) {
+        let BarItemState::Workspaces(state) = state else {
+            return;
+        };
+
+        render_workspace_state(&self.root, state, context.monitor_connector.as_deref());
+    }
+}
 
 pub(crate) struct WorkspacesWidget;
 
@@ -17,14 +36,15 @@ impl BarWidget for WorkspacesWidget {
         "workspaces"
     }
 
-    fn render(
+    fn build(
         &self,
-        bar: &Bar,
         _instance: &WidgetInstance,
-        container: &gtk::Box,
         _sender: &relm4::Sender<BarMsg>,
-    ) {
-        render_workspace_row(bar, container);
+    ) -> Box<dyn BarWidgetRuntime> {
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        render_status(&row, "Connecting to Niri");
+
+        Box::new(WorkspacesRuntime { root: row })
     }
 
     fn initial_state(&self) -> Option<BarItemState> {
@@ -36,18 +56,21 @@ impl BarWidget for WorkspacesWidget {
     }
 }
 
-pub(super) fn render_workspace_row(bar: &Bar, row: &gtk::Box) {
-    let Some(state) = workspace_state(bar) else {
-        render_status(row, "Connecting to Niri");
-        return;
-    };
+pub(super) fn render_workspace_state(
+    row: &gtk::Box,
+    state: &WorkspaceState,
+    monitor_connector: Option<&str>,
+) {
+    while let Some(child) = row.first_child() {
+        row.remove(&child);
+    }
 
     match state {
         WorkspaceState::Connecting => {
             render_status(row, "Connecting to Niri");
         }
         WorkspaceState::Ready(workspaces) => {
-            render_workspaces(row, workspaces, bar.monitor_connector());
+            render_workspaces(row, workspaces, monitor_connector);
         }
         WorkspaceState::Unavailable(error) => {
             render_status(row, &format!("Niri unavailable: {error}"));
@@ -56,13 +79,6 @@ pub(super) fn render_workspace_row(bar: &Bar, row: &gtk::Box) {
             render_status(row, "Niri updates stopped");
         }
     }
-}
-
-fn workspace_state(bar: &Bar) -> Option<&WorkspaceState> {
-    bar.item_states().iter().find_map(|state| match state {
-        BarItemState::Workspaces(state) => Some(state),
-        _ => None,
-    })
 }
 
 fn render_status(row: &gtk::Box, status: &str) {

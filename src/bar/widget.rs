@@ -1,7 +1,7 @@
 use relm4::gtk;
 
+use super::BarMsg;
 use super::state::BarItemState;
-use super::{Bar, BarMsg};
 use crate::bar::widgets::systray::model::SystrayEvent;
 use crate::shell::ShellMsg;
 

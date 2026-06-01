@@ -1,46 +1,62 @@
 use chrono;
 use relm4::Sender;
 use relm4::gtk;
-use relm4::gtk::prelude::BoxExt;
+use relm4::gtk::glib::object::Cast;
 use std::time::Duration;
 
 use crate::bar::state::{BarItemState, ClockState};
+use crate::bar::widget::BarWidgetRuntime;
 use crate::bar::widget::{BarWidget, WidgetInstance};
-use crate::bar::{Bar, BarMsg, style};
+use crate::bar::{BarContext, BarMsg, style};
 use crate::shell::ShellMsg;
 
 pub(crate) struct ClockWidget;
+
+struct ClockRuntime {
+    root: gtk::Label,
+    format: String,
+}
+
+impl BarWidgetRuntime for ClockRuntime {
+    fn root(&self) -> gtk::Widget {
+        self.root.clone().upcast()
+    }
+
+    fn update(&mut self, state: &BarItemState, _context: &BarContext) {
+        let BarItemState::Clock(ClockState::Ready) = state else {
+            return;
+        };
+
+        self.root
+            .set_text(&chrono::Local::now().format(&self.format).to_string());
+    }
+}
 
 impl BarWidget for ClockWidget {
     fn id(&self) -> &'static str {
         "clock"
     }
 
-    fn render(
+    fn build(
         &self,
-        bar: &Bar,
         instance: &WidgetInstance,
-        container: &gtk::Box,
         _sender: &relm4::Sender<BarMsg>,
-    ) {
+    ) -> Box<dyn BarWidgetRuntime> {
         let format = instance
             .config
             .get("format")
             .and_then(|value| value.as_str())
-            .unwrap_or("%H:%M");
+            .unwrap_or("%H:%M")
+            .to_string();
 
-        let text = bar
-            .item_states()
-            .iter()
-            .find_map(|state| match state {
-                BarItemState::Clock(ClockState::Ready) => {
-                    Some(chrono::Local::now().format(format).to_string())
-                }
-                _ => None,
-            })
-            .unwrap_or_else(|| chrono::Local::now().format(format).to_string());
+        let label = gtk::Label::new(Some(&chrono::Local::now().format(&format).to_string()));
 
-        render(container, &text);
+        style::style_label(&label, "clock");
+
+        Box::new(ClockRuntime {
+            root: label,
+            format,
+        })
     }
 
     fn initial_state(&self) -> Option<BarItemState> {
@@ -66,12 +82,6 @@ pub(super) async fn run_clock(sender: Sender<ShellMsg>) {
             return;
         }
     }
-}
-
-pub(super) fn render(container: &gtk::Box, text: &str) {
-    let label = gtk::Label::new(Some(text));
-    style::style_label(&label, "clock");
-    container.append(&label);
 }
 
 fn clock_message() -> ShellMsg {

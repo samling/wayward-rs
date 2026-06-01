@@ -4,15 +4,33 @@ pub(crate) mod service;
 use relm4::Sender;
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
-use relm4::gtk::prelude::{GestureSingleExt, BoxExt, WidgetExt, PopoverExt};
+use relm4::gtk::prelude::{BoxExt, GestureSingleExt, PopoverExt, WidgetExt};
 use wayle_systray::adapters::gtk4::Adapter;
 
 use self::model::{SystrayEvent, SystrayItemSummary};
+use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, SystrayState};
-use crate::bar::widget::{BarWidget, WidgetEvent, WidgetInstance};
-use crate::bar::{Bar, BarMsg};
+use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetEvent, WidgetInstance};
 use crate::shell::ShellMsg;
 
+struct SystrayRuntime {
+    root: gtk::Box,
+    sender: relm4::Sender<BarMsg>,
+}
+
+impl BarWidgetRuntime for SystrayRuntime {
+    fn root(&self) -> gtk::Widget {
+        self.root.clone().upcast()
+    }
+
+    fn update(&mut self, state: &BarItemState, _context: &BarContext) {
+        let BarItemState::Systray(SystrayState::Ready(items)) = state else {
+            return;
+        };
+
+        render_items(&self.root, &self.sender, items);
+    }
+}
 pub(crate) struct SystrayWidget;
 
 impl BarWidget for SystrayWidget {
@@ -20,48 +38,17 @@ impl BarWidget for SystrayWidget {
         "systray"
     }
 
-    fn render(
+    fn build(
         &self,
-        bar: &Bar,
         _instance: &WidgetInstance,
-        container: &gtk::Box,
         sender: &relm4::Sender<BarMsg>,
-    ) {
-        let Some(state) = bar.item_states().iter().find_map(|state| match state {
-            BarItemState::Systray(state) => Some(state),
-            _ => None,
-        }) else {
-            return;
-        };
+    ) -> Box<dyn BarWidgetRuntime> {
+        let root = gtk::Box::new(gtk::Orientation::Horizontal, 4);
 
-        let SystrayState::Ready(items) = state else {
-            return;
-        };
-
-        tracing::info!("Rendering systray with {} item(s)", items.len());
-        for item in items {
-            let child: gtk::Widget = if let Some(icon_name) = &item.icon_name {
-                let image = gtk::Image::from_icon_name(icon_name);
-                image.set_pixel_size(16);
-                image.upcast()
-            } else {
-                let text = if !item.title.is_empty() {
-                    item.title.as_str()
-                } else {
-                    item.id.as_str()
-                };
-
-                gtk::Label::new(Some(text)).upcast()
-            };
-            child.add_css_class("bar-item");
-            child.add_css_class("systray");
-            child.add_css_class(&format!("systray-{}", item.status.to_lowercase()));
-            child.set_tooltip_text(Some(&item.title));
-
-            attach_click_handler(&child, sender, item);
-
-            container.append(&child);
-        }
+        Box::new(SystrayRuntime {
+            root,
+            sender: sender.clone(),
+        })
     }
 
     fn initial_state(&self) -> Option<BarItemState> {
@@ -70,6 +57,40 @@ impl BarWidget for SystrayWidget {
 
     fn start(&self, sender: Sender<ShellMsg>) -> Option<relm4::JoinHandle<()>> {
         Some(service::start(sender))
+    }
+}
+
+fn render_items(
+    container: &gtk::Box,
+    sender: &relm4::Sender<BarMsg>,
+    items: &[SystrayItemSummary],
+) {
+    while let Some(child) = container.first_child() {
+        container.remove(&child);
+    }
+
+    for item in items {
+        let child: gtk::Widget = if let Some(icon_name) = &item.icon_name {
+            let image = gtk::Image::from_icon_name(icon_name);
+            image.set_pixel_size(16);
+            image.upcast()
+        } else {
+            let text = if !item.title.is_empty() {
+                item.title.as_str()
+            } else {
+                item.id.as_str()
+            };
+
+            gtk::Label::new(Some(text)).upcast()
+        };
+        child.add_css_class("bar-item");
+        child.add_css_class("systray");
+        child.add_css_class(&format!("systray-{}", item.status.to_lowercase()));
+        child.set_tooltip_text(Some(&item.title));
+
+        attach_click_handler(&child, sender, item);
+
+        container.append(&child);
     }
 }
 
@@ -121,8 +142,4 @@ fn show_menu(parent: &gtk::Widget, bus_name: &str) {
     let popover = Adapter::build_popover(item.as_ref());
     popover.set_parent(parent);
     popover.popup();
-
-    popover.connect_closed(|_| {
-        tracing::info!("Systray popover closed");
-    });
 }
