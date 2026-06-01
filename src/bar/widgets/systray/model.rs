@@ -1,7 +1,7 @@
 use wayle_systray::core::item::TrayItem;
 use wayle_systray::types::item::IconPixmap;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct SystrayItemSummary {
     pub(crate) id: String,
     pub(crate) title: String,

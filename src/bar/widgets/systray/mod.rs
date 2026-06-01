@@ -7,6 +7,7 @@ use relm4::Sender;
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
 use relm4::gtk::prelude::{BoxExt, GestureSingleExt, PopoverExt, WidgetExt};
+use std::collections::{HashMap, HashSet};
 use wayle_systray::adapters::gtk4::Adapter;
 
 use self::model::SystrayItemSummary;
@@ -20,7 +21,94 @@ use crate::shell::ShellMsg;
 struct SystrayRuntime {
     root: gtk::Box,
     sender: relm4::Sender<BarMsg>,
+    items: HashMap<String, SystrayItemRuntime>,
 }
+
+impl SystrayRuntime {
+    fn reconcile_items(&mut self, items: &[SystrayItemSummary]) {
+        let mut desired_keys = HashSet::new();
+
+        for item in items {
+            if !desired_keys.insert(item.bus_name.clone()) {
+                tracing::warn!("Skipping duplicate systray item: {}", item.bus_name);
+                continue;
+            }
+
+            if !self.items.contains_key(&item.bus_name) {
+                let runtime = SystrayItemRuntime::new(&self.sender, item);
+                self.root.append(&runtime.root);
+                self.items.insert(item.bus_name.clone(), runtime);
+            }
+
+            if let Some(runtime) = self.items.get_mut(&item.bus_name) {
+                runtime.update(item);
+            } else {
+                let runtime = SystrayItemRuntime::new(&self.sender, item);
+                self.root.append(&runtime.root);
+                self.items.insert(item.bus_name.clone(), runtime);
+            }
+        }
+
+        self.items.retain(|key, runtime| {
+            if desired_keys.contains(key) {
+                true
+            } else {
+                self.root.remove(&runtime.root);
+                false
+            }
+        })
+    }
+}
+
+struct SystrayItemRuntime {
+    root: gtk::Box,
+    status_class: Option<String>,
+    last_item: Option<SystrayItemSummary>,
+}
+
+impl SystrayItemRuntime {
+    fn new(sender: &relm4::Sender<BarMsg>, item: &SystrayItemSummary) -> Self {
+        let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        root.add_css_class("bar-item");
+        root.add_css_class("systray");
+
+        attach_click_handler(root.upcast_ref(), sender, item);
+
+        let mut runtime = Self {
+            root,
+            status_class: None,
+            last_item: None,
+        };
+        runtime.update(item);
+        runtime
+    }
+
+    fn update(&mut self, item: &SystrayItemSummary) {
+        if self.last_item.as_ref() == Some(item) {
+            return;
+        }
+
+        self.last_item = Some(item.clone());
+
+        while let Some(child) = self.root.first_child() {
+            self.root.remove(&child);
+        }
+
+        if let Some(status_class) = self.status_class.take() {
+            self.root.remove_css_class(&status_class);
+        }
+
+        let status_class = format!("systray-{}", item.status.to_lowercase());
+        self.root.add_css_class(&status_class);
+        self.status_class = Some(status_class);
+
+        self.root.set_tooltip_text(Some(&item.title));
+
+        let child = systray_item_content(item);
+        self.root.append(&child);
+    }
+}
+
 
 impl BarWidgetRuntime for SystrayRuntime {
     fn root(&self) -> gtk::Widget {
@@ -32,7 +120,7 @@ impl BarWidgetRuntime for SystrayRuntime {
             return;
         };
 
-        render_items(&self.root, &self.sender, items);
+        self.reconcile_items(items);
     }
 }
 pub(crate) struct SystrayWidget;
@@ -52,6 +140,7 @@ impl BarWidget for SystrayWidget {
         Box::new(SystrayRuntime {
             root,
             sender: sender.clone(),
+            items: HashMap::new(),
         })
     }
 
@@ -61,46 +150,6 @@ impl BarWidget for SystrayWidget {
 
     fn start(&self, sender: Sender<ShellMsg>) -> Option<relm4::JoinHandle<()>> {
         Some(service::start(sender))
-    }
-}
-
-fn render_items(
-    container: &gtk::Box,
-    sender: &relm4::Sender<BarMsg>,
-    items: &[SystrayItemSummary],
-) {
-    while let Some(child) = container.first_child() {
-        container.remove(&child);
-    }
-
-    for item in items {
-        if let Some(icon_theme_path) = &item.icon_theme_path {
-            add_icon_theme_path(icon_theme_path);
-        }
-
-        let child: gtk::Widget = if let Some(icon_name) = &item.icon_name {
-            let image = gtk::Image::from_icon_name(icon_name);
-            image.set_pixel_size(16);
-            image.upcast()
-        } else if let Some(pixmap) = item.icon_pixmaps.first() {
-            image_from_pixmap(pixmap).upcast()
-        } else {
-            let text = if !item.title.is_empty() {
-                item.title.as_str()
-            } else {
-                item.id.as_str()
-            };
-
-            gtk::Label::new(Some(text)).upcast()
-        };
-        child.add_css_class("bar-item");
-        child.add_css_class("systray");
-        child.add_css_class(&format!("systray-{}", item.status.to_lowercase()));
-        child.set_tooltip_text(Some(&item.title));
-
-        attach_click_handler(&child, sender, item);
-
-        container.append(&child);
     }
 }
 
@@ -177,4 +226,28 @@ fn show_menu(parent: &gtk::Widget, bus_name: &str) {
     let popover = Adapter::build_popover(item.as_ref());
     popover.set_parent(parent);
     popover.popup();
+}
+
+fn systray_item_content(item: &SystrayItemSummary) -> gtk::Widget {
+    if let Some(icon_theme_path) = &item.icon_theme_path {
+        add_icon_theme_path(icon_theme_path);
+    }
+
+    if let Some(icon_name) = &item.icon_name {
+        let image = gtk::Image::from_icon_name(icon_name);
+        image.set_pixel_size(16);
+        return image.upcast()
+    }
+
+    if let Some(pixmap) = item.icon_pixmaps.first() {
+        return image_from_pixmap(pixmap).upcast()
+    }
+
+    let text = if !item.title.is_empty() {
+        item.title.as_str()
+    } else {
+        item.id.as_str()
+    };
+
+    gtk::Label::new(Some(text)).upcast()
 }
