@@ -343,7 +343,7 @@ impl Component for Bar {
                     .retain(|existing_state| !existing_state.same_widget_as(&state));
 
                 self.item_states.push(state.clone());
-                self.apply_all_states_to_mounted_widgets();
+                self.apply_state_to_mounted_widgets(&state);
             }
             BarMsg::WidgetEvent(event) => {
                 let _ = sender.output(BarOutput::WidgetEvent(event));

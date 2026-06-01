@@ -74,10 +74,16 @@ fn render_items(
     }
 
     for item in items {
+        if let Some(icon_theme_path) = &item.icon_theme_path {
+            add_icon_theme_path(icon_theme_path);
+        }
+
         let child: gtk::Widget = if let Some(icon_name) = &item.icon_name {
             let image = gtk::Image::from_icon_name(icon_name);
             image.set_pixel_size(16);
             image.upcast()
+        } else if let Some(pixmap) = item.icon_pixmaps.first() {
+            image_from_pixmap(pixmap).upcast()
         } else {
             let text = if !item.title.is_empty() {
                 item.title.as_str()
@@ -136,6 +142,30 @@ fn attach_click_handler(
     });
 
     widget.add_controller(click)
+}
+
+fn image_from_pixmap(pixmap: &wayle_systray::types::item::IconPixmap) -> gtk::Image {
+    let bytes = gtk::glib::Bytes::from_owned(pixmap.data.clone());
+    let texture = gtk::gdk::MemoryTexture::new(
+        pixmap.width,
+        pixmap.height,
+        gtk::gdk::MemoryFormat::A8r8g8b8,
+        &bytes,
+        pixmap.width as usize * 4,
+    );
+
+    let image = gtk::Image::from_paintable(Some(&texture));
+    image.set_pixel_size(16);
+    image
+}
+
+fn add_icon_theme_path(path: &str) {
+    let Some(display) = gtk::gdk::Display::default() else {
+        return;
+    };
+
+    let icon_theme = gtk::IconTheme::for_display(&display);
+    icon_theme.add_search_path(path);
 }
 
 fn show_menu(parent: &gtk::Widget, bus_name: &str) {
