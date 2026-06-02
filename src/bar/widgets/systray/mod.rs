@@ -7,6 +7,7 @@ use relm4::Sender;
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
 use relm4::gtk::prelude::{BoxExt, GestureSingleExt, PopoverExt, WidgetExt};
+use serde::Deserialize;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use wayle_systray::adapters::gtk4::Adapter;
@@ -20,6 +21,26 @@ use crate::bar::widget::{
 use crate::shell::ShellMsg;
 
 const ICON_EXTENSIONS: [&str; 3] = ["png", "svg", "xpm"];
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(default)]
+struct SystrayConfig {
+    icon_size: i32,
+}
+
+impl Default for SystrayConfig {
+    fn default() -> Self {
+        Self {
+            icon_size: 16,
+        }
+    }
+}
+
+impl SystrayConfig {
+    fn icon_size(&self) -> i32 {
+        self.icon_size.max(1)
+    }
+}
 
 #[derive(Default)]
 struct SystrayIconCache {
@@ -63,6 +84,7 @@ struct SystrayRuntime {
     sender: relm4::Sender<BarMsg>,
     items: HashMap<String, SystrayItemRuntime>,
     icon_cache: SystrayIconCache,
+    icon_size: i32,
 }
 
 impl SystrayRuntime {
@@ -82,9 +104,9 @@ impl SystrayRuntime {
             }
 
             if let Some(runtime) = self.items.get_mut(&key) {
-                runtime.update(item, &mut self.icon_cache);
+                runtime.update(item, &mut self.icon_cache, self.icon_size);
             } else {
-                let runtime = SystrayItemRuntime::new(&self.sender, item, &mut self.icon_cache);
+                let runtime = SystrayItemRuntime::new(&self.sender, item, &mut self.icon_cache, self.icon_size);
                 self.root.append(&runtime.root);
                 self.items.insert(key, runtime);
             }
@@ -112,6 +134,7 @@ impl SystrayItemRuntime {
         sender: &relm4::Sender<BarMsg>,
         item: &SystrayItemSummary,
         icon_cache: &mut SystrayIconCache,
+        icon_size: i32,
     ) -> Self {
         let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         root.add_css_class("bar-item");
@@ -124,11 +147,11 @@ impl SystrayItemRuntime {
             status_class: None,
             last_item: None,
         };
-        runtime.update(item, icon_cache);
+        runtime.update(item, icon_cache, icon_size);
         runtime
     }
 
-    fn update(&mut self, item: &SystrayItemSummary, icon_cache: &mut SystrayIconCache) {
+    fn update(&mut self, item: &SystrayItemSummary, icon_cache: &mut SystrayIconCache, icon_size: i32) {
         if self.last_item.as_ref() == Some(item) {
             return;
         }
@@ -150,7 +173,7 @@ impl SystrayItemRuntime {
         self.root
             .set_tooltip_text(systray_tooltip(item).as_deref());
 
-        let child = systray_item_content(item, icon_cache);
+        let child = systray_item_content(item, icon_cache, icon_size);
         self.root.append(&child);
     }
 }
@@ -177,15 +200,18 @@ impl BarWidget for SystrayWidget {
 
     fn build(
         &self,
-        _instance: &WidgetInstance,
+        instance: &WidgetInstance,
         sender: &relm4::Sender<BarMsg>,
     ) -> Box<dyn BarWidgetRuntime> {
+        let config = instance.config_as::<SystrayConfig>();
+        let icon_size = config.icon_size();
         let root = gtk::Box::new(gtk::Orientation::Horizontal, 4);
         Box::new(SystrayRuntime {
             root,
             sender: sender.clone(),
             items: HashMap::new(),
             icon_cache: SystrayIconCache::default(),
+            icon_size,
         })
     }
 
@@ -238,7 +264,7 @@ fn attach_click_handler(
     widget.add_controller(click)
 }
 
-fn image_from_pixmap(pixmap: &wayle_systray::types::item::IconPixmap) -> gtk::Image {
+fn image_from_pixmap(pixmap: &wayle_systray::types::item::IconPixmap, icon_size: i32) -> gtk::Image {
     let bytes = gtk::glib::Bytes::from_owned(pixmap.data.clone());
     let texture = gtk::gdk::MemoryTexture::new(
         pixmap.width,
@@ -249,11 +275,11 @@ fn image_from_pixmap(pixmap: &wayle_systray::types::item::IconPixmap) -> gtk::Im
     );
 
     let image = gtk::Image::from_paintable(Some(&texture));
-    image.set_pixel_size(16);
+    image.set_pixel_size(icon_size);
     image
 }
 
-fn image_from_icon_name(icon_name: &str) -> Option<gtk::Image> {
+fn image_from_icon_name(icon_name: &str, icon_size: i32) -> Option<gtk::Image> {
     let display = gtk::gdk::Display::default()?;
     let icon_theme = gtk::IconTheme::for_display(&display);
 
@@ -262,14 +288,14 @@ fn image_from_icon_name(icon_name: &str) -> Option<gtk::Image> {
     }
 
     let image = gtk::Image::from_icon_name(icon_name);
-    image.set_pixel_size(16);
+    image.set_pixel_size(icon_size);
     Some(image)
 }
 
-fn image_from_icon_file(path: &str) -> Option<gtk::Image> {
+fn image_from_icon_file(path: &str, icon_size: i32) -> Option<gtk::Image> {
     let texture = gtk::gdk::Texture::from_filename(path).ok()?;
     let image = gtk::Image::from_paintable(Some(&texture));
-    image.set_pixel_size(16);
+    image.set_pixel_size(icon_size);
     Some(image)
 }
 
@@ -287,6 +313,7 @@ fn show_menu(parent: &gtk::Widget, bus_name: &str) {
 fn systray_item_content(
     item: &SystrayItemSummary,
     icon_cache: &mut SystrayIconCache,
+    icon_size: i32,
 ) -> gtk::Widget {
     if let (Some(icon_theme_path), Some(icon_name)) = (&item.icon_theme_path, &item.icon_name) {
         icon_cache.add_theme_path(icon_theme_path);
@@ -298,20 +325,20 @@ fn systray_item_content(
         }
     }
 
-    if let Some(icon_name) = &item.icon_name{
-        if let Some(image) = image_from_icon_file(icon_name) {
+    if let Some(icon_name) = &item.icon_name {
+        if let Some(image) = image_from_icon_file(icon_name, icon_size) {
             return image.upcast();
         }
     }
 
     if let Some(icon_name) = &item.icon_name
-        && let Some(image) = image_from_icon_name(icon_name)
+        && let Some(image) = image_from_icon_name(icon_name, icon_size)
     {
         return image.upcast();
     }
 
     if let Some(pixmap) = item.icon_pixmaps.first() {
-        return image_from_pixmap(pixmap).upcast();
+        return image_from_pixmap(pixmap, icon_size).upcast();
     }
 
     let text = if !item.title.is_empty() {
