@@ -171,8 +171,12 @@ impl BarWidget for SystrayWidget {
         Some(BarItemState::Systray(SystrayState::Ready(Vec::new())))
     }
 
-    fn start(&self, sender: Sender<ShellMsg>) -> Option<relm4::JoinHandle<()>> {
-        Some(service::start(sender))
+    fn start(
+        &self,
+        sender: Sender<ShellMsg>,
+        services: &crate::services::ShellServices,
+    ) -> Option<relm4::JoinHandle<()>> {
+        Some(service::start(sender, services.systray.clone()))
     }
 }
 

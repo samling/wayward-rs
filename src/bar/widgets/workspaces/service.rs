@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use futures::StreamExt;
 use relm4::Sender;
 use wayle_niri::NiriService;
@@ -8,28 +10,26 @@ use crate::shell::ShellMsg;
 
 pub fn start_workspace_watcher(
     sender: relm4::Sender<ShellMsg>,
+    service: Option<Arc<NiriService>>,
 ) -> relm4::tokio::task::JoinHandle<()> {
     relm4::spawn(async move {
-        run_workspace_watcher(sender).await;
+        run_workspace_watcher(sender, service).await;
     })
 }
 
-pub async fn run_workspace_watcher(sender: Sender<ShellMsg>) {
-    let service = match NiriService::new().await {
-        Ok(service) => service,
-        Err(error) => {
-            let _ = sender.send(workspace_message(WorkspaceState::Unavailable(
-                error.to_string(),
-            )));
-            return;
-        }
+pub async fn run_workspace_watcher(sender: Sender<ShellMsg>, service: Option<Arc<NiriService>>) {
+    let Some(service) = service else {
+        let _ = sender.send(workspace_message(WorkspaceState::Unavailable(
+            "Niri service unavailable".to_string(),
+        )));
+        return;
     };
 
-    let _ = send_workspace_snapshot(&sender, &service);
+    let _ = send_workspace_snapshot(&sender, &service.as_ref());
 
     let mut events = service.events();
     while events.next().await.is_some() {
-        if send_workspace_snapshot(&sender, &service).is_err() {
+        if send_workspace_snapshot(&sender, &service.as_ref()).is_err() {
             return;
         }
     }

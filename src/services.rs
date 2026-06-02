@@ -30,6 +30,17 @@ pub(crate) async fn init_shell_services() -> ShellServices {
         }
     };
 
+    let battery = match BatteryService::new().await {
+        Ok(service) => {
+            tracing::info!("Battery service started");
+            Some(Arc::new(service))
+        }
+        Err(error) => {
+            tracing::error!("Failed to start battery service: {error}");
+            None
+        }
+    };
+
     let brightness = match BrightnessService::new().await {
         Ok(Some(service)) => {
             tracing::info!("Brightness service started");
@@ -45,10 +56,34 @@ pub(crate) async fn init_shell_services() -> ShellServices {
         }
     };
 
+    let niri = match NiriService::new().await {
+        Ok(service) => {
+            tracing::info!("Niri service started");
+            Some(service)
+        }
+        Err(error) => {
+            tracing::error!("Failed to start Niri service: {error}");
+            None
+        }
+    };
+
+    let systray = match SystemTrayService::new().await {
+        Ok(service) => {
+            tracing::info!("System tray service started");
+            Some(service)
+        }
+        Err(error) => {
+            tracing::error!("Failed to start system tray service: {error}");
+            None
+        }
+    };
+
     ShellServices {
         audio,
+        battery,
         brightness,
-        ..ShellServices::default()
+        niri,
+        systray,
     }
 }
 
@@ -63,7 +98,7 @@ pub(crate) fn start_all(sender: &ComponentSender<Shell>, services: &ShellService
     let input_sender = sender.input_sender().clone();
 
     for widget in crate::bar::registry::WIDGETS {
-        widget.start(input_sender.clone());
+        widget.start(input_sender.clone(), services);
     }
 
     crate::osd::audio::start(input_sender.clone(), services.audio.clone());

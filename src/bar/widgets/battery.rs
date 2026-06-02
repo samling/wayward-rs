@@ -2,6 +2,7 @@ use crate::bar::state::{BarItemState, BatteryState};
 use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance};
 use crate::bar::{BarMsg, style};
 use crate::shell::ShellMsg;
+use std::sync::Arc;
 use futures::{StreamExt, select};
 use relm4::Sender;
 use relm4::gtk;
@@ -51,8 +52,12 @@ impl BarWidget for BatteryWidget {
         Some(BarItemState::Battery(BatteryState::Unavailable))
     }
 
-    fn start(&self, sender: Sender<ShellMsg>) -> Option<relm4::JoinHandle<()>> {
-        Some(start(sender))
+    fn start(
+        &self,
+        sender: Sender<ShellMsg>,
+        services: &crate::services::ShellServices,
+    ) -> Option<relm4::JoinHandle<()>> {
+        Some(start(sender, services.battery.clone()))
     }
 }
 
@@ -60,9 +65,9 @@ pub(super) fn initial_text() -> String {
     "NaN".to_string()
 }
 
-pub(crate) fn start(sender: Sender<ShellMsg>) -> relm4::tokio::task::JoinHandle<()> {
+pub(crate) fn start(sender: Sender<ShellMsg>, service: Option<Arc<BatteryService>>) -> relm4::tokio::task::JoinHandle<()> {
     relm4::spawn(async move {
-        run_battery_watcher(sender).await;
+        run_battery_watcher(sender, service).await;
     })
 }
 
@@ -70,13 +75,13 @@ fn battery_text(percentage: f64, state: DeviceState) -> String {
     format!("{percentage:.0}% {state}")
 }
 
-async fn run_battery_watcher(sender: Sender<ShellMsg>) {
-    let Ok(service) = BatteryService::new().await else {
+async fn run_battery_watcher(sender: Sender<ShellMsg>, service: Option<Arc<BatteryService>>) {
+    let Some(service) = service else {
         let _ = sender.send(battery_message(BatteryState::Unavailable));
         return;
     };
 
-    send_battery_snapshot(&sender, &service);
+    send_battery_snapshot(&sender, service.as_ref());
 
     let mut percentage_updates = service.device.percentage.watch().fuse();
     let mut state_updates = service.device.state.watch().fuse();

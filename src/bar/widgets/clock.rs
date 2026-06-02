@@ -63,7 +63,11 @@ impl BarWidget for ClockWidget {
         Some(BarItemState::Clock(ClockState::Ready))
     }
 
-    fn start(&self, sender: relm4::Sender<ShellMsg>) -> Option<relm4::JoinHandle<()>> {
+    fn start(
+        &self,
+        sender: relm4::Sender<ShellMsg>,
+        _services: &crate::services::ShellServices,
+    ) -> Option<relm4::JoinHandle<()>> {
         Some(start(sender))
     }
 }
