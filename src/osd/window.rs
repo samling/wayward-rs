@@ -49,7 +49,14 @@ impl OsdWindow {
 
         window.set_child(Some(&root));
 
-        Self { window, root, icon, label, level, hide_timeout: std::rc::Rc::new(std::cell::RefCell::new(None)) }
+        Self {
+            window,
+            root,
+            icon,
+            label,
+            level,
+            hide_timeout: std::rc::Rc::new(std::cell::RefCell::new(None)),
+        }
     }
 
     pub(crate) fn show_event(&self, event: &OsdEvent) {
@@ -74,13 +81,11 @@ impl OsdWindow {
         let window = self.window.clone();
         let hide_timeout = self.hide_timeout.clone();
 
-        let timeout = gtk::glib::timeout_add_local_once(
-            std::time::Duration::from_millis(1500),
-            move || {
+        let timeout =
+            gtk::glib::timeout_add_local_once(std::time::Duration::from_millis(1500), move || {
                 window.set_visible(false);
                 hide_timeout.borrow_mut().take();
-            },
-        );
+            });
 
         *self.hide_timeout.borrow_mut() = Some(timeout);
     }
