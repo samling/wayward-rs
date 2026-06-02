@@ -311,14 +311,14 @@ impl Shell {
             .iter()
             .find(|osd| osd.connector == focused_connector)
         else {
-            tracing::info!("Skipping OSD event because focused monitor has no OSD window");
+            tracing::info!("Skipping OSD event because OSD window is unavailable");
             return;
         };
 
         osd.window.show_event(event);
     }
 }
-
+// 
 #[relm4::component(pub(crate))]
 impl SimpleComponent for Shell {
     type Init = ShellInit;

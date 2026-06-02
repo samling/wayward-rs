@@ -19,7 +19,7 @@ pub(crate) struct ShellServices {
 }
 
 pub(crate) async fn init_shell_services() -> ShellServices {
-    let audio = match AudioService::builder().build().await {
+    let audio = match AudioService::builder().with_daemon().build().await {
         Ok(service) => {
             tracing::info!("Audio service started");
             Some(service)

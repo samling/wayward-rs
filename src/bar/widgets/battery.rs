@@ -2,11 +2,11 @@ use crate::bar::state::{BarItemState, BatteryState};
 use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance};
 use crate::bar::{BarMsg, style};
 use crate::shell::ShellMsg;
-use std::sync::Arc;
 use futures::{StreamExt, select};
 use relm4::Sender;
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
+use std::sync::Arc;
 use wayle_battery::BatteryService;
 use wayle_battery::types::DeviceState;
 
@@ -65,7 +65,10 @@ pub(super) fn initial_text() -> String {
     "NaN".to_string()
 }
 
-pub(crate) fn start(sender: Sender<ShellMsg>, service: Option<Arc<BatteryService>>) -> relm4::tokio::task::JoinHandle<()> {
+pub(crate) fn start(
+    sender: Sender<ShellMsg>,
+    service: Option<Arc<BatteryService>>,
+) -> relm4::tokio::task::JoinHandle<()> {
     relm4::spawn(async move {
         run_battery_watcher(sender, service).await;
     })

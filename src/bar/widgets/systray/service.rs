@@ -11,13 +11,19 @@ use crate::shell::ShellMsg;
 
 static SERVICE: Mutex<Option<Arc<SystemTrayService>>> = Mutex::new(None);
 
-pub fn start(sender: relm4::Sender<ShellMsg>, service: Option<Arc<SystemTrayService>>) -> relm4::tokio::task::JoinHandle<()> {
+pub fn start(
+    sender: relm4::Sender<ShellMsg>,
+    service: Option<Arc<SystemTrayService>>,
+) -> relm4::tokio::task::JoinHandle<()> {
     relm4::spawn(async move {
         run_systray_watcher(sender, service).await;
     })
 }
 
-pub async fn run_systray_watcher(sender: Sender<ShellMsg>, service: Option<Arc<SystemTrayService>>) {
+pub async fn run_systray_watcher(
+    sender: Sender<ShellMsg>,
+    service: Option<Arc<SystemTrayService>>,
+) {
     let Some(service) = service else {
         let _ = sender.send(systray_message(SystrayState::Unavailable));
         return;
