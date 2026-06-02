@@ -71,15 +71,7 @@ fn handle_click(bus_name: String, button: u32, x: i32, y: i32) {
 
         let result = match button {
             1 if item.item_is_menu.get() => item.context_menu(coords).await,
-            1 => {
-                let result = item.activate(coords).await;
-
-                if result.is_ok() {
-                    result
-                } else {
-                    item.context_menu(coords).await
-                }
-            }
+            1 => item.activate(coords).await,
             2 => item.secondary_activate(coords).await,
             3 => item.context_menu(coords).await,
             _ => {

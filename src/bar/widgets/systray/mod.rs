@@ -72,7 +72,7 @@ impl SystrayRuntime {
         for item in items {
             let key = logical_item_key(item);
             if !desired_keys.insert(key.clone()) {
-                tracing::warn!(
+                tracing::info!(
                     id = %item.id,
                     bus_name = %item.bus_name,
                     key = %key,
@@ -148,7 +148,7 @@ impl SystrayItemRuntime {
         self.status_class = Some(status_class);
 
         self.root
-            .set_tooltip_text(Some(&format!("{} | {}", item.id, item.bus_name)));
+            .set_tooltip_text(systray_tooltip(item).as_deref());
 
         let child = systray_item_content(item, icon_cache);
         self.root.append(&child);
@@ -213,7 +213,7 @@ fn attach_click_handler(
     click.connect_released(move |gesture, _n_press, x, y| {
         let button = gesture.current_button();
 
-        if button == 1 || button == 3 {
+        if button == 3 {
             let parent = parent.clone();
             let bus_name = bus_name.clone();
 
@@ -253,9 +253,29 @@ fn image_from_pixmap(pixmap: &wayle_systray::types::item::IconPixmap) -> gtk::Im
     image
 }
 
+fn image_from_icon_name(icon_name: &str) -> Option<gtk::Image> {
+    let display = gtk::gdk::Display::default()?;
+    let icon_theme = gtk::IconTheme::for_display(&display);
+
+    if !icon_theme.has_icon(icon_name) {
+        return None;
+    }
+
+    let image = gtk::Image::from_icon_name(icon_name);
+    image.set_pixel_size(16);
+    Some(image)
+}
+
+fn image_from_icon_file(path: &str) -> Option<gtk::Image> {
+    let texture = gtk::gdk::Texture::from_filename(path).ok()?;
+    let image = gtk::Image::from_paintable(Some(&texture));
+    image.set_pixel_size(16);
+    Some(image)
+}
+
 fn show_menu(parent: &gtk::Widget, bus_name: &str) {
     let Some(item) = service::item_by_bus_name(bus_name) else {
-        tracing::warn!("Systram item disappeared before menu could be shown: {bus_name}");
+        tracing::warn!("Systray item disappeared before menu could be shown: {bus_name}");
         return;
     };
 
@@ -278,9 +298,15 @@ fn systray_item_content(
         }
     }
 
-    if let Some(icon_name) = &item.icon_name {
-        let image = gtk::Image::from_icon_name(icon_name);
-        image.set_pixel_size(16);
+    if let Some(icon_name) = &item.icon_name{
+        if let Some(image) = image_from_icon_file(icon_name) {
+            return image.upcast();
+        }
+    }
+
+    if let Some(icon_name) = &item.icon_name
+        && let Some(image) = image_from_icon_name(icon_name)
+    {
         return image.upcast();
     }
 
@@ -303,4 +329,19 @@ fn logical_item_key(item: &SystrayItemSummary) -> String {
     }
 
     format!("bus:{}", item.bus_name)
+}
+
+fn systray_tooltip(item: &SystrayItemSummary) -> Option<String> {
+    for value in [
+        item.tooltip_title.as_str(),
+        item.tooltip_description.as_str(),
+        item.title.as_str(),
+        item.id.as_str(),
+    ] {
+        if !value.trim().is_empty() {
+            return Some(value.trim().to_string());
+        }
+    }
+
+    None
 }

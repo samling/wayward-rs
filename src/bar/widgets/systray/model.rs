@@ -8,6 +8,8 @@ pub(crate) struct SystrayItemSummary {
     pub(crate) icon_name: Option<String>,
     pub(crate) icon_pixmaps: Vec<IconPixmap>,
     pub(crate) icon_theme_path: Option<String>,
+    pub(crate) tooltip_title: String,
+    pub(crate) tooltip_description: String,
     pub(crate) status: String,
     pub(crate) bus_name: String,
 }
@@ -28,12 +30,15 @@ impl std::fmt::Debug for SystrayItemSummary {
 
 impl SystrayItemSummary {
     pub(crate) fn from_wayle_item(item: &TrayItem) -> Self {
+        let tooltip = item.tooltip.get();
         Self {
             id: item.id.get(),
             title: item.title.get(),
             icon_name: item.icon_name.get(),
             icon_pixmaps: item.icon_pixmap.get(),
             icon_theme_path: item.icon_theme_path.get(),
+            tooltip_title: tooltip.title,
+            tooltip_description: tooltip.description,
             status: item.status.get().to_string(),
             bus_name: item.bus_name.get(),
         }
