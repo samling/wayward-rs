@@ -1,5 +1,6 @@
 mod style;
 
+pub(crate) mod dropdown;
 pub(crate) mod layout;
 pub(crate) mod registry;
 pub(crate) mod state;
@@ -81,6 +82,7 @@ impl Bar {
     fn context(&self) -> BarContext {
         BarContext {
             monitor_connector: self.monitor_connector.clone(),
+            edge: self.edge,
         }
     }
 
@@ -220,6 +222,7 @@ impl Component for Bar {
             set_title: Some("Wayward"),
             set_default_height: 32,
             set_resizable: true,
+            add_css_class: "bar",
 
             gtk::CenterBox {
                 #[watch]

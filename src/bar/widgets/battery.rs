@@ -43,7 +43,7 @@ impl BarWidget for BatteryWidget {
         _sender: &relm4::Sender<BarMsg>,
     ) -> Box<dyn BarWidgetRuntime> {
         let label = gtk::Label::new(Some(&initial_text()));
-        style::style_label(&label, "battery");
+        style::add_bar_item_classes(&label, "battery");
 
         Box::new(BatteryRuntime { root: label })
     }

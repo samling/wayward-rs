@@ -1,79 +1,50 @@
-use std::{fs, path::PathBuf};
+use std::{cell::RefCell, fs, path::PathBuf, rc::Rc};
+use futures::{channel::mpsc, StreamExt};
 
-const DEFAULT_CSS: &str = r#"
-window,
-.bar {
-    background: #202124;
-    color: #f1f3f4;
-    font: 12px sans-serif;
+use relm4::gtk::{
+    gdk,
+    style_context_add_provider_for_display,
+    CssProvider,
+    STYLE_PROVIDER_PRIORITY_USER,
+};
+
+const DEFAULT_CSS: &str = include_str!("style.css");
+
+#[derive(Clone)]
+pub(crate) struct StyleHandle {
+    provider: CssProvider,
+    current_css: Rc<RefCell<String>>,
 }
 
-.bar-item {
-    padding: 0 8px;
+pub fn apply_initial_css() -> Option<StyleHandle> {
+    let display = gdk::Display::default()?;
+    let provider = CssProvider::new();
+    let css = load_css();
+
+    provider.load_from_string(&css);
+    style_context_add_provider_for_display(&display, &provider, STYLE_PROVIDER_PRIORITY_USER);
+
+    Some(StyleHandle {
+        provider,
+        current_css: Rc::new(RefCell::new(css)),
+    })
 }
 
-.bar-region {
-    background: transparent;
+impl StyleHandle {
+    fn reload(&self) {
+        let css = load_css();
+
+        if *self.current_css.borrow() == css {
+            return;
+        }
+
+        self.provider.load_from_string(&css);
+        *self.current_css.borrow_mut() = css;
+        tracing::info!("Reloaded style");
+    }
 }
 
-.battery {
-    opacity: 0.85;
-}
-
-.workspace {
-    padding: 3px 8px;
-    border-radius: 4px;
-    background: #3c4043;
-}
-
-.workspace.active {
-    background: #5f6368;
-}
-
-.workspace.focused {
-    background: #8ab4f8;
-    color: #202124;
-}
-
-.workspace.urgent {
-    background: #f28b82;
-    color: #202124;
-}
-
-.status {
-    color: #fdd664;
-}
-
-.osd {
-    padding: 12px 16px;
-    border-radius: 8px;
-    background: rgba(32, 33, 36, 1.00);
-    color: #f1f3f4;
-}
-
-.osd-window {
-    background: transparent;
-}
-
-.osd-icon {
-    min-width: 24px;
-    font-size: 18px;
-}
-
-.osd-label {
-    min-width: 120px;
-}
-
-.osd-level {
-    min-width: 180px;
-}
-"#;
-
-pub fn apply_initial_css() {
-    relm4::set_global_css(&load_css());
-}
-
-pub fn start_hot_reload() {
+pub fn start_hot_reload(handle: StyleHandle) {
     let Some(dir) = style_dir() else {
         tracing::info!("Could not determine config directory, style hot reload disabled");
         return;
@@ -84,11 +55,16 @@ pub fn start_hot_reload() {
         return;
     };
 
-    crate::file_watch::start_debounced_file_watch("style", dir, path, || {
-        relm4::gtk::glib::MainContext::default().invoke(|| {
-            apply_initial_css();
-            tracing::info!("Reloaded style");
-        })
+    let (reload_tx, mut reload_rx) = mpsc::unbounded::<()>();
+
+    relm4::spawn_local(async move {
+        while reload_rx.next().await.is_some() {
+            handle.reload();
+        }
+    });
+
+    crate::file_watch::start_debounced_file_watch("style", dir, path, move || {
+        let _ = reload_tx.unbounded_send(());
     });
 }
 
