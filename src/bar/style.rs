@@ -1,6 +1,6 @@
-use relm4::gtk::{self, prelude::WidgetExt};
+use relm4::gtk::prelude::WidgetExt;
 
-pub(super) fn style_label(label: &gtk::Label, class_name: &str) {
-    label.add_css_class("bar-item");
-    label.add_css_class(class_name);
+pub(super) fn add_bar_item_classes(widget: &impl WidgetExt, class_name: &str) {
+    widget.add_css_class("bar-item");
+    widget.add_css_class(class_name);
 }

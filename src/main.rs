@@ -18,8 +18,9 @@ fn main() {
     let services = runtime.block_on(services::init_shell_services());
 
     let app = RelmApp::new("dev.sboynton.wayward").visible_on_activate(false);
-    style::apply_initial_css();
-    style::start_hot_reload();
+    if let Some(style) = style::apply_initial_css() {
+        style::start_hot_reload(style);
+    }
 
     app.run::<shell::Shell>(shell::ShellInit { services });
 

@@ -86,6 +86,7 @@ pub(crate) trait BarWidget: Sync {
 #[derive(Clone, Debug)]
 pub(crate) struct BarContext {
     pub(crate) monitor_connector: Option<String>,
+    pub(crate) edge: crate::bar::layout::BarEdge,
 }
 
 pub(crate) trait BarWidgetRuntime {

@@ -1,0 +1,149 @@
+.bar {
+    background: transparent;
+    color: #f1f3f4;
+    font: 12px sans-serif;
+}
+
+.bar-item {
+    padding: 0 8px;
+}
+
+.bar-region {
+    background: transparent;
+}
+
+.workspace {
+    padding: 0 6px;
+    background: transparent;
+    color: inherit;
+}
+
+.workspace.active {
+    font-weight: 600;
+}
+
+.workspace.focused {
+    color: #8ab4f8;
+}
+
+.workspace.urgent {
+    color: #f28b82;
+}
+
+.status {
+    color: #fdd664;
+}
+
+.osd {
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: rgba(32, 33, 36, 1.00);
+    color: #f1f3f4;
+}
+
+.osd-window {
+    background: transparent;
+}
+
+.osd-icon {
+    min-width: 24px;
+    font-size: 18px;
+}
+
+.osd-label {
+    min-width: 120px;
+}
+
+.osd-level {
+    min-width: 180px;
+}
+
+menubutton.bar-item,
+menubutton.bar-item > button,
+menubutton.bar-item > button.toggle {
+    background: transparent;
+    background-image: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    color: inherit;
+    min-height: 0;
+    min-width: 0;
+    outline: none;
+    padding: 0;
+}
+
+menubutton.bar-item > button {
+    padding: 0 8px;
+}
+
+menubutton.bar-item:hover,
+menubutton.bar-item:active,
+menubutton.bar-item:checked,
+menubutton.bar-item > button:hover,
+menubutton.bar-item > button:active,
+menubutton.bar-item > button:checked,
+menubutton.bar-item > button:focus,
+menubutton.bar-item > button:focus-visible {
+    background: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    color: inherit;
+    outline: none;
+}
+
+popover.dropdown contents {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+}
+
+popover.dropdown arrow {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+.dropdown-content {
+    background: #202124;
+    color: #f1f3f4;
+    padding: 10px;
+}
+
+.dropdown-title {
+    font-weight: 600;
+}
+
+.clock-dropdown-content {
+    min-width: 220px;
+}
+
+.clock-dropdown-title {
+    margin-bottom: 4px;
+}
+
+.clock-calendar {
+    padding: 4px;
+}
+
+.clock-calendar-weekday {
+    opacity: 0.7;
+    font-size: 11px;
+}
+
+.clock-calendar-day {
+    min-width: 24px;
+    min-height: 22px;
+    color: inherit;
+}
+
+.clock-calendar-day.other-month {
+    opacity: 0.35;
+}
+
+.clock-calendar-day.today {
+    color: #8ab4f8;
+    font-weight: 600;
+}

@@ -1,6 +1,7 @@
 .agents/
 .codex/
 .serena/
+.superpowers/
 docs/superpowers/
 
 /target/
