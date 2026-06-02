@@ -65,12 +65,13 @@ impl BarWidget for BatteryWidget {
         &self,
         _instance: &WidgetInstance,
         _sender: &relm4::Sender<BarMsg>,
-        _services: &crate::services::ShellServices,
+        services: &crate::services::ShellServices,
     ) -> Box<dyn BarWidgetRuntime> {
         let label = gtk::Label::new(Some(&initial_text()));
         label.add_css_class("battery-label");
 
-        let dropdown_content = battery_dropdown_content();
+        let power_profiles = services.power_profiles.clone();
+        let dropdown_content = battery_dropdown_content(power_profiles.clone());
         let profile_buttons = profile_buttons(&dropdown_content);
 
         let (root, dropdown) = crate::bar::dropdown::Dropdown::menu_button(
@@ -123,7 +124,7 @@ fn battery_text(percentage: f64, state: DeviceState) -> String {
     format!("{percentage:.0}% {state}")
 }
 
-fn battery_dropdown_content() -> gtk::Box {
+fn battery_dropdown_content(power_profiles: Option<Arc<PowerProfilesService>>) -> gtk::Box {
     use relm4::gtk::prelude::{BoxExt, WidgetExt};
 
     let root = gtk::Box::new(gtk::Orientation::Vertical, 8);
@@ -140,16 +141,16 @@ fn battery_dropdown_content() -> gtk::Box {
     profiles.add_css_class("profile-segments");
     profiles.set_homogeneous(true);
 
-    let saver = profile_button("Power Saver");
+    let saver = profile_button("Power Saver", PowerProfile::PowerSaver, power_profiles.clone());
     saver.add_css_class("power-saver");
     profiles.append(&saver);
 
-    let balanced = profile_button("Balanced");
+    let balanced = profile_button("Balanced", PowerProfile::Balanced, power_profiles.clone());
     balanced.add_css_class("balanced");
     balanced.set_group(Some(&saver));
     profiles.append(&balanced);
 
-    let performance = profile_button("Performance");
+    let performance = profile_button("Performance", PowerProfile::Performance, power_profiles.clone());
     performance.add_css_class("performance");
     performance.set_group(Some(&saver));
     profiles.append(&performance);
@@ -158,10 +159,27 @@ fn battery_dropdown_content() -> gtk::Box {
     root
 }
 
-fn profile_button(label: &str) -> gtk::ToggleButton {
+fn profile_button(label: &str, profile: PowerProfile, power_profiles: Option<Arc<PowerProfilesService>>) -> gtk::ToggleButton {
     let button = gtk::ToggleButton::with_label(label);
     button.add_css_class("profile-button");
     button.set_sensitive(false);
+
+    button.connect_toggled(move |button| {
+        if !button.is_active() {
+            return;
+        }
+
+        let Some(service) = power_profiles.clone() else {
+            return;
+        };
+
+        relm4::spawn(async move {
+            if let Err(error) = service.power_profiles.set_active_profile(profile).await {
+                tracing::error!("Failed to set power profile: {error}");
+            }
+        });
+    });
+
     button
 }
 
