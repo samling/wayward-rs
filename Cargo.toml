@@ -22,3 +22,4 @@ wayle-battery = "0.1"
 wayle-brightness = "0.1"
 wayle-niri = "0.1"
 wayle-systray = { version = "0.1", features = ["adapter-gtk"] }
+wayle-power-profiles = "0.1"

@@ -42,6 +42,7 @@ impl BarWidget for WorkspacesWidget {
         &self,
         _instance: &WidgetInstance,
         _sender: &relm4::Sender<BarMsg>,
+        _services: &crate::services::ShellServices,
     ) -> Box<dyn BarWidgetRuntime> {
         let row = gtk::Box::new(gtk::Orientation::Horizontal, 4);
         render_status(&row, "Connecting to Niri");

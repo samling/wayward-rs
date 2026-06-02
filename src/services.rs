@@ -5,6 +5,7 @@ use wayle_audio::AudioService;
 use wayle_battery::BatteryService;
 use wayle_brightness::BrightnessService;
 use wayle_niri::NiriService;
+use wayle_power_profiles::PowerProfilesService;
 use wayle_systray::SystemTrayService;
 
 use crate::shell::Shell;
@@ -15,6 +16,7 @@ pub(crate) struct ShellServices {
     pub(crate) battery: Option<Arc<BatteryService>>,
     pub(crate) brightness: Option<Arc<BrightnessService>>,
     pub(crate) niri: Option<Arc<NiriService>>,
+    pub(crate) power_profiles: Option<Arc<PowerProfilesService>>,
     pub(crate) systray: Option<Arc<SystemTrayService>>,
 }
 
@@ -67,6 +69,17 @@ pub(crate) async fn init_shell_services() -> ShellServices {
         }
     };
 
+    let power_profiles = match PowerProfilesService::new().await {
+        Ok(service) => {
+            tracing::info!("Power profiles service started");
+            Some(service)
+        }
+        Err(error) => {
+            tracing::error!("Failed to start power proflies service: {error}");
+            None
+        }
+    };
+
     let systray = match SystemTrayService::new().await {
         Ok(service) => {
             tracing::info!("System tray service started");
@@ -83,6 +96,7 @@ pub(crate) async fn init_shell_services() -> ShellServices {
         battery,
         brightness,
         niri,
+        power_profiles,
         systray,
     }
 }

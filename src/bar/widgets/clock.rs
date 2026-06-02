@@ -10,7 +10,7 @@ use crate::bar::layout::BarEdge;
 use crate::bar::state::{BarItemState, ClockState};
 use crate::bar::widget::BarWidgetRuntime;
 use crate::bar::widget::{BarWidget, WidgetInstance};
-use crate::bar::{BarContext, BarMsg, style};
+use crate::bar::{BarContext, BarMsg};
 use crate::shell::ShellMsg;
 
 pub(crate) struct ClockWidget;
@@ -50,6 +50,7 @@ impl BarWidget for ClockWidget {
         &self,
         instance: &WidgetInstance,
         _sender: &relm4::Sender<BarMsg>,
+        _services: &crate::services::ShellServices,
     ) -> Box<dyn BarWidgetRuntime> {
         let format = instance
             .config
@@ -60,17 +61,11 @@ impl BarWidget for ClockWidget {
 
         let label = gtk::Label::new(Some(&chrono::Local::now().format(&format).to_string()));
 
-        let root = gtk::MenuButton::new();
-        root.set_always_show_arrow(false);
-        root.set_child(Some(&label));
-
-        style::add_bar_item_classes(&root, "clock");
-        root.add_css_class("flat");
         label.add_css_class("clock-label");
 
         let edge = std::rc::Rc::new(std::cell::Cell::new(BarEdge::Top));
-        let dropdown = Dropdown::new("clock-dropdown");
         let child = calendar_dropdown_content(chrono::Local::now().date_naive());
+        let (root, dropdown) = Dropdown::menu_button("clock", BarEdge::Top, &label, &child);
 
         dropdown.bind_to_menu_button(&root, BarEdge::Top, &child);
 

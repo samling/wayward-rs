@@ -147,3 +147,30 @@ popover.dropdown arrow {
     color: #8ab4f8;
     font-weight: 600;
 }
+
+.battery-dropdown-content {
+    min-width: 220px;
+}
+
+.battery-dropdown-title {
+    margin-bottom: 4px;
+}
+
+.profile-segments {
+    background: transparent;
+}
+
+.profile-button {
+    background: transparent;
+    background-image: none;
+    border: 1px solid rgba(241, 243, 244, 0.24);
+    box-shadow: none;
+    color: inherit;
+    min-height: 0;
+    padding: 6px 8px;
+}
+
+.profile-button:checked {
+    background: rgba(138, 180, 248, 0.22);
+    border-color: #8ab4f8;
+}

@@ -19,6 +19,25 @@ impl Dropdown {
         Self { popover }
     }
 
+    pub(crate) fn menu_button(
+        class_name: &str,
+        edge: BarEdge,
+        button_child: &impl IsA<gtk::Widget>,
+        popover_child: &impl IsA<gtk::Widget>,
+    ) -> (gtk::MenuButton, Self) {
+        let button = gtk::MenuButton::new();
+        button.set_always_show_arrow(false);
+        button.set_child(Some(button_child));
+
+        crate::bar::style::add_bar_item_classes(&button, class_name);
+        button.add_css_class("flat");
+
+        let dropdown = Self::new(&format!("{class_name}-dropdown"));
+        dropdown.bind_to_menu_button(&button, edge, popover_child);
+
+        (button, dropdown)
+    }
+
     pub(crate) fn bind_to_menu_button(
         &self,
         button: &gtk::MenuButton,
