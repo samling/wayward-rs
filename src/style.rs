@@ -43,6 +43,30 @@ window,
 .status {
     color: #fdd664;
 }
+
+.osd {
+    padding: 12px 16px;
+    border-radius: 8px;
+    background: rgba(32, 33, 36, 1.00);
+    color: #f1f3f4;
+}
+
+.osd-window {
+    background: transparent;
+}
+
+.osd-icon {
+    min-width: 24px;
+    font-size: 18px;
+}
+
+.osd-label {
+    min-width: 120px;
+}
+
+.osd-level {
+    min-width: 180px;
+}
 "#;
 
 pub fn apply_initial_css() {

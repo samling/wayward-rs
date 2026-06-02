@@ -15,4 +15,7 @@ pub(crate) fn start_all(sender: &ComponentSender<Shell>) {
     for widget in crate::bar::registry::WIDGETS {
         widget.start(input_sender.clone());
     }
+
+    crate::osd::audio::start(input_sender.clone());
+    crate::osd::brightness::start(input_sender);
 }
