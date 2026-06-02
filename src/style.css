@@ -160,17 +160,37 @@ popover.dropdown arrow {
     background: transparent;
 }
 
-.profile-button {
+.profile-button,
+button.profile-button,
+button.profile-button.toggle {
     background: transparent;
     background-image: none;
     border: 1px solid rgba(241, 243, 244, 0.24);
+    border-radius: 0;
     box-shadow: none;
     color: inherit;
     min-height: 0;
+    outline: none;
     padding: 6px 8px;
 }
 
-.profile-button:checked {
+.profile-button:hover,
+.profile-button:focus,
+.profile-button:focus-visible,
+button.profile-button:hover,
+button.profile-button:focus,
+button.profile-button:focus-visible {
+    background: transparent;
+    background-image: none;
+    box-shadow: none;
+    outline: none;
+}
+
+.profile-button:checked,
+button.profile-button:checked,
+button.profile-button.toggle:checked {
     background: rgba(138, 180, 248, 0.22);
+    background-image: none;
     border-color: #8ab4f8;
+    box-shadow: none;
 }
