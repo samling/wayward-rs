@@ -8,6 +8,7 @@ use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
 use relm4::gtk::prelude::{BoxExt, GestureSingleExt, PopoverExt, WidgetExt};
 use std::collections::{HashMap, HashSet};
+use std::path::{Path, PathBuf};
 use wayle_systray::adapters::gtk4::Adapter;
 
 use self::model::SystrayItemSummary;
@@ -18,10 +19,50 @@ use crate::bar::widget::{
 };
 use crate::shell::ShellMsg;
 
+const ICON_EXTENSIONS: [&str; 3] = ["png", "svg", "xpm"];
+
+#[derive(Default)]
+struct SystrayIconCache {
+    theme_paths: HashSet<String>,
+    icon_paths: HashMap<(String, String), Option<PathBuf>>,
+}
+
+impl SystrayIconCache {
+    fn add_theme_path(&mut self, path: &str) {
+        if !self.theme_paths.insert(path.to_string()) {
+            return;
+        }
+
+        let Some(display) = gtk::gdk::Display::default() else {
+            return;
+        };
+
+        let icon_theme = gtk::IconTheme::for_display(&display);
+        icon_theme.add_search_path(path);
+    }
+
+    fn resolve_icon_path(&mut self, theme_path: &str, icon_name: &str) -> Option<PathBuf> {
+        let key = (theme_path.to_string(), icon_name.to_string());
+
+        if let Some(path) = self.icon_paths.get(&key) {
+            return path.clone();
+        }
+
+        let resolved = ICON_EXTENSIONS
+            .iter()
+            .map(|extension| Path::new(theme_path).join(format!("{icon_name}.{extension}")))
+            .find(|path| path.is_file());
+
+        self.icon_paths.insert(key, resolved.clone());
+        resolved
+    }
+}
+
 struct SystrayRuntime {
     root: gtk::Box,
     sender: relm4::Sender<BarMsg>,
     items: HashMap<String, SystrayItemRuntime>,
+    icon_cache: SystrayIconCache,
 }
 
 impl SystrayRuntime {
@@ -41,9 +82,9 @@ impl SystrayRuntime {
             }
 
             if let Some(runtime) = self.items.get_mut(&key) {
-                runtime.update(item);
+                runtime.update(item, &mut self.icon_cache);
             } else {
-                let runtime = SystrayItemRuntime::new(&self.sender, item);
+                let runtime = SystrayItemRuntime::new(&self.sender, item, &mut self.icon_cache);
                 self.root.append(&runtime.root);
                 self.items.insert(key, runtime);
             }
@@ -67,7 +108,11 @@ struct SystrayItemRuntime {
 }
 
 impl SystrayItemRuntime {
-    fn new(sender: &relm4::Sender<BarMsg>, item: &SystrayItemSummary) -> Self {
+    fn new(
+        sender: &relm4::Sender<BarMsg>,
+        item: &SystrayItemSummary,
+        icon_cache: &mut SystrayIconCache,
+    ) -> Self {
         let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         root.add_css_class("bar-item");
         root.add_css_class("systray");
@@ -79,11 +124,11 @@ impl SystrayItemRuntime {
             status_class: None,
             last_item: None,
         };
-        runtime.update(item);
+        runtime.update(item, icon_cache);
         runtime
     }
 
-    fn update(&mut self, item: &SystrayItemSummary) {
+    fn update(&mut self, item: &SystrayItemSummary, icon_cache: &mut SystrayIconCache) {
         if self.last_item.as_ref() == Some(item) {
             return;
         }
@@ -105,7 +150,7 @@ impl SystrayItemRuntime {
         self.root
             .set_tooltip_text(Some(&format!("{} | {}", item.id, item.bus_name)));
 
-        let child = systray_item_content(item);
+        let child = systray_item_content(item, icon_cache);
         self.root.append(&child);
     }
 }
@@ -140,6 +185,7 @@ impl BarWidget for SystrayWidget {
             root,
             sender: sender.clone(),
             items: HashMap::new(),
+            icon_cache: SystrayIconCache::default(),
         })
     }
 
@@ -207,15 +253,6 @@ fn image_from_pixmap(pixmap: &wayle_systray::types::item::IconPixmap) -> gtk::Im
     image
 }
 
-fn add_icon_theme_path(path: &str) {
-    let Some(display) = gtk::gdk::Display::default() else {
-        return;
-    };
-
-    let icon_theme = gtk::IconTheme::for_display(&display);
-    icon_theme.add_search_path(path);
-}
-
 fn show_menu(parent: &gtk::Widget, bus_name: &str) {
     let Some(item) = service::item_by_bus_name(bus_name) else {
         tracing::warn!("Systram item disappeared before menu could be shown: {bus_name}");
@@ -227,9 +264,18 @@ fn show_menu(parent: &gtk::Widget, bus_name: &str) {
     popover.popup();
 }
 
-fn systray_item_content(item: &SystrayItemSummary) -> gtk::Widget {
-    if let Some(icon_theme_path) = &item.icon_theme_path {
-        add_icon_theme_path(icon_theme_path);
+fn systray_item_content(
+    item: &SystrayItemSummary,
+    icon_cache: &mut SystrayIconCache,
+) -> gtk::Widget {
+    if let (Some(icon_theme_path), Some(icon_name)) = (&item.icon_theme_path, &item.icon_name) {
+        icon_cache.add_theme_path(icon_theme_path);
+
+        if let Some(path) = icon_cache.resolve_icon_path(icon_theme_path, icon_name) {
+            let image = gtk::Image::from_file(path);
+            image.set_pixel_size(16);
+            return image.upcast();
+        }
     }
 
     if let Some(icon_name) = &item.icon_name {

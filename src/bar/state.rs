@@ -28,10 +28,19 @@ pub(crate) enum ClockState {
     Ready,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 pub(crate) enum SystrayState {
     Ready(Vec<SystrayItemSummary>),
     Unavailable,
+}
+
+impl std::fmt::Debug for SystrayState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Ready(items) => write!(f, "Ready({} items(s))", items.len()),
+            Self::Unavailable => f.write_str("Unavailable"),
+        }
+    }
 }
 
 impl BarItemState {
