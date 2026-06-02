@@ -1,4 +1,5 @@
 use relm4::gtk;
+use serde::de::DeserializeOwned;
 
 use super::BarMsg;
 use super::state::BarItemState;
@@ -10,6 +11,27 @@ pub(crate) struct WidgetInstance {
     pub(crate) widget_type: String,
     pub(crate) widget: &'static dyn BarWidget,
     pub(crate) config: toml::value::Table,
+}
+
+impl WidgetInstance {
+    pub(crate) fn config_as<T>(&self) -> T
+    where
+        T: DeserializeOwned + Default,
+    {
+        let value = toml::Value::Table(self.config.clone());
+
+        match value.try_into() {
+            Ok(config) => config,
+            Err(error) => {
+                tracing::error!(
+                    widget_id = %self.id,
+                    widget_type = %self.widget_type,
+                    "Failed to parse widget config: {error}"
+                );
+                T::default()
+            }
+        }
+    }
 }
 
 impl std::fmt::Debug for WidgetInstance {

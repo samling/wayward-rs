@@ -29,6 +29,21 @@ impl std::fmt::Debug for SystrayItemSummary {
 }
 
 impl SystrayItemSummary {
+    pub(crate) fn tooltip_text(&self) -> Option<String> {
+        for value in [
+            self.tooltip_title.as_str(),
+            self.tooltip_description.as_str(),
+            self.title.as_str(),
+            self.id.as_str(),
+        ] {
+            if !value.trim().is_empty() {
+                return Some(value.trim().to_string());
+            }
+        }
+
+        None
+    }
+
     pub(crate) fn from_wayle_item(item: &TrayItem) -> Self {
         let tooltip = item.tooltip.get();
         Self {
