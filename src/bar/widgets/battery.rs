@@ -2,7 +2,7 @@ use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, BatterySnapshot, BatteryState};
 use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance};
 use crate::shell::ShellMsg;
-use futures::{StreamExt, select};
+use futures::{StreamExt, FutureExt, future, select};
 use relm4::Sender;
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
@@ -233,8 +233,8 @@ async fn run_battery_watcher(
 
     let mut percentage_updates = service.device.percentage.watch().fuse();
     let mut state_updates = service.device.state.watch().fuse();
-    // let mut profile_updates = power_profiles.as_ref().map(|service| service.power_profiles.active_profile.watch().fuse());
-    // let mut profiles_update = power_profiles.as_ref().map(|service| service.power_profiles.profiles.watch().fuse());
+    let mut active_profile_updates = power_profiles.as_ref().map(|service| service.power_profiles.active_profile.watch().fuse());
+    let mut available_profile_updates = power_profiles.as_ref().map(|service| service.power_profiles.profiles.watch().fuse());
 
     loop {
         select! {
@@ -249,6 +249,31 @@ async fn run_battery_watcher(
                 if update.is_none() {
                     break;
                 }
+                send_battery_snapshot(&sender, &service, power_profiles.as_deref());
+            }
+            update = async {
+                match active_profile_updates.as_mut() {
+                    Some(stream) => stream.next().await,
+                    None => future::pending().await,
+                }
+            }.fuse() => {
+                if update.is_none() {
+                    active_profile_updates = None;
+                }
+
+                send_battery_snapshot(&sender, &service, power_profiles.as_deref());
+            }
+
+            update = async {
+                match available_profile_updates.as_mut() {
+                    Some(stream) => stream.next().await,
+                    None => future::pending().await,
+                }
+            }.fuse() => {
+                if update.is_none() {
+                    available_profile_updates = None;
+                }
+
                 send_battery_snapshot(&sender, &service, power_profiles.as_deref());
             }
         }
