@@ -9,6 +9,13 @@ pub struct Shell {
     bars: Vec<RunningBar>,
     config: AppConfig,
     item_states: Vec<bar::state::BarItemState>,
+    focused_monitor_connector: Option<String>,
+    osd_windows: Vec<RunningOsd>,
+}
+
+struct RunningOsd {
+    connector: String,
+    window: crate::osd::window::OsdWindow,
 }
 
 #[derive(Debug)]
@@ -18,6 +25,7 @@ pub enum ShellMsg {
     ReconcileMonitors,
     ItemStateChanged(bar::state::BarItemState),
     BarOutput(bar::BarOutput),
+    OsdChanged(crate::osd::OsdEvent),
 }
 
 struct RunningBar {
@@ -70,6 +78,18 @@ impl Shell {
                 tracing::error!("Failed to send monitor change message");
             }
         });
+    }
+
+    fn update_focused_monitor(&mut self, state: &bar::state::BarItemState) {
+        let bar::state::BarItemState::Workspaces(bar::state::WorkspaceState::Ready(workspaces)) = state
+        else {
+            return;
+        };
+
+        self.focused_monitor_connector = workspaces
+            .iter()
+            .find(|workspace| workspace.is_focused)
+            .and_then(|workspace| workspace.output.clone());
     }
 
     fn desired_bars(&self) -> Vec<DesiredBar> {
@@ -152,6 +172,35 @@ impl Shell {
         }
 
         tracing::info!("Config changed: {} bar(s)", self.config.bars.len());
+    }
+
+    fn reconcile_osd_windows(&mut self) {
+        let monitors = Self::available_monitors();
+
+        self.osd_windows.retain(|osd| {
+            monitors
+                .iter()
+                .any(|monitor| monitor_connector(monitor).as_deref() == Some(osd.connector.as_str()))
+        });
+
+        for monitor in monitors {
+            let Some(connector) = monitor_connector(&monitor) else {
+                continue;
+            };
+
+            if self
+                .osd_windows
+                .iter()
+                .any(|osd| osd.connector == connector)
+            {
+                continue;
+            }
+
+            self.osd_windows.push(RunningOsd {
+                connector,
+                window: crate::osd::window::OsdWindow::new(&monitor),
+            });
+        }
     }
 
     fn available_monitors() -> Vec<gdk::Monitor> {
@@ -244,6 +293,24 @@ impl Shell {
                 .send(bar::BarMsg::ItemStateChanged(state.clone()));
         }
     }
+
+    fn show_osd(&mut self, event: &crate::osd::OsdEvent) {
+        let Some(focused_connector) = self.focused_monitor_connector.as_deref() else {
+            tracing::info!("Skipping OSD event because no focused monitor is known");
+            return;
+        };
+
+        let Some(osd) = self
+            .osd_windows
+            .iter()
+            .find(|osd| osd.connector == focused_connector)
+        else {
+            tracing::info!("Skipping OSD event because focused monitor has no OSD window");
+            return;
+        };
+
+        osd.window.show_event(event);
+    }
 }
 
 #[relm4::component(pub)]
@@ -269,9 +336,12 @@ impl SimpleComponent for Shell {
             bars: Vec::new(),
             config,
             item_states: crate::services::initial_item_states(),
+            focused_monitor_connector: None,
+            osd_windows: Vec::new(),
         };
 
         model.reconcile_bars(&sender);
+        model.reconcile_osd_windows();
 
         Self::start_config_hot_reload(&sender);
         Self::start_monitor_watch(&sender);
@@ -299,6 +369,7 @@ impl SimpleComponent for Shell {
             }
             ShellMsg::ReconcileMonitors => {
                 self.reconcile_bars(&_sender);
+                self.reconcile_osd_windows();
 
                 if Self::has_monitor_without_connector() {
                     let input_sender = _sender.input_sender().clone();
@@ -309,6 +380,8 @@ impl SimpleComponent for Shell {
                 }
             }
             ShellMsg::ItemStateChanged(state) => {
+                self.update_focused_monitor(&state);
+
                 self.item_states
                     .retain(|existing_state| !existing_state.same_widget_as(&state));
 
@@ -325,7 +398,10 @@ impl SimpleComponent for Shell {
                 bar::BarOutput::WidgetEvent(event) => {
                     bar::registry::handle_widget_event(event);
                 }
-            },
+            }
+            ShellMsg::OsdChanged(event) => {
+                self.show_osd(&event);
+            }
         }
     }
 }
