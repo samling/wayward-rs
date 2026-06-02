@@ -5,12 +5,17 @@ use relm4::prelude::*;
 
 use crate::{bar, config::AppConfig};
 
-pub struct Shell {
+pub(crate) struct Shell {
     bars: Vec<RunningBar>,
     config: AppConfig,
     item_states: Vec<bar::state::BarItemState>,
     focused_monitor_connector: Option<String>,
     osd_windows: Vec<RunningOsd>,
+    services: crate::services::ShellServices,
+}
+
+pub(crate) struct ShellInit {
+    pub(crate) services: crate::services::ShellServices,
 }
 
 struct RunningOsd {
@@ -19,7 +24,7 @@ struct RunningOsd {
 }
 
 #[derive(Debug)]
-pub enum ShellMsg {
+pub(crate) enum ShellMsg {
     ConfigChanged(AppConfig),
     MonitorsChanged,
     ReconcileMonitors,
@@ -81,7 +86,8 @@ impl Shell {
     }
 
     fn update_focused_monitor(&mut self, state: &bar::state::BarItemState) {
-        let bar::state::BarItemState::Workspaces(bar::state::WorkspaceState::Ready(workspaces)) = state
+        let bar::state::BarItemState::Workspaces(bar::state::WorkspaceState::Ready(workspaces)) =
+            state
         else {
             return;
         };
@@ -178,9 +184,9 @@ impl Shell {
         let monitors = Self::available_monitors();
 
         self.osd_windows.retain(|osd| {
-            monitors
-                .iter()
-                .any(|monitor| monitor_connector(monitor).as_deref() == Some(osd.connector.as_str()))
+            monitors.iter().any(|monitor| {
+                monitor_connector(monitor).as_deref() == Some(osd.connector.as_str())
+            })
         });
 
         for monitor in monitors {
@@ -305,17 +311,17 @@ impl Shell {
             .iter()
             .find(|osd| osd.connector == focused_connector)
         else {
-            tracing::info!("Skipping OSD event because focused monitor has no OSD window");
+            tracing::info!("Skipping OSD event because OSD window is unavailable");
             return;
         };
 
         osd.window.show_event(event);
     }
 }
-
-#[relm4::component(pub)]
+//
+#[relm4::component(pub(crate))]
 impl SimpleComponent for Shell {
-    type Init = ();
+    type Init = ShellInit;
     type Input = ShellMsg;
     type Output = ();
 
@@ -326,7 +332,7 @@ impl SimpleComponent for Shell {
     }
 
     fn init(
-        _init: Self::Init,
+        init: Self::Init,
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
@@ -338,6 +344,7 @@ impl SimpleComponent for Shell {
             item_states: crate::services::initial_item_states(),
             focused_monitor_connector: None,
             osd_windows: Vec::new(),
+            services: init.services,
         };
 
         model.reconcile_bars(&sender);
@@ -345,7 +352,7 @@ impl SimpleComponent for Shell {
 
         Self::start_config_hot_reload(&sender);
         Self::start_monitor_watch(&sender);
-        crate::services::start_all(&sender);
+        crate::services::start_all(&sender, &model.services);
 
         let widgets = view_output!();
 
@@ -398,7 +405,7 @@ impl SimpleComponent for Shell {
                 bar::BarOutput::WidgetEvent(event) => {
                     bar::registry::handle_widget_event(event);
                 }
-            }
+            },
             ShellMsg::OsdChanged(event) => {
                 self.show_osd(&event);
             }

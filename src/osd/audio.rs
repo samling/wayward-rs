@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use futures::StreamExt;
 use relm4::Sender;
 use wayle_audio::AudioService;
@@ -6,22 +8,22 @@ use wayle_audio::core::device::output::OutputDevice;
 use crate::osd::OsdEvent;
 use crate::shell::ShellMsg;
 
-pub(crate) fn start(sender: Sender<ShellMsg>) -> relm4::JoinHandle<()> {
-    relm4::spawn(async move {
-        run(sender).await;
-    })
-}
-
-async fn run(sender: Sender<ShellMsg>) {
-    let service = match AudioService::new().await {
-        Ok(service) => service,
-        Err(error) => {
-            tracing::error!("Failed to start audio service: {error}");
-            return;
-        }
+pub(crate) fn start(
+    sender: Sender<ShellMsg>,
+    service: Option<Arc<AudioService>>,
+) -> Option<relm4::JoinHandle<()>> {
+    let Some(service) = service else {
+        tracing::info!("Audio OSD disabled because audio service is unavailable");
+        return None;
     };
 
-    tracing::info!("Audio service started");
+    Some(relm4::spawn(async move {
+        run(sender, service).await;
+    }))
+}
+
+async fn run(sender: Sender<ShellMsg>, service: Arc<AudioService>) {
+    tracing::info!("Audio OSD watcher started");
 
     let mut default_output_updates = service.default_output.watch().fuse();
 

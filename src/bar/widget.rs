@@ -3,6 +3,7 @@ use serde::de::DeserializeOwned;
 
 use super::BarMsg;
 use super::state::BarItemState;
+use crate::services::ShellServices;
 use crate::shell::ShellMsg;
 
 #[derive(Clone)]
@@ -73,7 +74,11 @@ pub(crate) trait BarWidget: Sync {
         None
     }
 
-    fn start(&self, _sender: relm4::Sender<ShellMsg>) -> Option<relm4::JoinHandle<()>> {
+    fn start(
+        &self,
+        _sender: relm4::Sender<ShellMsg>,
+        _services: &ShellServices,
+    ) -> Option<relm4::JoinHandle<()>> {
         None
     }
 }

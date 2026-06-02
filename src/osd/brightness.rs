@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use futures::StreamExt;
 use relm4::Sender;
 use wayle_brightness::BrightnessService;
@@ -5,27 +7,21 @@ use wayle_brightness::BrightnessService;
 use crate::osd::OsdEvent;
 use crate::shell::ShellMsg;
 
-pub(crate) fn start(sender: Sender<ShellMsg>) -> relm4::JoinHandle<()> {
-    tracing::info!("Brightness service started");
-    relm4::spawn(async move {
-        run(sender).await;
-    })
+pub(crate) fn start(
+    sender: Sender<ShellMsg>,
+    service: Option<Arc<BrightnessService>>,
+) -> Option<relm4::JoinHandle<()>> {
+    let Some(service) = service else {
+        tracing::info!("Brightness OSD disabled because brightness service is unavailable");
+        return None;
+    };
+    Some(relm4::spawn(async move {
+        run(sender, service).await;
+    }))
 }
 
-async fn run(sender: Sender<ShellMsg>) {
-    let service = match BrightnessService::new().await {
-        Ok(Some(service)) => service,
-        Ok(None) => {
-            tracing::info!("No brightness device found, brightness OSD disabled");
-            return;
-        }
-        Err(error) => {
-            tracing::error!("Failed to start brightness service: {error}");
-            return;
-        }
-    };
-
-    let mut primary_updates= service.primary.watch().fuse();
+async fn run(sender: Sender<ShellMsg>, service: Arc<BrightnessService>) {
+    let mut primary_updates = service.primary.watch().fuse();
 
     let mut device = match service.primary.get() {
         Some(device) => device,

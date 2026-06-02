@@ -8,6 +8,7 @@ use relm4::gtk::glib::object::Cast;
 use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, WorkspaceState};
 use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance};
+use crate::services::ShellServices;
 use crate::shell::ShellMsg;
 
 use self::render::{render_status, render_workspace_state};
@@ -52,7 +53,14 @@ impl BarWidget for WorkspacesWidget {
         Some(BarItemState::Workspaces(WorkspaceState::Connecting))
     }
 
-    fn start(&self, sender: relm4::Sender<ShellMsg>) -> Option<relm4::JoinHandle<()>> {
-        Some(service::start_workspace_watcher(sender))
+    fn start(
+        &self,
+        sender: relm4::Sender<ShellMsg>,
+        services: &ShellServices,
+    ) -> Option<relm4::JoinHandle<()>> {
+        Some(service::start_workspace_watcher(
+            sender,
+            services.niri.clone(),
+        ))
     }
 }
