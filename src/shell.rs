@@ -318,7 +318,7 @@ impl Shell {
         osd.window.show_event(event);
     }
 }
-// 
+//
 #[relm4::component(pub(crate))]
 impl SimpleComponent for Shell {
     type Init = ShellInit;
