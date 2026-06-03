@@ -106,6 +106,9 @@ fn render_workspaces(
 
                 let label = gtk::Label::new(None);
                 label.add_css_class("workspace-label");
+                label.set_hexpand(true);
+                label.set_halign(gtk::Align::Center);
+                label.set_xalign(0.5);
 
                 root.append(&label);
                 row.append(&root);

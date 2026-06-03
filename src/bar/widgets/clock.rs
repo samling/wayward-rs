@@ -51,6 +51,7 @@ impl BarWidget for ClockWidget {
         instance: &WidgetInstance,
         _sender: &relm4::Sender<BarMsg>,
         _services: &crate::services::ShellServices,
+        context: &BarContext,
     ) -> Box<dyn BarWidgetRuntime> {
         let format = instance
             .config
@@ -63,11 +64,18 @@ impl BarWidget for ClockWidget {
 
         label.add_css_class("clock-label");
 
-        let edge = std::rc::Rc::new(std::cell::Cell::new(BarEdge::Top));
+        let edge = std::rc::Rc::new(std::cell::Cell::new(context.edge));
         let child = calendar_dropdown_content(chrono::Local::now().date_naive());
-        let (root, dropdown) = Dropdown::menu_button("clock", BarEdge::Top, &label, &child);
+        let instance_class = instance.instance_css_class();
+        let (root, dropdown) = Dropdown::menu_button(
+            "clock",
+            instance_class.as_deref(),
+            context.edge,
+            &label,
+            &child,
+        );
 
-        dropdown.bind_to_menu_button(&root, BarEdge::Top, &child);
+        dropdown.bind_to_menu_button(&root, context.edge, &child);
 
         Box::new(ClockRuntime {
             root,

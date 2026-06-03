@@ -21,6 +21,7 @@ impl Dropdown {
 
     pub(crate) fn menu_button(
         class_name: &str,
+        instance_class: Option<&str>,
         edge: BarEdge,
         button_child: &impl IsA<gtk::Widget>,
         popover_child: &impl IsA<gtk::Widget>,
@@ -30,7 +31,7 @@ impl Dropdown {
         button_child.add_css_class("bar-item-content");
         button.set_child(Some(button_child));
 
-        crate::bar::style::add_bar_item_classes(&button, class_name);
+        crate::bar::style::add_bar_item_classes(&button, class_name, instance_class);
         button.add_css_class("flat");
 
         let dropdown = Self::new(&format!("{class_name}-dropdown"));

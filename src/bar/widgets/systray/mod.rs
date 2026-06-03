@@ -28,6 +28,7 @@ struct SystrayRuntime {
     items: HashMap<String, SystrayItemRuntime>,
     icon_cache: SystrayIconCache,
     icon_size: i32,
+    orientation: gtk::Orientation,
 }
 
 impl SystrayRuntime {
@@ -54,6 +55,7 @@ impl SystrayRuntime {
                     item,
                     &mut self.icon_cache,
                     self.icon_size,
+                    self.orientation,
                 );
                 self.content.append(&runtime.root);
                 self.items.insert(key, runtime);
@@ -83,8 +85,9 @@ impl SystrayItemRuntime {
         item: &SystrayItemSummary,
         icon_cache: &mut SystrayIconCache,
         icon_size: i32,
+        orientation: gtk::Orientation,
     ) -> Self {
-        let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let root = gtk::Box::new(orientation, 0);
         root.add_css_class("systray-item");
 
         attach_click_handler(root.upcast_ref(), sender, item);
@@ -155,12 +158,16 @@ impl BarWidget for SystrayWidget {
         instance: &WidgetInstance,
         sender: &relm4::Sender<BarMsg>,
         _services: &crate::services::ShellServices,
+        context: &BarContext,
     ) -> Box<dyn BarWidgetRuntime> {
         let config = instance.config_as::<SystrayConfig>();
-        let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        crate::bar::style::add_bar_item_classes(&root, "systray");
+        let orientation = context.edge.orientation();
 
-        let content = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        let root = gtk::Box::new(orientation, 0);
+        let instance_class = instance.instance_css_class();
+        crate::bar::style::add_bar_item_classes(&root, "systray", instance_class.as_deref());
+
+        let content = gtk::Box::new(orientation, 4);
         content.add_css_class("bar-item-content");
         content.add_css_class("systray-content");
         root.append(&content);
@@ -172,6 +179,7 @@ impl BarWidget for SystrayWidget {
             items: HashMap::new(),
             icon_cache: SystrayIconCache::default(),
             icon_size: config.icon_size(),
+            orientation,
         })
     }
 

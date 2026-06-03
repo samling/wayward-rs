@@ -1,9 +1,66 @@
 use serde::Deserialize;
 use std::{collections::BTreeMap, fs, path::PathBuf};
 
+const DEFAULT_CONFIG_TOML: &str = r#"# Wayward app configuration.
+# theme = "example"
+
+[[bars]]
+name = "bar"
+edge = "top"
+start = ["workspaces"]
+center = ["clock"]
+end = ["systray"]
+"#;
+
+pub(crate) fn themes_dir() -> Option<PathBuf> {
+    config_dir().map(|dir| dir.join("themes"))
+}
+
+pub(crate) fn ensure_config_files() {
+    let Some(dir) = config_dir() else {
+        tracing::info!("Could not determine config direcotry, skipping config bootstrap");
+        return;
+    };
+
+    if let Err(error) = fs::create_dir_all(&dir) {
+        tracing::error!(
+            "Failed to create config directory {}: {error}",
+            dir.display()
+        );
+        return;
+    }
+
+    if let Some(themes_dir) = themes_dir() {
+        if let Err(error) = fs::create_dir_all(&themes_dir) {
+            tracing::error!(
+                "Failed to create themes directory {}: {error}",
+                themes_dir.display()
+            )
+        }
+    }
+
+    write_default_file(config_path(), DEFAULT_CONFIG_TOML);
+}
+
+fn write_default_file(path: Option<PathBuf>, contents: &str) {
+    let Some(path) = path else {
+        return;
+    };
+
+    if path.exists() {
+        return;
+    }
+
+    if let Err(error) = fs::write(&path, &contents) {
+        tracing::error!("Failed to create default file {}: {error}", path.display())
+    }
+}
+
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AppConfig {
+    #[serde(default)]
+    pub theme: Option<String>,
     #[serde(default)]
     pub widgets: BTreeMap<String, toml::value::Table>,
     pub bars: Vec<BarConfig>,
@@ -53,6 +110,7 @@ pub(crate) fn config_path() -> Option<PathBuf> {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
+            theme: None,
             widgets: BTreeMap::new(),
             bars: vec![BarConfig::default()],
         }
