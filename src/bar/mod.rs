@@ -51,6 +51,7 @@ pub enum BarMsg {
     LayoutChanged { layout: BarLayout, edge: BarEdge },
     ItemStateChanged(BarItemState),
     WidgetEvent(WidgetEvent),
+    StyleChanged,
 }
 
 #[derive(Debug)]
@@ -117,6 +118,16 @@ impl Bar {
         }
     }
 
+    fn apply_size_hint(root: &gtk::ApplicationWindow, edge: BarEdge) {
+        if edge.is_vertical() {
+            root.set_size_request(1, -1);
+            root.set_default_size(1, -1);
+        } else {
+            root.set_size_request(-1, 1);
+            root.set_default_size(-1, 1);
+        }
+    }
+
     fn configure_window(
         root: &gtk::ApplicationWindow,
         edge: BarEdge,
@@ -159,11 +170,11 @@ impl Bar {
 
         if edge.is_vertical() {
             root.add_css_class("vertical");
-            root.set_size_request(1, -1);
         } else {
             root.add_css_class("horizontal");
-            root.set_size_request(-1, 1);
         }
+
+        Self::apply_size_hint(root, edge);
 
         root.auto_exclusive_zone_enable();
         root.set_keyboard_mode(KeyboardMode::None);
@@ -203,13 +214,17 @@ impl Bar {
             container.remove(&child);
         }
 
+        let context = self.context();
+
         widgets
             .iter()
             .map(|instance| {
-                let runtime =
-                    instance
-                        .widget
-                        .build(instance, &self.input_sender.clone(), &self.services);
+                let runtime = instance.widget.build(
+                    instance,
+                    &self.input_sender.clone(),
+                    &self.services,
+                    &context,
+                );
                 let root = runtime.root();
 
                 container.append(&root);
@@ -243,7 +258,10 @@ impl Component for Bar {
                 #[wrap(Some)]
                 #[name = "start_region"]
                 set_start_widget = &gtk::Box {
+                    #[watch]
+                    set_visible: !model.layout.start.is_empty(),
                     add_css_class: "bar-region",
+                    add_css_class: "bar-region-start",
 
                     #[watch]
                     set_orientation: model.edge.orientation(),
@@ -266,7 +284,10 @@ impl Component for Bar {
                     set_halign: model.edge.center_halign(),
                     #[watch]
                     set_valign: model.edge.center_valign(),
+                    #[watch]
+                    set_visible: !model.layout.center.is_empty(),
                     add_css_class: "bar-region",
+                    add_css_class: "bar-region-center",
 
                     #[watch]
                     set_orientation: model.edge.orientation(),
@@ -281,7 +302,10 @@ impl Component for Bar {
                 #[wrap(Some)]
                 #[name = "end_region"]
                 set_end_widget = &gtk::Box {
+                    #[watch]
+                    set_visible: !model.layout.end.is_empty(),
                     add_css_class: "bar-region",
+                    add_css_class: "bar-region-end",
 
                     #[watch]
                     set_orientation: model.edge.orientation(),
@@ -353,6 +377,11 @@ impl Component for Bar {
                 );
 
                 self.apply_all_states_to_mounted_widgets();
+            }
+            BarMsg::StyleChanged => {
+                Self::apply_size_hint(root, self.edge);
+                root.queue_resize();
+                root.queue_draw();
             }
             BarMsg::ItemStateChanged(state) => {
                 self.item_states

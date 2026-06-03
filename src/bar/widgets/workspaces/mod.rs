@@ -196,7 +196,7 @@ fn start_indicator_animation(
         let raw_progress = (elapsed_ms / config.indicator_duration_ms as f64).clamp(0.0, 1.0);
         let progress = animation_progress(config.indicator_effect, raw_progress);
 
-        let frame_bounds = start.lerp(target,progress);
+        let frame_bounds = start.lerp(target, progress);
         frame_bounds.apply_to(&callback_layer, &callback_indicator);
 
         let mut state = callback_state.borrow_mut();
@@ -226,17 +226,20 @@ impl BarWidget for WorkspacesWidget {
         instance: &WidgetInstance,
         _sender: &relm4::Sender<BarMsg>,
         _services: &crate::services::ShellServices,
+        context: &BarContext,
     ) -> Box<dyn BarWidgetRuntime> {
         let config = instance.config_as::<config::WorkspacesConfig>();
+        let orientation = context.edge.orientation();
 
-        let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        crate::bar::style::add_bar_item_classes(&root, "workspaces");
+        let root = gtk::Box::new(orientation, 0);
+        let instance_class = instance.instance_css_class();
+        crate::bar::style::add_bar_item_classes(&root, "workspaces", instance_class.as_deref());
 
         let overlay = gtk::Overlay::new();
         overlay.add_css_class("workspaces-overlay");
         root.append(&overlay);
 
-        let base = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let base = gtk::Box::new(orientation, 0);
         base.add_css_class("workspaces-base");
         overlay.set_child(Some(&base));
 
@@ -245,13 +248,13 @@ impl BarWidget for WorkspacesWidget {
         overlay.add_overlay(&indicator_layer);
         overlay.set_measure_overlay(&indicator_layer, false);
 
-        let indicator = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let indicator = gtk::Box::new(orientation, 0);
         indicator.add_css_class("workspace-indicator");
         indicator.set_can_target(false);
         indicator.set_visible(false);
         indicator_layer.put(&indicator, 0.0, 0.0);
 
-        let content = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        let content = gtk::Box::new(orientation, 4);
         content.add_css_class("bar-item-content");
         content.add_css_class("workspaces-content");
         overlay.add_overlay(&content);

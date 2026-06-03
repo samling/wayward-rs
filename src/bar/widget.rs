@@ -10,6 +10,7 @@ use crate::shell::ShellMsg;
 pub(crate) struct WidgetInstance {
     pub(crate) id: String,
     pub(crate) widget_type: String,
+    pub(crate) instance: Option<String>,
     pub(crate) widget: &'static dyn BarWidget,
     pub(crate) config: toml::value::Table,
 }
@@ -32,6 +33,12 @@ impl WidgetInstance {
                 T::default()
             }
         }
+    }
+
+    pub(crate) fn instance_css_class(&self) -> Option<String> {
+        self.instance
+            .as_ref()
+            .map(|instance| format!("instance-{}-{}", self.widget_type, instance))
     }
 }
 
@@ -69,6 +76,7 @@ pub(crate) trait BarWidget: Sync {
         instance: &WidgetInstance,
         sender: &relm4::Sender<BarMsg>,
         services: &ShellServices,
+        context: &BarContext,
     ) -> Box<dyn BarWidgetRuntime>;
 
     fn initial_state(&self) -> Option<BarItemState> {

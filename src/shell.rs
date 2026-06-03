@@ -16,6 +16,7 @@ pub(crate) struct Shell {
 
 pub(crate) struct ShellInit {
     pub(crate) services: crate::services::ShellServices,
+    pub(crate) style: Option<crate::style::StyleHandle>,
 }
 
 struct RunningOsd {
@@ -26,6 +27,7 @@ struct RunningOsd {
 #[derive(Debug)]
 pub(crate) enum ShellMsg {
     ConfigChanged(AppConfig),
+    StyleChanged,
     MonitorsChanged,
     ReconcileMonitors,
     ItemStateChanged(bar::state::BarItemState),
@@ -343,6 +345,7 @@ impl SimpleComponent for Shell {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let ShellInit { services, style } = init;
         let config = AppConfig::load();
 
         let mut model = Shell {
@@ -351,7 +354,7 @@ impl SimpleComponent for Shell {
             item_states: crate::services::initial_item_states(),
             focused_monitor_connector: None,
             osd_windows: Vec::new(),
-            services: init.services,
+            services,
         };
 
         model.reconcile_bars(&sender);
@@ -360,6 +363,14 @@ impl SimpleComponent for Shell {
         Self::start_config_hot_reload(&sender);
         Self::start_monitor_watch(&sender);
         crate::services::start_all(&sender, &model.services);
+
+        if let Some(style) = style {
+            let input_sender = sender.input_sender().clone();
+
+            crate::style::start_hot_reload(style, move || {
+                let _ = input_sender.send(ShellMsg::StyleChanged);
+            });
+        }
 
         let widgets = view_output!();
 
@@ -371,6 +382,14 @@ impl SimpleComponent for Shell {
             ShellMsg::ConfigChanged(config) => {
                 self.config = config;
                 self.reconcile_bars(&_sender);
+            }
+            ShellMsg::StyleChanged => {
+                for running_bar in &self.bars {
+                    let _ = running_bar
+                        .controller
+                        .sender()
+                        .send(bar::BarMsg::StyleChanged);
+                }
             }
             ShellMsg::MonitorsChanged => {
                 tracing::info!("Monitors changed");

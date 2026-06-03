@@ -1,11 +1,20 @@
 use futures::{StreamExt, channel::mpsc};
-use std::{cell::RefCell, fs, path::PathBuf, rc::Rc};
+use std::{
+    cell::RefCell,
+    fs,
+    path::{Path, PathBuf},
+    rc::Rc,
+};
 
 use relm4::gtk::{
     CssProvider, STYLE_PROVIDER_PRIORITY_USER, gdk, style_context_add_provider_for_display,
 };
 
 const DEFAULT_CSS: &str = include_str!("style.css");
+
+pub(crate) fn default_style_config() -> &'static str {
+    DEFAULT_CSS
+}
 
 #[derive(Clone)]
 pub(crate) struct StyleHandle {
@@ -28,27 +37,27 @@ pub fn apply_initial_css() -> Option<StyleHandle> {
 }
 
 impl StyleHandle {
-    fn reload(&self) {
+    fn reload(&self) -> bool {
         let css = load_css();
 
         if *self.current_css.borrow() == css {
-            return;
+            return false;
         }
 
         self.provider.load_from_string(&css);
         *self.current_css.borrow_mut() = css;
         tracing::info!("Reloaded style");
+
+        true
     }
 }
 
-pub fn start_hot_reload(handle: StyleHandle) {
-    let Some(dir) = style_dir() else {
+pub fn start_hot_reload<F>(handle: StyleHandle, on_reload: F)
+where
+    F: Fn() + 'static,
+{
+    let Some(dir) = crate::config::config_dir() else {
         tracing::info!("Could not determine config directory, style hot reload disabled");
-        return;
-    };
-
-    let Some(path) = style_path() else {
-        tracing::info!("Could not determine style path, styhle hot reload disabled");
         return;
     };
 
@@ -56,45 +65,63 @@ pub fn start_hot_reload(handle: StyleHandle) {
 
     relm4::spawn_local(async move {
         while reload_rx.next().await.is_some() {
-            handle.reload();
+            if handle.reload() {
+                on_reload();
+            }
         }
     });
 
-    crate::file_watch::start_debounced_file_watch("style", dir, path, move || {
-        let _ = reload_tx.unbounded_send(());
-    });
+    crate::file_watch::start_debounced_watch(
+        "style",
+        dir,
+        notify::RecursiveMode::Recursive,
+        move |event| event.paths.iter().any(|path| is_style_reload_path(path)),
+        move || {
+            let _ = reload_tx.unbounded_send(());
+        },
+    );
 }
 
 fn load_css() -> String {
     let mut css = DEFAULT_CSS.to_string();
 
-    let Some(path) = style_path() else {
-        tracing::info!("Could not determine config directory, using default style");
-        return css;
-    };
+    if let Some(theme_css) = load_theme_css() {
+        css.push('\n');
+        css.push_str(&theme_css);
+    }
+
+    css
+}
+
+fn load_theme_css() -> Option<String> {
+    let config = crate::config::AppConfig::load();
+    let theme = config.theme.as_deref()?;
+    let path = theme_path(theme)?;
 
     match fs::read_to_string(&path) {
-        Ok(user_css) => {
-            css.push('\n');
-            css.push_str(&user_css);
-            css
-        }
-        Err(_) => {
-            tracing::info!(
-                "No style file found at {}, using default style",
-                path.display()
-            );
-            css
+        Ok(css) => Some(css),
+        Err(error) => {
+            tracing::error!("Failed to read theme {}: {error}", path.display());
+            None
         }
     }
 }
 
-fn style_dir() -> Option<PathBuf> {
-    dirs::config_dir().map(|dir| dir.join("wayward"))
+fn theme_path(theme: &str) -> Option<PathBuf> {
+    if theme.contains('/') || theme.contains('\\') || theme.contains("..") {
+        tracing::error!("Ignoring invalid theme name: {theme}");
+        return None;
+    }
+
+    crate::config::themes_dir().map(|dir| dir.join(format!("{theme}.css")))
 }
 
-fn style_path() -> Option<PathBuf> {
-    style_dir().map(|dir| dir.join("style.css"))
+fn is_style_reload_path(path: &Path) -> bool {
+    if crate::config::config_path().as_deref() == Some(path) {
+        return true;
+    }
+
+    crate::config::themes_dir().is_some_and(|themes_dir| path.starts_with(themes_dir))
 }
 
 #[cfg(test)]

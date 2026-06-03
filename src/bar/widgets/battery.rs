@@ -74,8 +74,9 @@ impl BarWidget for BatteryWidget {
         _instance: &WidgetInstance,
         _sender: &relm4::Sender<BarMsg>,
         services: &crate::services::ShellServices,
+        context: &BarContext,
     ) -> Box<dyn BarWidgetRuntime> {
-        let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        let content = gtk::Box::new(context.edge.orientation(), 0);
         content.add_css_class("battery-content");
 
         let icon = gtk::Image::from_icon_name("battery-missing-symbolic");
@@ -94,9 +95,11 @@ impl BarWidget for BatteryWidget {
         let dropdown_content = battery_dropdown_content(power_profiles.clone());
         let profile_buttons = profile_buttons(&dropdown_content);
 
+        let instance_class = _instance.instance_css_class();
         let (root, dropdown) = crate::bar::dropdown::Dropdown::menu_button(
             "battery",
-            crate::bar::layout::BarEdge::Top,
+            instance_class.as_deref(),
+            context.edge,
             &content,
             &dropdown_content,
         );
