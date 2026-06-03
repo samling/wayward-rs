@@ -154,6 +154,7 @@ impl Shell {
                     &desired_bar.config,
                     desired_bar.monitor,
                     sender,
+                    self.services.clone(),
                 ) {
                     self.send_item_states_to_bar(&running_bar);
                     self.bars.push(running_bar);
@@ -162,7 +163,12 @@ impl Shell {
                 continue;
             };
 
-            let init = bar::BarInit::from_config(&self.config, Some(&desired_bar.config), None);
+            let init = bar::BarInit::from_config(
+                &self.config,
+                Some(&desired_bar.config),
+                None,
+                self.services.clone(),
+            );
 
             if running_bar
                 .controller
@@ -268,6 +274,7 @@ impl Shell {
         bar_config: &crate::config::BarConfig,
         monitor: gdk::Monitor,
         sender: &ComponentSender<Self>,
+        services: crate::services::ShellServices,
     ) -> Option<RunningBar> {
         let Some(name) = bar_name(bar_config) else {
             tracing::error!("Skipping bar without a name");
@@ -283,7 +290,7 @@ impl Shell {
 
         tracing::info!("Launching bar {key}");
 
-        let init = bar::BarInit::from_config(app_config, Some(bar_config), Some(monitor));
+        let init = bar::BarInit::from_config(app_config, Some(bar_config), Some(monitor), services);
         let controller = bar::Bar::builder()
             .launch(init)
             .forward(sender.input_sender(), ShellMsg::BarOutput);

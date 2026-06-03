@@ -22,6 +22,7 @@ pub struct BarInit {
     pub(crate) edge: BarEdge,
     pub(crate) monitor: Option<gtk::gdk::Monitor>,
     pub(crate) monitor_connector: Option<String>,
+    pub(crate) services: crate::services::ShellServices,
 }
 
 impl BarInit {
@@ -29,6 +30,7 @@ impl BarInit {
         app_config: &crate::config::AppConfig,
         config: Option<&crate::config::BarConfig>,
         monitor: Option<gtk::gdk::Monitor>,
+        services: crate::services::ShellServices,
     ) -> Self {
         let monitor_connector = monitor
             .as_ref()
@@ -39,6 +41,7 @@ impl BarInit {
             edge: BarEdge::from_config(config.and_then(|bar| bar.edge.as_deref())),
             monitor,
             monitor_connector,
+            services,
         }
     }
 }
@@ -76,6 +79,7 @@ pub struct Bar {
     monitor_connector: Option<String>,
     input_sender: relm4::Sender<BarMsg>,
     pub(super) item_states: Vec<BarItemState>,
+    services: crate::services::ShellServices,
 }
 
 impl Bar {
@@ -174,6 +178,7 @@ impl Bar {
                 .iter()
                 .filter_map(|widget| widget.initial_state())
                 .collect(),
+            services: init.services,
         }
     }
 
@@ -196,7 +201,10 @@ impl Bar {
         widgets
             .iter()
             .map(|instance| {
-                let runtime = instance.widget.build(instance, &self.input_sender.clone());
+                let runtime =
+                    instance
+                        .widget
+                        .build(instance, &self.input_sender.clone(), &self.services);
                 let root = runtime.root();
 
                 container.append(&root);

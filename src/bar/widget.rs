@@ -68,6 +68,7 @@ pub(crate) trait BarWidget: Sync {
         &self,
         instance: &WidgetInstance,
         sender: &relm4::Sender<BarMsg>,
+        services: &ShellServices,
     ) -> Box<dyn BarWidgetRuntime>;
 
     fn initial_state(&self) -> Option<BarItemState> {

@@ -154,6 +154,7 @@ impl BarWidget for SystrayWidget {
         &self,
         instance: &WidgetInstance,
         sender: &relm4::Sender<BarMsg>,
+        _services: &crate::services::ShellServices,
     ) -> Box<dyn BarWidgetRuntime> {
         let config = instance.config_as::<SystrayConfig>();
         let root = gtk::Box::new(gtk::Orientation::Horizontal, 4);

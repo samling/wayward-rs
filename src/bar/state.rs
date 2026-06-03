@@ -1,5 +1,7 @@
 use crate::bar::widgets::systray::model::SystrayItemSummary;
 use crate::bar::widgets::workspaces::model::WorkspaceSummary;
+use wayle_battery::types::DeviceState;
+use wayle_power_profiles::types::profile::PowerProfile;
 
 #[derive(Clone, Debug)]
 pub(crate) enum BarItemState {
@@ -19,8 +21,16 @@ pub(crate) enum WorkspaceState {
 
 #[derive(Clone, Debug)]
 pub(crate) enum BatteryState {
-    Ready(String),
+    Ready(BatterySnapshot),
     Unavailable,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct BatterySnapshot {
+    pub(crate) percentage: f64,
+    pub(crate) state: DeviceState,
+    pub(crate) active_profile: Option<PowerProfile>,
+    pub(crate) available_profiles: Vec<PowerProfile>,
 }
 
 #[derive(Clone, Debug)]

@@ -1,11 +1,8 @@
+use futures::{StreamExt, channel::mpsc};
 use std::{cell::RefCell, fs, path::PathBuf, rc::Rc};
-use futures::{channel::mpsc, StreamExt};
 
 use relm4::gtk::{
-    gdk,
-    style_context_add_provider_for_display,
-    CssProvider,
-    STYLE_PROVIDER_PRIORITY_USER,
+    CssProvider, STYLE_PROVIDER_PRIORITY_USER, gdk, style_context_add_provider_for_display,
 };
 
 const DEFAULT_CSS: &str = include_str!("style.css");
