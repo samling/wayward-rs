@@ -4,6 +4,7 @@ pub(crate) mod service;
 
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
+use relm4::gtk::prelude::{BoxExt, WidgetExt};
 
 use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, WorkspaceState};
@@ -15,6 +16,7 @@ use self::render::{render_status, render_workspace_state};
 
 struct WorkspacesRuntime {
     root: gtk::Box,
+    content: gtk::Box,
 }
 
 impl BarWidgetRuntime for WorkspacesRuntime {
@@ -27,7 +29,7 @@ impl BarWidgetRuntime for WorkspacesRuntime {
             return;
         };
 
-        render_workspace_state(&self.root, state, context.monitor_connector.as_deref());
+        render_workspace_state(&self.content, state, context.monitor_connector.as_deref());
     }
 }
 
@@ -44,11 +46,17 @@ impl BarWidget for WorkspacesWidget {
         _sender: &relm4::Sender<BarMsg>,
         _services: &crate::services::ShellServices,
     ) -> Box<dyn BarWidgetRuntime> {
-        let row = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-        crate::bar::style::add_bar_item_classes(&row, "workspaces");
-        render_status(&row, "Connecting to Niri");
+        let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        crate::bar::style::add_bar_item_classes(&root, "workspaces");
 
-        Box::new(WorkspacesRuntime { root: row })
+        let content = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        content.add_css_class("bar-item-content");
+        content.add_css_class("workspaces-content");
+        root.append(&content);
+
+        render_status(&content, "Connecting to Niri");
+
+        Box::new(WorkspacesRuntime { root, content })
     }
 
     fn initial_state(&self) -> Option<BarItemState> {

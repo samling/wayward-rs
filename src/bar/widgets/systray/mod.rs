@@ -23,6 +23,7 @@ use crate::shell::ShellMsg;
 
 struct SystrayRuntime {
     root: gtk::Box,
+    content: gtk::Box,
     sender: relm4::Sender<BarMsg>,
     items: HashMap<String, SystrayItemRuntime>,
     icon_cache: SystrayIconCache,
@@ -54,7 +55,7 @@ impl SystrayRuntime {
                     &mut self.icon_cache,
                     self.icon_size,
                 );
-                self.root.append(&runtime.root);
+                self.content.append(&runtime.root);
                 self.items.insert(key, runtime);
             }
         }
@@ -63,7 +64,7 @@ impl SystrayRuntime {
             if desired_keys.contains(key) {
                 true
             } else {
-                self.root.remove(&runtime.root);
+                self.content.remove(&runtime.root);
                 false
             }
         });
@@ -156,11 +157,17 @@ impl BarWidget for SystrayWidget {
         _services: &crate::services::ShellServices,
     ) -> Box<dyn BarWidgetRuntime> {
         let config = instance.config_as::<SystrayConfig>();
-        let root = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         crate::bar::style::add_bar_item_classes(&root, "systray");
+
+        let content = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        content.add_css_class("bar-item-content");
+        content.add_css_class("systray-content");
+        root.append(&content);
 
         Box::new(SystrayRuntime {
             root,
+            content,
             sender: sender.clone(),
             items: HashMap::new(),
             icon_cache: SystrayIconCache::default(),

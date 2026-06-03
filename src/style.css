@@ -1,21 +1,83 @@
+/* Bar shell */
 .bar {
     background: transparent;
     color: #f1f3f4;
-    font: 12px sans-serif;
-}
-
-.bar-item {
-    padding: 0 8px;
+    font: 1em sans-serif;
 }
 
 .bar-region {
     background: transparent;
 }
 
+/* Widget cells */
+.bar-item {
+    background: transparent;
+    background-image: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    color: inherit;
+    min-height: 0;
+    min-width: 0;
+    outline: none;
+    padding: 0;
+}
+
+.bar-item:hover,
+.bar-item:focus,
+.bar-item:focus-visible,
+.bar-item:active,
+.bar-item:checked {
+    background-image: none;
+    box-shadow: none;
+    outline: none;
+}
+
+.bar-item-content {
+    color: inherit;
+    min-height: 0;
+    min-width: 0;
+    padding: 0 0.65em;
+}
+
+menubutton.bar-item > button,
+menubutton.bar-item > button.toggle {
+    background: transparent;
+    background-image: none;
+    border: none;
+    border-radius: inherit;
+    box-shadow: none;
+    color: inherit;
+    min-height: 0;
+    min-width: 0;
+    outline: none;
+    padding: 0;
+}
+
+menubutton.bar-item > button:hover,
+menubutton.bar-item > button:focus,
+menubutton.bar-item > button:focus-visible,
+menubutton.bar-item > button:active,
+menubutton.bar-item > button:checked {
+    background: transparent;
+    background-image: none;
+    border: none;
+    border-radius: inherit;
+    box-shadow: none;
+    color: inherit;
+    outline: none;
+}
+
+/* Workspaces */
+.workspaces-content {
+    border-spacing: 0.4em;
+}
+
 .workspace {
-    padding: 0 6px;
     background: transparent;
     color: inherit;
+    min-width: 0;
+    padding: 0;
 }
 
 .workspace.active {
@@ -34,109 +96,49 @@
     color: #fdd664;
 }
 
-.osd {
-    padding: 12px 16px;
-    border-radius: 8px;
-    background: rgba(32, 33, 36, 1.00);
-    color: #f1f3f4;
-}
-
-.osd-window {
-    background: transparent;
-}
-
-.osd-icon {
-    min-width: 24px;
-    font-size: 18px;
-}
-
-.osd-label {
-    min-width: 120px;
-}
-
-.osd-level {
-    min-width: 180px;
-}
-
-menubutton.bar-item,
-menubutton.bar-item > button,
-menubutton.bar-item > button.toggle {
-    background: transparent;
-    background-image: none;
-    border: none;
-    border-radius: 0;
-    box-shadow: none;
-    color: inherit;
-    min-height: 0;
-    min-width: 0;
-    outline: none;
-    padding: 0;
-}
-
-menubutton.bar-item > button {
-    padding: 0 8px;
-}
-
-menubutton.bar-item:hover,
-menubutton.bar-item:active,
-menubutton.bar-item:checked,
-menubutton.bar-item > button:hover,
-menubutton.bar-item > button:active,
-menubutton.bar-item > button:checked,
-menubutton.bar-item > button:focus,
-menubutton.bar-item > button:focus-visible {
-    background: transparent;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-    color: inherit;
-    outline: none;
-}
-
-popover.dropdown contents {
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    padding: 0;
-}
-
+/* Dropdowns */
+popover.dropdown contents,
 popover.dropdown arrow {
     background: transparent;
+    background-image: none;
     border: none;
     box-shadow: none;
+    padding: 0;
 }
 
 .dropdown-content {
     background: #202124;
+    border-spacing: 0.6em;
     color: #f1f3f4;
-    padding: 10px;
+    padding: 0.75em;
 }
 
 .dropdown-title {
     font-weight: 600;
 }
 
+/* Clock */
 .clock-dropdown-content {
-    min-width: 220px;
+    min-width: 18em;
 }
 
 .clock-dropdown-title {
-    margin-bottom: 4px;
+    margin-bottom: 0.25em;
 }
 
 .clock-calendar {
-    padding: 4px;
+    padding: 0.25em;
 }
 
 .clock-calendar-weekday {
     opacity: 0.7;
-    font-size: 11px;
+    font-size: 0.9em;
 }
 
 .clock-calendar-day {
-    min-width: 24px;
-    min-height: 22px;
     color: inherit;
+    min-height: 1.8em;
+    min-width: 2em;
 }
 
 .clock-calendar-day.other-month {
@@ -148,14 +150,7 @@ popover.dropdown arrow {
     font-weight: 600;
 }
 
-.battery-dropdown-content {
-    min-width: 220px;
-}
-
-.battery-dropdown-title {
-    margin-bottom: 4px;
-}
-
+/* Battery */
 .battery-content {
     border-spacing: 0.5em;
     min-height: 0;
@@ -171,6 +166,14 @@ popover.dropdown arrow {
     min-width: 0;
 }
 
+.battery-dropdown-content {
+    min-width: 18em;
+}
+
+.battery-dropdown-title {
+    margin-bottom: 0.25em;
+}
+
 .profile-segments {
     background: transparent;
 }
@@ -180,23 +183,34 @@ button.profile-button,
 button.profile-button.toggle {
     background: transparent;
     background-image: none;
-    border: 1px solid rgba(241, 243, 244, 0.24);
+    border: 1px solid transparent;
     border-radius: 0;
     box-shadow: none;
     color: inherit;
     min-height: 0;
     outline: none;
-    padding: 6px 8px;
+    padding: 0.45em 0.65em;
 }
 
 .profile-button:hover,
-.profile-button:focus,
-.profile-button:focus-visible,
 button.profile-button:hover,
-button.profile-button:focus,
-button.profile-button:focus-visible {
+button.profile-button.toggle:hover {
     background: transparent;
     background-image: none;
+    border-color: rgba(241, 243, 244, 0.24);
+    box-shadow: none;
+    outline: none;
+}
+
+.profile-button:focus,
+.profile-button:focus-visible,
+button.profile-button:focus,
+button.profile-button:focus-visible,
+button.profile-button.toggle:focus,
+button.profile-button.toggle:focus-visible {
+    background: transparent;
+    background-image: none;
+    border-color: transparent;
     box-shadow: none;
     outline: none;
 }
@@ -210,24 +224,65 @@ button.profile-button.toggle:checked {
     box-shadow: none;
 }
 
-.bar-item {
-    background: rgba(241, 243, 244, 0.10);
-    border-radius: 0.6em;
-    padding: 0 0.65em;
-}
-
-menubutton.bar-item > button {
-    background: transparent;
-    border-radius: inherit;
-    padding: 0;
-}
-
-.systray {
-    background: rgba(241, 243, 244, 0.10);
-    border-radius: 0.6em;
-    padding: 0 0.45em;
+/* Systray */
+.systray-content {
+    border-spacing: 0.25em;
 }
 
 .systray-item {
-    padding: 0 0.25em;
+    min-height: 0;
+    min-width: 0;
+}
+
+popover.systray-menu modelbutton,
+popover.systray-menu modelbutton.flat,
+popover.systray-menu button {
+    background: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    outline: none;
+    outline-width: 0;
+}
+
+popover.systray-menu modelbutton:hover,
+popover.systray-menu modelbutton:focus,
+popover.systray-menu modelbutton:focus-visible,
+popover.systray-menu modelbutton.flat:hover,
+popover.systray-menu modelbutton.flat:focus,
+popover.systray-menu modelbutton.flat:focus-visible,
+popover.systray-menu button:hover,
+popover.systray-menu button:focus,
+popover.systray-menu button:focus-visible {
+    background: transparent;
+    background-image: none;
+    border: none;
+    box-shadow: none;
+    outline: none;
+    outline-width: 0;
+}
+
+/* OSD */
+.osd-window {
+    background: transparent;
+}
+
+.osd {
+    background: rgba(32, 33, 36, 1.00);
+    border-radius: 0.6em;
+    color: #f1f3f4;
+    padding: 0.8em 1em;
+}
+
+.osd-icon {
+    font-size: 1.5em;
+    min-width: 1.5em;
+}
+
+.osd-label {
+    min-width: 10em;
+}
+
+.osd-level {
+    min-width: 15em;
 }

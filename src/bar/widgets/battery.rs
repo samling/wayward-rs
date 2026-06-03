@@ -53,7 +53,7 @@ impl BarWidgetRuntime for BatteryRuntime {
             .set_text(&battery_percentage_text(snapshot.percentage));
         self.energy_rate_label
             .set_text(&battery_energy_rate_text(snapshot.energy_rate));
-        
+
         for (profile, button) in &self.profile_buttons {
             let available = snapshot.available_profiles.contains(profile);
             button.set_sensitive(available);
