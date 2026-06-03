@@ -2,7 +2,9 @@
 .bar {
     background: transparent;
     color: #f1f3f4;
-    font: 1em sans-serif;
+    font-family: "AdwaitaSans", sans-serif;
+    font-size: 0.95em;
+    min-height: 24px;
 }
 
 .bar-region {
@@ -74,14 +76,21 @@ menubutton.bar-item > button:checked {
 }
 
 .workspace {
-    background: transparent;
+    border-radius: 0.4em;
+    padding: 0.12em 0.65em;
+    background-color: transparent;
     color: inherit;
-    min-width: 0;
-    padding: 0;
 }
 
-.workspace.active {
+.workspace-label {
+    background: transparent;
+    padding: 0;
     font-weight: 600;
+}
+
+.workspace-indicator {
+    background-color: rgba(138, 180, 248, 0.5);
+    border-radius: 0.4em;
 }
 
 .workspace.focused {

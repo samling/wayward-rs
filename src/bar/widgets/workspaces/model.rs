@@ -21,32 +21,6 @@ pub struct RawWorkspace {
 }
 
 impl WorkspaceSummary {
-    pub fn label(&self) -> String {
-        self.name
-            .as_ref()
-            .filter(|name| !name.is_empty())
-            .cloned()
-            .unwrap_or_else(|| self.idx.to_string())
-    }
-
-    pub fn css_classes(&self) -> Vec<&'static str> {
-        let mut classes = vec!["workspace"];
-
-        if self.is_active {
-            classes.push("active");
-        }
-
-        if self.is_focused {
-            classes.push("focused");
-        }
-
-        if self.is_urgent {
-            classes.push("urgent");
-        }
-
-        classes
-    }
-
     pub fn from_wayle_workspace(workspace: &wayle_niri::core::Workspace) -> Self {
         Self {
             id: workspace.id.get(),
@@ -57,6 +31,45 @@ impl WorkspaceSummary {
             is_focused: workspace.is_focused.get(),
             is_urgent: workspace.is_urgent.get(),
         }
+    }
+
+    pub fn formatted_label(&self, format: &str) -> String {
+        let index = self.idx.to_string();
+        let title = self
+            .name
+            .as_deref()
+            .filter(|name| !name.is_empty())
+            .unwrap_or("");
+        let title_or_index = self
+            .name
+            .as_ref()
+            .filter(|name| !name.is_empty())
+            .cloned()
+            .unwrap_or_else(|| index.clone());
+
+        let mut output = String::new();
+        let mut chars = format.chars();
+
+        while let Some(ch) = chars.next() {
+            if ch != '%' {
+                output.push(ch);
+                continue;
+            }
+
+            match chars.next() {
+                Some('I') => output.push_str(&index),
+                Some('T') => output.push_str(title),
+                Some('L') => output.push_str(&title_or_index),
+                Some('%') => output.push_str("%"),
+                Some(unknown) => {
+                    output.push('%');
+                    output.push(unknown);
+                }
+                None => output.push('%'),
+            }
+        }
+
+        output
     }
 }
 
@@ -78,51 +91,50 @@ impl From<RawWorkspace> for WorkspaceSummary {
 mod tests {
     use super::*;
 
-    #[test]
-    fn label_prefers_name() {
-        let workspace = WorkspaceSummary {
+    fn workspace(name: Option<&str>) -> WorkspaceSummary {
+        WorkspaceSummary {
             id: 10,
             idx: 3,
-            name: Some("code".to_string()),
+            name: name.map(str::to_string),
             output: Some("DP-1".to_string()),
             is_active: true,
             is_focused: true,
             is_urgent: false,
-        };
-
-        assert_eq!(workspace.label(), "code");
+        }
     }
 
     #[test]
-    fn label_falls_back_to_index() {
-        let workspace = WorkspaceSummary {
-            id: 10,
-            idx: 3,
-            name: None,
-            output: Some("DP-1".to_string()),
-            is_active: true,
-            is_focused: false,
-            is_urgent: true,
-        };
-
-        assert_eq!(workspace.label(), "3");
+    fn formatted_label_supports_index() {
+        assert_eq!(workspace(Some("code")).formatted_label("%I"), "3");
     }
 
     #[test]
-    fn css_classes_include_state() {
-        let workspace = WorkspaceSummary {
-            id: 10,
-            idx: 3,
-            name: None,
-            output: None,
-            is_active: true,
-            is_focused: true,
-            is_urgent: true,
-        };
+    fn formatted_label_supports_title() {
+        assert_eq!(workspace(Some("code")).formatted_label("%T"), "code");
+    }
 
-        assert_eq!(
-            workspace.css_classes(),
-            vec!["workspace", "active", "focused", "urgent"]
-        );
+    #[test]
+    fn formatted_label_uses_empty_title_when_name_is_missing() {
+        assert_eq!(workspace(None).formatted_label("%I: %T"), "3: ");
+    }
+
+    #[test]
+    fn formatted_label_supports_composite_formats() {
+        assert_eq!(workspace(Some("code")).formatted_label("%I: %T"), "3: code");
+    }
+
+    #[test]
+    fn formatted_label_supports_literal_percent() {
+        assert_eq!(workspace(Some("code")).formatted_label("%%%I"), "%3");
+    }
+
+    #[test]
+    fn formatted_label_preserves_unknown_tokens() {
+        assert_eq!(workspace(Some("code")).formatted_label("%X %I"), "%X 3");
+    }
+
+    #[test]
+    fn formatted_label_preserves_trailing_percent() {
+        assert_eq!(workspace(Some("code")).formatted_label("%I%"), "3%");
     }
 }
