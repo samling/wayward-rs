@@ -29,6 +29,7 @@ pub(crate) enum BatteryState {
 pub(crate) struct BatterySnapshot {
     pub(crate) percentage: f64,
     pub(crate) state: DeviceState,
+    pub(crate) energy_rate: f64,
     pub(crate) active_profile: Option<PowerProfile>,
     pub(crate) available_profiles: Vec<PowerProfile>,
 }

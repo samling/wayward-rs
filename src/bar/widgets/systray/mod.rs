@@ -84,8 +84,7 @@ impl SystrayItemRuntime {
         icon_size: i32,
     ) -> Self {
         let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        root.add_css_class("bar-item");
-        root.add_css_class("systray");
+        root.add_css_class("systray-item");
 
         attach_click_handler(root.upcast_ref(), sender, item);
 
@@ -158,6 +157,7 @@ impl BarWidget for SystrayWidget {
     ) -> Box<dyn BarWidgetRuntime> {
         let config = instance.config_as::<SystrayConfig>();
         let root = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        crate::bar::style::add_bar_item_classes(&root, "systray");
 
         Box::new(SystrayRuntime {
             root,

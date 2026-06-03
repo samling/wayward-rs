@@ -45,6 +45,7 @@ impl BarWidget for WorkspacesWidget {
         _services: &crate::services::ShellServices,
     ) -> Box<dyn BarWidgetRuntime> {
         let row = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+        crate::bar::style::add_bar_item_classes(&row, "workspaces");
         render_status(&row, "Connecting to Niri");
 
         Box::new(WorkspacesRuntime { root: row })

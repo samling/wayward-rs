@@ -156,6 +156,21 @@ popover.dropdown arrow {
     margin-bottom: 4px;
 }
 
+.battery-content {
+    border-spacing: 0.5em;
+    min-height: 0;
+}
+
+.battery-icon {
+    -gtk-icon-size: 1.25em;
+    min-width: 1.25em;
+}
+
+.battery-percentage,
+.battery-energy-rate {
+    min-width: 0;
+}
+
 .profile-segments {
     background: transparent;
 }
@@ -193,4 +208,26 @@ button.profile-button.toggle:checked {
     background-image: none;
     border-color: #8ab4f8;
     box-shadow: none;
+}
+
+.bar-item {
+    background: rgba(241, 243, 244, 0.10);
+    border-radius: 0.6em;
+    padding: 0 0.65em;
+}
+
+menubutton.bar-item > button {
+    background: transparent;
+    border-radius: inherit;
+    padding: 0;
+}
+
+.systray {
+    background: rgba(241, 243, 244, 0.10);
+    border-radius: 0.6em;
+    padding: 0 0.45em;
+}
+
+.systray-item {
+    padding: 0 0.25em;
 }
