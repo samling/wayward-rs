@@ -27,6 +27,7 @@ impl Dropdown {
     ) -> (gtk::MenuButton, Self) {
         let button = gtk::MenuButton::new();
         button.set_always_show_arrow(false);
+        button_child.add_css_class("bar-item-content");
         button.set_child(Some(button_child));
 
         crate::bar::style::add_bar_item_classes(&button, class_name);

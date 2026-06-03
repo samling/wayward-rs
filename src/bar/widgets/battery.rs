@@ -2,11 +2,11 @@ use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, BatterySnapshot, BatteryState};
 use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance};
 use crate::shell::ShellMsg;
-use futures::{StreamExt, FutureExt, future, select};
+use futures::{FutureExt, StreamExt, future, select};
 use relm4::Sender;
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
-use relm4::gtk::prelude::{ToggleButtonExt, WidgetExt};
+use relm4::gtk::prelude::{BoxExt, ToggleButtonExt, WidgetExt};
 use std::sync::Arc;
 use wayle_battery::BatteryService;
 use wayle_battery::types::DeviceState;
@@ -15,7 +15,9 @@ use wayle_power_profiles::types::profile::PowerProfile;
 
 struct BatteryRuntime {
     root: gtk::MenuButton,
-    label: gtk::Label,
+    icon: gtk::Image,
+    percentage_label: gtk::Label,
+    energy_rate_label: gtk::Label,
     dropdown: crate::bar::dropdown::Dropdown,
     profile_buttons: Vec<(PowerProfile, gtk::ToggleButton)>,
 }
@@ -31,7 +33,9 @@ impl BarWidgetRuntime for BatteryRuntime {
         let snapshot = match state {
             BarItemState::Battery(BatteryState::Ready(snapshot)) => snapshot,
             BarItemState::Battery(BatteryState::Unavailable) => {
-                self.label.set_text(&initial_text());
+                self.icon.set_icon_name(Some("battery-missing-symbolic"));
+                self.percentage_label.set_text(&initial_text());
+                self.energy_rate_label.set_text("");
 
                 for (_, button) in &self.profile_buttons {
                     button.set_sensitive(false);
@@ -43,8 +47,12 @@ impl BarWidgetRuntime for BatteryRuntime {
             _ => return,
         };
 
-        let text = battery_text(snapshot.percentage, snapshot.state);
-        self.label.set_text(&text);
+        self.icon
+            .set_icon_name(Some(battery_icon_name(snapshot.percentage, snapshot.state)));
+        self.percentage_label
+            .set_text(&battery_percentage_text(snapshot.percentage));
+        self.energy_rate_label
+            .set_text(&battery_energy_rate_text(snapshot.energy_rate));
 
         for (profile, button) in &self.profile_buttons {
             let available = snapshot.available_profiles.contains(profile);
@@ -67,8 +75,20 @@ impl BarWidget for BatteryWidget {
         _sender: &relm4::Sender<BarMsg>,
         services: &crate::services::ShellServices,
     ) -> Box<dyn BarWidgetRuntime> {
-        let label = gtk::Label::new(Some(&initial_text()));
-        label.add_css_class("battery-label");
+        let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        content.add_css_class("battery-content");
+
+        let icon = gtk::Image::from_icon_name("battery-missing-symbolic");
+        icon.add_css_class("battery-icon");
+        content.append(&icon);
+
+        let percentage_label = gtk::Label::new(Some(&initial_text()));
+        percentage_label.add_css_class("battery-percentage");
+        content.append(&percentage_label);
+
+        let energy_rate_label = gtk::Label::new(None);
+        energy_rate_label.add_css_class("battery-energy-rate");
+        content.append(&energy_rate_label);
 
         let power_profiles = services.power_profiles.clone();
         let dropdown_content = battery_dropdown_content(power_profiles.clone());
@@ -77,13 +97,15 @@ impl BarWidget for BatteryWidget {
         let (root, dropdown) = crate::bar::dropdown::Dropdown::menu_button(
             "battery",
             crate::bar::layout::BarEdge::Top,
-            &label,
+            &content,
             &dropdown_content,
         );
 
         Box::new(BatteryRuntime {
             root,
-            label,
+            icon,
+            percentage_label,
+            energy_rate_label,
             dropdown,
             profile_buttons,
         })
@@ -120,8 +142,54 @@ pub(crate) fn start(
     })
 }
 
-fn battery_text(percentage: f64, state: DeviceState) -> String {
-    format!("{percentage:.0}% {state}")
+fn battery_percentage_text(percentage: f64) -> String {
+    format!("{percentage:.0}%")
+}
+
+fn battery_energy_rate_text(energy_rate: f64) -> String {
+    format!("{energy_rate:.1}W")
+}
+
+fn battery_icon_name(percentage: f64, state: DeviceState) -> &'static str {
+    let level = ((percentage / 10.0).round() as i32 * 10).clamp(0, 100);
+
+    match state {
+        DeviceState::FullyCharged => "battery-level-100-charged-symbolic",
+        DeviceState::Charging => charging_battery_icon_name(level),
+        _ => discharging_battery_icon_name(level),
+    }
+}
+
+fn charging_battery_icon_name(level: i32) -> &'static str {
+    match level {
+        100 => "battery-level-100-charging-symbolic",
+        90 => "battery-level-90-charging-symbolic",
+        80 => "battery-level-80-charging-symbolic",
+        70 => "battery-level-70-charging-symbolic",
+        60 => "battery-level-60-charging-symbolic",
+        50 => "battery-level-50-charging-symbolic",
+        40 => "battery-level-40-charging-symbolic",
+        30 => "battery-level-30-charging-symbolic",
+        20 => "battery-level-20-charging-symbolic",
+        10 => "battery-level-10-charging-symbolic",
+        _ => "battery-level-0-charging-symbolic",
+    }
+}
+
+fn discharging_battery_icon_name(level: i32) -> &'static str {
+    match level {
+        100 => "battery-level-100-symbolic",
+        90 => "battery-level-90-symbolic",
+        80 => "battery-level-80-symbolic",
+        70 => "battery-level-70-symbolic",
+        60 => "battery-level-60-symbolic",
+        50 => "battery-level-50-symbolic",
+        40 => "battery-level-40-symbolic",
+        30 => "battery-level-30-symbolic",
+        20 => "battery-level-20-symbolic",
+        10 => "battery-level-10-symbolic",
+        _ => "battery-level-0-symbolic",
+    }
 }
 
 fn battery_dropdown_content(power_profiles: Option<Arc<PowerProfilesService>>) -> gtk::Box {
@@ -141,7 +209,11 @@ fn battery_dropdown_content(power_profiles: Option<Arc<PowerProfilesService>>) -
     profiles.add_css_class("profile-segments");
     profiles.set_homogeneous(true);
 
-    let saver = profile_button("Power Saver", PowerProfile::PowerSaver, power_profiles.clone());
+    let saver = profile_button(
+        "Power Saver",
+        PowerProfile::PowerSaver,
+        power_profiles.clone(),
+    );
     saver.add_css_class("power-saver");
     profiles.append(&saver);
 
@@ -150,7 +222,11 @@ fn battery_dropdown_content(power_profiles: Option<Arc<PowerProfilesService>>) -
     balanced.set_group(Some(&saver));
     profiles.append(&balanced);
 
-    let performance = profile_button("Performance", PowerProfile::Performance, power_profiles.clone());
+    let performance = profile_button(
+        "Performance",
+        PowerProfile::Performance,
+        power_profiles.clone(),
+    );
     performance.add_css_class("performance");
     performance.set_group(Some(&saver));
     profiles.append(&performance);
@@ -159,7 +235,11 @@ fn battery_dropdown_content(power_profiles: Option<Arc<PowerProfilesService>>) -
     root
 }
 
-fn profile_button(label: &str, profile: PowerProfile, power_profiles: Option<Arc<PowerProfilesService>>) -> gtk::ToggleButton {
+fn profile_button(
+    label: &str,
+    profile: PowerProfile,
+    power_profiles: Option<Arc<PowerProfilesService>>,
+) -> gtk::ToggleButton {
     let button = gtk::ToggleButton::with_label(label);
     button.add_css_class("profile-button");
     button.set_sensitive(false);
@@ -233,8 +313,13 @@ async fn run_battery_watcher(
 
     let mut percentage_updates = service.device.percentage.watch().fuse();
     let mut state_updates = service.device.state.watch().fuse();
-    let mut active_profile_updates = power_profiles.as_ref().map(|service| service.power_profiles.active_profile.watch().fuse());
-    let mut available_profile_updates = power_profiles.as_ref().map(|service| service.power_profiles.profiles.watch().fuse());
+    let mut energy_rate_updates = service.device.energy_rate.watch().fuse();
+    let mut active_profile_updates = power_profiles
+        .as_ref()
+        .map(|service| service.power_profiles.active_profile.watch().fuse());
+    let mut available_profile_updates = power_profiles
+        .as_ref()
+        .map(|service| service.power_profiles.profiles.watch().fuse());
 
     loop {
         select! {
@@ -249,6 +334,13 @@ async fn run_battery_watcher(
                 if update.is_none() {
                     break;
                 }
+                send_battery_snapshot(&sender, &service, power_profiles.as_deref());
+            }
+            update = energy_rate_updates.next() => {
+                if update.is_none() {
+                    break;
+                }
+
                 send_battery_snapshot(&sender, &service, power_profiles.as_deref());
             }
             update = async {
@@ -289,6 +381,7 @@ fn send_battery_snapshot(
 ) {
     let percentage = service.device.percentage.get();
     let state = service.device.state.get();
+    let energy_rate = service.device.energy_rate.get();
 
     let active_profile = power_profiles.map(|service| service.power_profiles.active_profile.get());
 
@@ -308,6 +401,7 @@ fn send_battery_snapshot(
     let snapshot = BatterySnapshot {
         percentage,
         state,
+        energy_rate,
         active_profile,
         available_profiles,
     };
@@ -317,4 +411,45 @@ fn send_battery_snapshot(
 
 fn battery_message(state: BatteryState) -> ShellMsg {
     ShellMsg::ItemStateChanged(BarItemState::Battery(state))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn battery_percentage_text_rounds_to_whole_percent() {
+        assert_eq!(battery_percentage_text(87.4), "87%");
+        assert_eq!(battery_percentage_text(87.5), "88%");
+    }
+
+    #[test]
+    fn battery_energy_rate_text_formats_watts_directly() {
+        assert_eq!(battery_energy_rate_text(6.24), "6.2W");
+        assert_eq!(battery_energy_rate_text(0.04), "0.0W");
+    }
+
+    #[test]
+    fn battery_icon_name_uses_charged_icon_for_fully_charged() {
+        assert_eq!(
+            battery_icon_name(100.0, DeviceState::FullyCharged),
+            "battery-level-100-charged-symbolic"
+        );
+    }
+
+    #[test]
+    fn battery_icon_name_uses_charging_icons_for_charging_state() {
+        assert_eq!(
+            battery_icon_name(84.0, DeviceState::Charging),
+            "battery-level-80-charging-symbolic"
+        );
+    }
+
+    #[test]
+    fn battery_icon_name_uses_level_icons_for_other_states() {
+        assert_eq!(
+            battery_icon_name(26.0, DeviceState::Discharging),
+            "battery-level-30-symbolic"
+        );
+    }
 }

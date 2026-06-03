@@ -54,6 +54,7 @@ fn show_menu(parent: &gtk::Widget, bus_name: &str) {
     };
 
     let popover = Adapter::build_popover(item.as_ref());
+    popover.add_css_class("systray-menu");
     popover.set_parent(parent);
     popover.popup();
 }

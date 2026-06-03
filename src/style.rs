@@ -96,3 +96,41 @@ fn style_dir() -> Option<PathBuf> {
 fn style_path() -> Option<PathBuf> {
     style_dir().map(|dir| dir.join("style.css"))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::DEFAULT_CSS;
+
+    #[test]
+    fn default_css_has_one_bar_item_base_rule() {
+        assert_eq!(DEFAULT_CSS.matches("\n.bar-item {").count(), 1);
+    }
+
+    #[test]
+    fn default_css_has_one_bar_item_content_base_rule() {
+        let content_rule = DEFAULT_CSS
+            .split("\n.bar-item-content {")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("bar item content rule should exist");
+
+        assert!(content_rule.contains("padding:"));
+    }
+
+    #[test]
+    fn default_css_bar_item_state_rule_does_not_override_layout_or_shape() {
+        let state_rule = DEFAULT_CSS
+            .split(".bar-item:hover,")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("bar item state rule should exist");
+
+        assert!(!state_rule.contains("padding:"));
+        assert!(!state_rule.contains("min-height:"));
+        assert!(!state_rule.contains("min-width:"));
+        assert!(!state_rule.contains("border-radius:"));
+        assert!(!state_rule.contains("background:"));
+    }
+}

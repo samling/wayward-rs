@@ -154,10 +154,15 @@ impl Bar {
             }
         }
 
+        root.remove_css_class("horizontal");
+        root.remove_css_class("vertical");
+
         if edge.is_vertical() {
-            root.set_size_request(32, -1);
+            root.add_css_class("vertical");
+            root.set_size_request(1, -1);
         } else {
-            root.set_size_request(-1, 32);
+            root.add_css_class("horizontal");
+            root.set_size_request(-1, 1);
         }
 
         root.auto_exclusive_zone_enable();
@@ -228,7 +233,7 @@ impl Component for Bar {
     view! {
         gtk::ApplicationWindow {
             set_title: Some("Wayward"),
-            set_default_height: 32,
+            set_default_height: 1,
             set_resizable: true,
             add_css_class: "bar",
 
