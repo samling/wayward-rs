@@ -1,4 +1,5 @@
 mod style;
+mod window;
 
 pub(crate) mod dropdown;
 pub(crate) mod layout;
@@ -12,7 +13,6 @@ use state::BarItemState;
 use widget::{BarContext, BarWidgetRuntime, WidgetEvent, WidgetInstance};
 
 use gtk::prelude::*;
-use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use relm4::gtk;
 use relm4::prelude::*;
 
@@ -116,69 +116,6 @@ impl Bar {
         for state in states {
             self.apply_state_to_mounted_widgets(&state);
         }
-    }
-
-    fn apply_size_hint(root: &gtk::ApplicationWindow, edge: BarEdge) {
-        if edge.is_vertical() {
-            root.set_size_request(1, -1);
-            root.set_default_size(1, -1);
-        } else {
-            root.set_size_request(-1, 1);
-            root.set_default_size(-1, 1);
-        }
-    }
-
-    fn configure_window(
-        root: &gtk::ApplicationWindow,
-        edge: BarEdge,
-        name: Option<&str>,
-        monitor: Option<&gtk::gdk::Monitor>,
-    ) {
-        root.init_layer_shell();
-        root.set_monitor(monitor);
-        root.set_layer(Layer::Top);
-
-        root.set_anchor(Edge::Top, false);
-        root.set_anchor(Edge::Bottom, false);
-        root.set_anchor(Edge::Left, false);
-        root.set_anchor(Edge::Right, false);
-        match edge {
-            BarEdge::Top => {
-                root.set_anchor(Edge::Top, true);
-                root.set_anchor(Edge::Left, true);
-                root.set_anchor(Edge::Right, true);
-            }
-            BarEdge::Bottom => {
-                root.set_anchor(Edge::Bottom, true);
-                root.set_anchor(Edge::Left, true);
-                root.set_anchor(Edge::Right, true);
-            }
-            BarEdge::Left => {
-                root.set_anchor(Edge::Left, true);
-                root.set_anchor(Edge::Top, true);
-                root.set_anchor(Edge::Bottom, true);
-            }
-            BarEdge::Right => {
-                root.set_anchor(Edge::Right, true);
-                root.set_anchor(Edge::Top, true);
-                root.set_anchor(Edge::Bottom, true);
-            }
-        }
-
-        root.remove_css_class("horizontal");
-        root.remove_css_class("vertical");
-
-        if edge.is_vertical() {
-            root.add_css_class("vertical");
-        } else {
-            root.add_css_class("horizontal");
-        }
-
-        Self::apply_size_hint(root, edge);
-
-        root.auto_exclusive_zone_enable();
-        root.set_keyboard_mode(KeyboardMode::None);
-        root.set_namespace(Some(name.unwrap_or("wayward")));
     }
 
     fn initial_model(init: BarInit, input_sender: relm4::Sender<BarMsg>) -> Self {
@@ -331,7 +268,7 @@ impl Component for Bar {
             tracing::info!("Starting bar {name}");
         }
 
-        Self::configure_window(
+        window::configure_window(
             &root,
             model.edge,
             model.name.as_deref(),
@@ -363,7 +300,7 @@ impl Component for Bar {
                 self.layout = layout;
                 self.edge = edge;
 
-                Self::configure_window(
+                window::configure_window(
                     root,
                     self.edge,
                     self.name.as_deref(),
@@ -379,7 +316,7 @@ impl Component for Bar {
                 self.apply_all_states_to_mounted_widgets();
             }
             BarMsg::StyleChanged => {
-                Self::apply_size_hint(root, self.edge);
+                window::apply_size_hint(root, self.edge);
                 root.queue_resize();
                 root.queue_draw();
             }

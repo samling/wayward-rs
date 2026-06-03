@@ -103,6 +103,8 @@ fn render_workspaces(
             None => {
                 let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
                 root.add_css_class("workspace");
+                root.set_halign(gtk::Align::Center);
+                root.set_valign(gtk::Align::Center);
 
                 let label = gtk::Label::new(None);
                 label.add_css_class("workspace-label");

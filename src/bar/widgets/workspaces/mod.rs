@@ -1,12 +1,12 @@
 mod config;
+mod indicator;
 pub(crate) mod model;
 mod render;
 pub(crate) mod service;
 
 use relm4::gtk;
-use relm4::gtk::glib::ControlFlow;
 use relm4::gtk::glib::object::Cast;
-use relm4::gtk::prelude::{BoxExt, FixedExt, WidgetExt, WidgetExtManual};
+use relm4::gtk::prelude::{BoxExt, FixedExt, WidgetExt};
 use std::{cell::RefCell, rc::Rc};
 
 use crate::bar::BarMsg;
@@ -15,58 +15,8 @@ use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance
 use crate::services::ShellServices;
 use crate::shell::ShellMsg;
 
+use self::indicator::{IndicatorAnimationState, IndicatorBounds, start_indicator_animation};
 use self::render::{RenderedWorkspace, render_status, render_workspace_state};
-
-#[derive(Clone, Copy, Debug)]
-struct IndicatorBounds {
-    x: f64,
-    y: f64,
-    width: f64,
-    height: f64,
-}
-
-impl IndicatorBounds {
-    fn apply_to(self, indicator_layer: &gtk::Fixed, indicator: &gtk::Box) {
-        indicator.set_size_request(
-            self.width.round().max(0.0) as i32,
-            self.height.round().max(0.0) as i32,
-        );
-        indicator_layer.move_(indicator, self.x, self.y);
-        indicator.set_visible(true);
-    }
-
-    fn lerp(self, target: Self, progress: f64) -> Self {
-        Self {
-            x: lerp(self.x, target.x, progress),
-            y: lerp(self.y, target.y, progress),
-            width: lerp(self.width, target.width, progress),
-            height: lerp(self.height, target.height, progress),
-        }
-    }
-}
-
-fn lerp(start: f64, end: f64, progress: f64) -> f64 {
-    start + (end - start) * progress
-}
-
-fn animation_progress(effect: config::WorkspaceIndicatorEffect, progress: f64) -> f64 {
-    let progress = progress.clamp(0.0, 1.0);
-
-    match effect {
-        config::WorkspaceIndicatorEffect::None => 1.0,
-        config::WorkspaceIndicatorEffect::Slide => progress,
-        config::WorkspaceIndicatorEffect::Ease => {
-            let inverse = 1.0 - progress;
-            1.0 - inverse * inverse * inverse
-        }
-    }
-}
-
-#[derive(Default)]
-struct IndicatorAnimationState {
-    current: Option<IndicatorBounds>,
-    callback: Option<gtk::TickCallbackId>,
-}
 
 struct WorkspacesRuntime {
     root: gtk::Box,
@@ -120,7 +70,8 @@ impl WorkspacesRuntime {
         let config = self.config.clone();
 
         gtk::glib::idle_add_local_once(move || {
-            let Some(bounds) = active_workspace.compute_bounds(&indicator_layer) else {
+            let Some(target) = IndicatorBounds::from_widget(&active_workspace, &indicator_layer)
+            else {
                 let mut state = animation_state.borrow_mut();
 
                 if let Some(callback) = state.callback.take() {
@@ -130,13 +81,6 @@ impl WorkspacesRuntime {
                 state.current = None;
                 indicator.set_visible(false);
                 return;
-            };
-
-            let target = IndicatorBounds {
-                x: bounds.x() as f64,
-                y: bounds.y() as f64,
-                width: bounds.width() as f64,
-                height: bounds.height() as f64,
             };
 
             let mut state = animation_state.borrow_mut();
@@ -169,49 +113,6 @@ impl WorkspacesRuntime {
             );
         });
     }
-}
-
-fn start_indicator_animation(
-    indicator_layer: gtk::Fixed,
-    indicator: gtk::Box,
-    animation_state: Rc<RefCell<IndicatorAnimationState>>,
-    config: config::WorkspacesConfig,
-    start: IndicatorBounds,
-    target: IndicatorBounds,
-) {
-    let tick_widget = indicator.clone();
-    let callback_indicator = indicator.clone();
-    let callback_layer = indicator_layer.clone();
-    let callback_state = animation_state.clone();
-    let started_at = Rc::new(RefCell::new(None::<i64>));
-    let callback_started_at = started_at.clone();
-
-    let callback_id = tick_widget.add_tick_callback(move |_, frame_clock| {
-        let start_time = {
-            let mut started_at = callback_started_at.borrow_mut();
-            *started_at.get_or_insert_with(|| frame_clock.frame_time())
-        };
-
-        let elapsed_ms = (frame_clock.frame_time() - start_time) as f64 / 1000.0;
-        let raw_progress = (elapsed_ms / config.indicator_duration_ms as f64).clamp(0.0, 1.0);
-        let progress = animation_progress(config.indicator_effect, raw_progress);
-
-        let frame_bounds = start.lerp(target, progress);
-        frame_bounds.apply_to(&callback_layer, &callback_indicator);
-
-        let mut state = callback_state.borrow_mut();
-        state.current = Some(frame_bounds);
-
-        if raw_progress >= 1.0 {
-            state.current = Some(target);
-            state.callback = None;
-            ControlFlow::Break
-        } else {
-            ControlFlow::Continue
-        }
-    });
-
-    animation_state.borrow_mut().callback = Some(callback_id);
 }
 
 pub(crate) struct WorkspacesWidget;
@@ -286,34 +187,5 @@ impl BarWidget for WorkspacesWidget {
             sender,
             services.niri.clone(),
         ))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn slide_progress_is_linear() {
-        assert_eq!(
-            animation_progress(config::WorkspaceIndicatorEffect::Slide, 0.5),
-            0.5
-        );
-    }
-
-    #[test]
-    fn ease_progress_moves_faster_than_linear_at_halfway() {
-        assert_eq!(
-            animation_progress(config::WorkspaceIndicatorEffect::Ease, 0.5),
-            0.875
-        );
-    }
-
-    #[test]
-    fn none_progress_finishes_immediately() {
-        assert_eq!(
-            animation_progress(config::WorkspaceIndicatorEffect::None, 0.25),
-            1.0
-        );
     }
 }
