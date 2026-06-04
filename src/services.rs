@@ -5,6 +5,7 @@ use wayle_audio::AudioService;
 use wayle_battery::BatteryService;
 use wayle_brightness::BrightnessService;
 use wayle_niri::NiriService;
+use wayle_notification::NotificationService;
 use wayle_power_profiles::PowerProfilesService;
 use wayle_systray::SystemTrayService;
 
@@ -16,6 +17,7 @@ pub(crate) struct ShellServices {
     pub(crate) battery: Option<Arc<BatteryService>>,
     pub(crate) brightness: Option<Arc<BrightnessService>>,
     pub(crate) niri: Option<Arc<NiriService>>,
+    pub(crate) notification: Option<Arc<NotificationService>>,
     pub(crate) power_profiles: Option<Arc<PowerProfilesService>>,
     pub(crate) systray: Option<Arc<SystemTrayService>>,
 }
@@ -69,6 +71,17 @@ pub(crate) async fn init_shell_services() -> ShellServices {
         }
     };
 
+    let notification = match NotificationService::new().await {
+        Ok(service) => {
+            tracing::info!("Notification service started");
+            Some(service)
+        }
+        Err(error) => {
+            tracing::error!("Failed to start notification service: {error}");
+            None
+        }
+    };
+
     let power_profiles = match PowerProfilesService::new().await {
         Ok(service) => {
             tracing::info!("Power profiles service started");
@@ -96,6 +109,7 @@ pub(crate) async fn init_shell_services() -> ShellServices {
         battery,
         brightness,
         niri,
+        notification,
         power_profiles,
         systray,
     }
@@ -115,6 +129,7 @@ pub(crate) fn start_all(sender: &ComponentSender<Shell>, services: &ShellService
         widget.start(input_sender.clone(), services);
     }
 
+    crate::notifications::service::start(input_sender.clone(), services.notification.clone());
     crate::osd::audio::start(input_sender.clone(), services.audio.clone());
     crate::osd::brightness::start(input_sender, services.brightness.clone());
 }

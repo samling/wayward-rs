@@ -1,6 +1,7 @@
 mod bar;
 mod config;
 mod file_watch;
+mod notifications;
 mod osd;
 mod services;
 mod shell;
