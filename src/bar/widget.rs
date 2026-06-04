@@ -74,13 +74,19 @@ pub(crate) trait BarWidget: Sync {
     fn build(
         &self,
         instance: &WidgetInstance,
-        sender: &relm4::Sender<BarMsg>,
-        services: &ShellServices,
-        context: &BarContext,
+        context: &WidgetBuildContext<'_>,
     ) -> Box<dyn BarWidgetRuntime>;
 
     fn initial_state(&self) -> Option<BarItemState> {
         None
+    }
+
+    fn handle_event(&self, event: WidgetEvent, _services: &ShellServices) {
+        tracing::warn!(
+            widget_id = %event.widget_id,
+            widget_type = %self.id(),
+            "Widget does not handle events"
+        );
     }
 
     fn start(
@@ -96,6 +102,12 @@ pub(crate) trait BarWidget: Sync {
 pub(crate) struct BarContext {
     pub(crate) monitor_connector: Option<String>,
     pub(crate) edge: crate::bar::layout::BarEdge,
+}
+
+pub(crate) struct WidgetBuildContext<'a> {
+    pub(crate) sender: &'a relm4::Sender<BarMsg>,
+    pub(crate) services: &'a ShellServices,
+    pub(crate) bar: &'a BarContext,
 }
 
 pub(crate) trait BarWidgetRuntime {

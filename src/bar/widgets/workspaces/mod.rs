@@ -11,7 +11,9 @@ use std::{cell::RefCell, rc::Rc};
 
 use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, WorkspaceState};
-use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance};
+use crate::bar::widget::{
+    BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetEvent, WidgetInstance,
+};
 use crate::services::ShellServices;
 use crate::shell::ShellMsg;
 
@@ -129,12 +131,10 @@ impl BarWidget for WorkspacesWidget {
     fn build(
         &self,
         instance: &WidgetInstance,
-        sender: &relm4::Sender<BarMsg>,
-        _services: &crate::services::ShellServices,
-        context: &BarContext,
+        context: &WidgetBuildContext<'_>,
     ) -> Box<dyn BarWidgetRuntime> {
         let config = instance.config_as::<config::WorkspacesConfig>();
-        let orientation = context.edge.orientation();
+        let orientation = context.bar.edge.orientation();
 
         let root = gtk::Box::new(orientation, 0);
         let instance_class = instance.instance_css_class();
@@ -169,7 +169,7 @@ impl BarWidget for WorkspacesWidget {
 
         Box::new(WorkspacesRuntime {
             root,
-            sender: sender.clone(),
+            sender: context.sender.clone(),
             indicator_animation: Rc::new(RefCell::new(IndicatorAnimationState::default())),
             indicator_layer,
             indicator,
@@ -181,6 +181,10 @@ impl BarWidget for WorkspacesWidget {
 
     fn initial_state(&self) -> Option<BarItemState> {
         Some(BarItemState::Workspaces(WorkspaceState::Connecting))
+    }
+
+    fn handle_event(&self, event: WidgetEvent, services: &ShellServices) {
+        service::handle_event(event, services.niri.clone());
     }
 
     fn start(

@@ -2,9 +2,10 @@ mod dropdown;
 mod format;
 mod service;
 
-use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, BatteryState};
-use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance};
+use crate::bar::widget::{
+    BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetInstance,
+};
 use crate::shell::ShellMsg;
 use relm4::Sender;
 use relm4::gtk;
@@ -76,11 +77,9 @@ impl BarWidget for BatteryWidget {
     fn build(
         &self,
         instance: &WidgetInstance,
-        _sender: &relm4::Sender<BarMsg>,
-        services: &crate::services::ShellServices,
-        context: &BarContext,
+        context: &WidgetBuildContext,
     ) -> Box<dyn BarWidgetRuntime> {
-        let content = gtk::Box::new(context.edge.orientation(), 0);
+        let content = gtk::Box::new(context.bar.edge.orientation(), 0);
         content.add_css_class("battery-content");
 
         let icon = gtk::Image::from_icon_name("battery-missing-symbolic");
@@ -95,7 +94,7 @@ impl BarWidget for BatteryWidget {
         energy_rate_label.add_css_class("battery-energy-rate");
         content.append(&energy_rate_label);
 
-        let power_profiles = services.power_profiles.clone();
+        let power_profiles = context.services.power_profiles.clone();
         let dropdown_content = battery_dropdown_content(power_profiles.clone());
         let profile_buttons = profile_buttons(&dropdown_content);
 
@@ -103,7 +102,7 @@ impl BarWidget for BatteryWidget {
         let (root, dropdown) = crate::bar::dropdown::Dropdown::menu_button(
             "battery",
             instance_class.as_deref(),
-            context.edge,
+            context.bar.edge,
             &content,
             &dropdown_content,
         );

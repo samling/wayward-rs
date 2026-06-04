@@ -1,6 +1,6 @@
 use futures::StreamExt;
 use relm4::Sender;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 use wayle_systray::SystemTrayService;
 use wayle_systray::types::Coordinates;
 
@@ -8,8 +8,6 @@ use super::model::SystrayItemSummary;
 use crate::bar::state::{BarItemState, SystrayState};
 use crate::bar::widget::{WidgetAction, WidgetEvent};
 use crate::shell::ShellMsg;
-
-static SERVICE: Mutex<Option<Arc<SystemTrayService>>> = Mutex::new(None);
 
 pub fn start(
     sender: relm4::Sender<ShellMsg>,
@@ -29,8 +27,6 @@ pub async fn run_systray_watcher(
         return;
     };
 
-    store_service(service.clone());
-
     send_systray_snapshot(&sender, service.as_ref());
 
     let mut item_updates = service.items.watch();
@@ -42,7 +38,7 @@ pub async fn run_systray_watcher(
     let _ = sender.send(systray_message(SystrayState::Unavailable));
 }
 
-pub(crate) fn handle_event(event: WidgetEvent) {
+pub(crate) fn handle_event(event: WidgetEvent, service: Option<Arc<SystemTrayService>>) {
     match event.action {
         WidgetAction::Clicked {
             item_id,
@@ -51,13 +47,19 @@ pub(crate) fn handle_event(event: WidgetEvent) {
             y,
         } => {
             let bus_name = item_id;
-            handle_click(bus_name, button, x, y);
+            handle_click(bus_name, button, x, y, service);
         }
     }
 }
 
-fn handle_click(bus_name: String, button: u32, x: i32, y: i32) {
-    let Some(service) = current_service() else {
+fn handle_click(
+    bus_name: String,
+    button: u32,
+    x: i32,
+    y: i32,
+    service: Option<Arc<SystemTrayService>>,
+) {
+    let Some(service) = service else {
         tracing::warn!("Ignoring systray click before service is ready");
         return;
     };
@@ -106,28 +108,11 @@ fn systray_message(state: SystrayState) -> ShellMsg {
     ShellMsg::ItemStateChanged(BarItemState::Systray(state))
 }
 
-fn store_service(service: Arc<SystemTrayService>) {
-    let Ok(mut stored_service) = SERVICE.lock() else {
-        tracing::error!("Failed to lock systray service");
-        return;
-    };
-
-    *stored_service = Some(service);
-}
-
-fn current_service() -> Option<Arc<SystemTrayService>> {
-    let Ok(stored_service) = SERVICE.lock() else {
-        tracing::error!("Failed to lock systray service");
-        return None;
-    };
-
-    stored_service.clone()
-}
-
 pub(crate) fn item_by_bus_name(
+    service: &SystemTrayService,
     bus_name: &str,
 ) -> Option<std::sync::Arc<wayle_systray::core::item::TrayItem>> {
-    current_service()?
+    service
         .items
         .get()
         .into_iter()

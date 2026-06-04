@@ -11,6 +11,8 @@ use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
 use relm4::gtk::prelude::{BoxExt, WidgetExt};
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
+use wayle_systray::SystemTrayService;
 
 use self::config::SystrayConfig;
 use self::icon::{SystrayIconCache, systray_item_content};
@@ -18,7 +20,8 @@ use self::interaction::attach_click_handler;
 use self::model::SystrayItemSummary;
 use crate::bar::BarMsg;
 use crate::bar::state::{BarItemState, SystrayState};
-use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetInstance};
+use crate::bar::widget::WidgetBuildContext;
+use crate::bar::widget::{BarContext, BarWidget, BarWidgetRuntime, WidgetEvent, WidgetInstance};
 use crate::shell::ShellMsg;
 
 struct SystrayRuntime {
@@ -29,6 +32,7 @@ struct SystrayRuntime {
     icon_cache: SystrayIconCache,
     icon_size: i32,
     orientation: gtk::Orientation,
+    service: Option<Arc<SystemTrayService>>,
 }
 
 impl SystrayRuntime {
@@ -56,6 +60,7 @@ impl SystrayRuntime {
                     &mut self.icon_cache,
                     self.icon_size,
                     self.orientation,
+                    self.service.clone(),
                 );
                 self.content.append(&runtime.root);
                 self.items.insert(key, runtime);
@@ -86,11 +91,12 @@ impl SystrayItemRuntime {
         icon_cache: &mut SystrayIconCache,
         icon_size: i32,
         orientation: gtk::Orientation,
+        service: Option<Arc<SystemTrayService>>,
     ) -> Self {
         let root = gtk::Box::new(orientation, 0);
         root.add_css_class("systray-item");
 
-        attach_click_handler(root.upcast_ref(), sender, item);
+        attach_click_handler(root.upcast_ref(), sender, item, service);
 
         let mut runtime = Self {
             root,
@@ -156,12 +162,10 @@ impl BarWidget for SystrayWidget {
     fn build(
         &self,
         instance: &WidgetInstance,
-        sender: &relm4::Sender<BarMsg>,
-        _services: &crate::services::ShellServices,
-        context: &BarContext,
+        context: &WidgetBuildContext<'_>,
     ) -> Box<dyn BarWidgetRuntime> {
         let config = instance.config_as::<SystrayConfig>();
-        let orientation = context.edge.orientation();
+        let orientation = context.bar.edge.orientation();
 
         let root = gtk::Box::new(orientation, 0);
         let instance_class = instance.instance_css_class();
@@ -175,16 +179,21 @@ impl BarWidget for SystrayWidget {
         Box::new(SystrayRuntime {
             root,
             content,
-            sender: sender.clone(),
+            sender: context.sender.clone(),
             items: HashMap::new(),
             icon_cache: SystrayIconCache::default(),
             icon_size: config.icon_size(),
             orientation,
+            service: context.services.systray.clone(),
         })
     }
 
     fn initial_state(&self) -> Option<BarItemState> {
         Some(BarItemState::Systray(SystrayState::Ready(Vec::new())))
+    }
+
+    fn handle_event(&self, event: WidgetEvent, services: &crate::services::ShellServices) {
+        service::handle_event(event, services.systray.clone());
     }
 
     fn start(

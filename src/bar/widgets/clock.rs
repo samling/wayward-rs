@@ -5,12 +5,13 @@ use relm4::gtk::glib::object::Cast;
 use relm4::gtk::prelude::WidgetExt;
 use std::time::Duration;
 
+use crate::bar::BarContext;
 use crate::bar::dropdown::Dropdown;
 use crate::bar::layout::BarEdge;
 use crate::bar::state::{BarItemState, ClockState};
 use crate::bar::widget::BarWidgetRuntime;
+use crate::bar::widget::WidgetBuildContext;
 use crate::bar::widget::{BarWidget, WidgetInstance};
-use crate::bar::{BarContext, BarMsg};
 use crate::shell::ShellMsg;
 
 pub(crate) struct ClockWidget;
@@ -49,9 +50,7 @@ impl BarWidget for ClockWidget {
     fn build(
         &self,
         instance: &WidgetInstance,
-        _sender: &relm4::Sender<BarMsg>,
-        _services: &crate::services::ShellServices,
-        context: &BarContext,
+        context: &WidgetBuildContext<'_>,
     ) -> Box<dyn BarWidgetRuntime> {
         let format = instance
             .config
@@ -64,18 +63,18 @@ impl BarWidget for ClockWidget {
 
         label.add_css_class("clock-label");
 
-        let edge = std::rc::Rc::new(std::cell::Cell::new(context.edge));
+        let edge = std::rc::Rc::new(std::cell::Cell::new(context.bar.edge));
         let child = calendar_dropdown_content(chrono::Local::now().date_naive());
         let instance_class = instance.instance_css_class();
         let (root, dropdown) = Dropdown::menu_button(
             "clock",
             instance_class.as_deref(),
-            context.edge,
+            context.bar.edge,
             &label,
             &child,
         );
 
-        dropdown.bind_to_menu_button(&root, context.edge, &child);
+        dropdown.bind_to_menu_button(&root, context.bar.edge, &child);
 
         Box::new(ClockRuntime {
             root,

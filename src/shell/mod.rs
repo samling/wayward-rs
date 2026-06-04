@@ -33,7 +33,6 @@ pub(crate) enum ShellMsg {
     MonitorsChanged,
     ReconcileMonitors,
     ItemStateChanged(bar::state::BarItemState),
-    BarOutput(bar::BarOutput),
     OsdChanged(crate::osd::OsdEvent),
     NotificationsChanged(Vec<crate::notifications::model::NotificationToast>),
     DismissNotificationPopup(u32),
@@ -72,7 +71,7 @@ impl SimpleComponent for Shell {
             services,
         };
 
-        model.reconcile_bars(&sender);
+        model.reconcile_bars();
         model.reconcile_osd_windows();
         model.reconcile_notification_windows(&sender);
 
@@ -97,7 +96,7 @@ impl SimpleComponent for Shell {
         match message {
             ShellMsg::ConfigChanged(config) => {
                 self.config = config;
-                self.reconcile_bars(&_sender);
+                self.reconcile_bars();
             }
             ShellMsg::StyleChanged => {
                 for running_bar in &self.bars {
@@ -117,7 +116,7 @@ impl SimpleComponent for Shell {
                 });
             }
             ShellMsg::ReconcileMonitors => {
-                self.reconcile_bars(&_sender);
+                self.reconcile_bars();
                 self.reconcile_osd_windows();
                 self.reconcile_notification_windows(&_sender);
 
@@ -146,11 +145,6 @@ impl SimpleComponent for Shell {
 
                 self.show_notifications();
             }
-            ShellMsg::BarOutput(output) => match output {
-                bar::BarOutput::WidgetEvent(event) => {
-                    bar::registry::handle_widget_event(event);
-                }
-            },
             ShellMsg::OsdChanged(event) => {
                 self.show_osd(&event);
             }
