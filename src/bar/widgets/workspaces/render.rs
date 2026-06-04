@@ -1,8 +1,10 @@
 use gtk::prelude::*;
 use relm4::gtk;
 
-use super::model::WorkspaceSummary;
+use super::{ID, model::WorkspaceSummary};
+use crate::bar::BarMsg;
 use crate::bar::state::WorkspaceState;
+use crate::bar::widget::{WidgetAction, WidgetEvent};
 
 pub(super) struct RenderedWorkspace {
     id: u64,
@@ -16,6 +18,7 @@ pub(super) fn render_workspace_state(
     state: &WorkspaceState,
     monitor_connector: Option<&str>,
     label_format: &str,
+    sender: &relm4::Sender<BarMsg>,
 ) -> Option<gtk::Box> {
     match state {
         WorkspaceState::Connecting => {
@@ -23,9 +26,14 @@ pub(super) fn render_workspace_state(
             render_status(row, "Connecting to Niri");
             None
         }
-        WorkspaceState::Ready(workspaces) => {
-            render_workspaces(row, rendered, workspaces, monitor_connector, label_format)
-        }
+        WorkspaceState::Ready(workspaces) => render_workspaces(
+            row,
+            rendered,
+            workspaces,
+            monitor_connector,
+            label_format,
+            sender,
+        ),
         WorkspaceState::Unavailable(error) => {
             clear(row, rendered);
             render_status(row, &format!("Niri unavailable: {error}"));
@@ -53,12 +61,33 @@ pub(super) fn render_status(row: &gtk::Box, status: &str) {
     row.append(&label);
 }
 
+fn attach_click_handler(root: &gtk::Box, sender: &relm4::Sender<BarMsg>, workspace_id: u64) {
+    let click = gtk::GestureClick::new();
+    click.set_button(0);
+
+    let sender = sender.clone();
+    click.connect_released(move |gesture, _n_press, x, y| {
+        let _ = sender.send(BarMsg::WidgetEvent(WidgetEvent {
+            widget_id: ID,
+            action: WidgetAction::Clicked {
+                item_id: workspace_id.to_string(),
+                button: gesture.current_button(),
+                x: x as i32,
+                y: y as i32,
+            },
+        }));
+    });
+
+    root.add_controller(click);
+}
+
 fn render_workspaces(
     row: &gtk::Box,
     rendered: &mut Vec<RenderedWorkspace>,
     workspaces: &[WorkspaceSummary],
     monitor_connector: Option<&str>,
     label_format: &str,
+    sender: &relm4::Sender<BarMsg>,
 ) -> Option<gtk::Box> {
     let visible: Vec<_> = workspaces
         .iter()
@@ -105,6 +134,7 @@ fn render_workspaces(
                 root.add_css_class("workspace");
                 root.set_halign(gtk::Align::Center);
                 root.set_valign(gtk::Align::Center);
+                root.set_cursor_from_name(Some("pointer"));
 
                 let label = gtk::Label::new(None);
                 label.add_css_class("workspace-label");
@@ -120,6 +150,8 @@ fn render_workspaces(
                     root: root.clone(),
                     label: label.clone(),
                 });
+
+                attach_click_handler(&root, sender, workspace.id);
 
                 (root, label)
             }
