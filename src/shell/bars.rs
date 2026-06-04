@@ -2,7 +2,7 @@ use gtk::gdk;
 use gtk::prelude::*;
 use relm4::prelude::*;
 
-use super::{Shell, ShellMsg, monitors};
+use super::{Shell, monitors};
 use crate::{bar, config::AppConfig};
 
 pub(super) struct RunningBar {
@@ -63,7 +63,7 @@ impl Shell {
         desired
     }
 
-    pub(super) fn reconcile_bars(&mut self, sender: &ComponentSender<Self>) {
+    pub(super) fn reconcile_bars(&mut self) {
         let desired_bars = self.desired_bars();
 
         self.bars.retain(|running_bar| {
@@ -85,7 +85,6 @@ impl Shell {
                     &self.config,
                     &desired_bar.config,
                     desired_bar.monitor,
-                    sender,
                     self.services.clone(),
                 ) {
                     self.send_item_states_to_bar(&running_bar);
@@ -122,7 +121,6 @@ impl Shell {
         app_config: &AppConfig,
         bar_config: &crate::config::BarConfig,
         monitor: gdk::Monitor,
-        sender: &ComponentSender<Self>,
         services: crate::services::ShellServices,
     ) -> Option<RunningBar> {
         let Some(name) = bar_name(bar_config) else {
@@ -140,9 +138,7 @@ impl Shell {
         tracing::info!("Launching bar {key}");
 
         let init = bar::BarInit::from_config(app_config, Some(bar_config), Some(monitor), services);
-        let controller = bar::Bar::builder()
-            .launch(init)
-            .forward(sender.input_sender(), ShellMsg::BarOutput);
+        let controller = bar::Bar::builder().launch(init).detach();
 
         Some(RunningBar { key, controller })
     }

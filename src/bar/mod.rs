@@ -10,7 +10,7 @@ pub(crate) mod widgets;
 
 use layout::{BarEdge, BarLayout};
 use state::BarItemState;
-use widget::{BarContext, BarWidgetRuntime, WidgetEvent, WidgetInstance};
+use widget::{BarContext, BarWidgetRuntime, WidgetBuildContext, WidgetEvent, WidgetInstance};
 
 use gtk::prelude::*;
 use relm4::gtk;
@@ -52,11 +52,6 @@ pub enum BarMsg {
     ItemStateChanged(BarItemState),
     WidgetEvent(WidgetEvent),
     StyleChanged,
-}
-
-#[derive(Debug)]
-pub enum BarOutput {
-    WidgetEvent(WidgetEvent),
 }
 
 struct MountedWidget {
@@ -152,16 +147,16 @@ impl Bar {
         }
 
         let context = self.context();
+        let build_context = WidgetBuildContext {
+            sender: &self.input_sender,
+            services: &self.services,
+            bar: &context,
+        };
 
         widgets
             .iter()
             .map(|instance| {
-                let runtime = instance.widget.build(
-                    instance,
-                    &self.input_sender.clone(),
-                    &self.services,
-                    &context,
-                );
+                let runtime = instance.widget.build(instance, &build_context);
                 let root = runtime.root();
 
                 container.append(&root);
@@ -179,7 +174,7 @@ impl Bar {
 impl Component for Bar {
     type Init = BarInit;
     type Input = BarMsg;
-    type Output = BarOutput;
+    type Output = ();
     type CommandOutput = ();
 
     view! {
@@ -328,7 +323,7 @@ impl Component for Bar {
                 self.apply_state_to_mounted_widgets(&state);
             }
             BarMsg::WidgetEvent(event) => {
-                let _ = sender.output(BarOutput::WidgetEvent(event));
+                registry::handle_widget_event(event, &self.services);
             }
         }
 

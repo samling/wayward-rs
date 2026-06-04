@@ -1,4 +1,4 @@
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use futures::StreamExt;
 use relm4::Sender;
@@ -8,8 +8,6 @@ use crate::bar::state::WorkspaceState;
 use crate::bar::widget::{WidgetAction, WidgetEvent};
 use crate::bar::widgets::workspaces::model::WorkspaceSummary;
 use crate::shell::ShellMsg;
-
-static SERVICE: Mutex<Option<Arc<NiriService>>> = Mutex::new(None);
 
 pub fn start_workspace_watcher(
     sender: relm4::Sender<ShellMsg>,
@@ -27,8 +25,6 @@ pub async fn run_workspace_watcher(sender: Sender<ShellMsg>, service: Option<Arc
         )));
         return;
     };
-
-    store_service(service.clone());
 
     let _ = send_workspace_snapshot(&sender, &service.as_ref());
 
@@ -61,12 +57,12 @@ fn send_workspace_snapshot(sender: &Sender<ShellMsg>, service: &NiriService) -> 
         .map_err(|_| ())
 }
 
-pub(crate) fn handle_event(event: WidgetEvent) {
+pub(crate) fn handle_event(event: WidgetEvent, service: Option<Arc<NiriService>>) {
     match event.action {
         WidgetAction::Clicked {
             item_id, button, ..
         } => {
-            handle_click(item_id, button);
+            handle_click(item_id, button, service);
         }
     }
 }
@@ -84,12 +80,12 @@ fn clicked_workspace_reference(item_id: &str, button: u32) -> Option<WorkspaceRe
     Some(WorkspaceReferenceArg::Id(workspace_id))
 }
 
-fn handle_click(item_id: String, button: u32) {
+fn handle_click(item_id: String, button: u32, service: Option<Arc<NiriService>>) {
     let Some(reference) = clicked_workspace_reference(&item_id, button) else {
         return;
     };
 
-    let Some(service) = current_service() else {
+    let Some(service) = service else {
         tracing::warn!("Ignoring workspace click before service is ready");
         return;
     };
@@ -99,24 +95,6 @@ fn handle_click(item_id: String, button: u32) {
             tracing::error!("Failed to focus workspace {item_id}: {error}");
         }
     });
-}
-
-fn store_service(service: Arc<NiriService>) {
-    let Ok(mut stored_service) = SERVICE.lock() else {
-        tracing::error!("Failed to lock workspace service");
-        return;
-    };
-
-    *stored_service = Some(service);
-}
-
-fn current_service() -> Option<Arc<NiriService>> {
-    let Ok(stored_service) = SERVICE.lock() else {
-        tracing::error!("Failed to lock workspace service");
-        return None;
-    };
-
-    stored_service.clone()
 }
 
 fn workspace_message(state: WorkspaceState) -> ShellMsg {
