@@ -35,6 +35,9 @@ pub(crate) enum ShellMsg {
     BarOutput(bar::BarOutput),
     OsdChanged(crate::osd::OsdEvent),
     NotificationsChanged(Vec<crate::notifications::model::NotificationToast>),
+    DismissNotificationPopup(u32),
+    InvokeNotificationAction { id: u32, action_id: String },
+    InvokeNotificationDefaultAction(u32),
 }
 
 struct RunningBar {
@@ -440,6 +443,15 @@ impl SimpleComponent for Shell {
             }
             ShellMsg::NotificationsChanged(notifications) => {
                 self.notifications = notifications;
+            }
+            ShellMsg::DismissNotificationPopup(id) => {
+                tracing::info!(id, "Notification popup dismiss requested");
+            }
+            ShellMsg::InvokeNotificationAction { id, action_id } => {
+                tracing::info!(id, action_id, "Notification action requested");
+            }
+            ShellMsg::InvokeNotificationDefaultAction(id) => {
+                tracing::info!(id, "Default notification action requested");
             }
         }
     }
