@@ -10,6 +10,7 @@ pub(crate) struct Shell {
     config: AppConfig,
     item_states: Vec<bar::state::BarItemState>,
     focused_monitor_connector: Option<String>,
+    notifications: Vec<crate::notifications::model::NotificationToast>,
     osd_windows: Vec<RunningOsd>,
     services: crate::services::ShellServices,
 }
@@ -33,6 +34,7 @@ pub(crate) enum ShellMsg {
     ItemStateChanged(bar::state::BarItemState),
     BarOutput(bar::BarOutput),
     OsdChanged(crate::osd::OsdEvent),
+    NotificationsChanged(Vec<crate::notifications::model::NotificationToast>),
 }
 
 struct RunningBar {
@@ -353,6 +355,7 @@ impl SimpleComponent for Shell {
             config,
             item_states: crate::services::initial_item_states(),
             focused_monitor_connector: None,
+            notifications: Vec::new(),
             osd_windows: Vec::new(),
             services,
         };
@@ -434,6 +437,9 @@ impl SimpleComponent for Shell {
             },
             ShellMsg::OsdChanged(event) => {
                 self.show_osd(&event);
+            }
+            ShellMsg::NotificationsChanged(notifications) => {
+                self.notifications = notifications;
             }
         }
     }

@@ -1,5 +1,4 @@
 use chrono::{DateTime, Utc};
-use tracing::subscriber::with_default;
 use wayle_notification::{core::notification::Notification, types::Urgency};
 
 const FALLBACK_APP_NAME: &str = "Application";
@@ -97,16 +96,6 @@ impl NotificationToast {
     pub(crate) fn has_default_action(&self) -> bool {
         self.default_action.is_some()
     }
-
-    pub(crate) fn newest_first(mut toasts: Vec<NotificationToast>) -> Vec<NotificationToast> {
-        toasts.sort_by(|left, right| {
-            right
-                .timestamp
-                .cmp(&left.timestamp)
-                .then_with(|| right.id.cmp(&left.id))
-        });
-        toasts
-    }
 }
 
 fn display_or_fallback(value: Option<String>, fallback: &str) -> String {
@@ -114,4 +103,14 @@ fn display_or_fallback(value: Option<String>, fallback: &str) -> String {
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| fallback.to_string())
+}
+
+pub(crate) fn newest_first(mut toasts: Vec<NotificationToast>) -> Vec<NotificationToast> {
+    toasts.sort_by(|left, right| {
+        right
+            .timestamp
+            .cmp(&left.timestamp)
+            .then_with(|| right.id.cmp(&left.id))
+    });
+    toasts
 }
