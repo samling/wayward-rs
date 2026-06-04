@@ -1,6 +1,7 @@
 use gtk::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use relm4::gtk;
+use std::cell::RefCell;
 
 use super::model::NotificationToast;
 use crate::shell::ShellMsg;
@@ -13,6 +14,7 @@ pub(crate) struct NotificationWindow {
     window: gtk::Window,
     stack: gtk::Box,
     sender: relm4::Sender<ShellMsg>,
+    toasts: RefCell<Vec<NotificationToast>>,
 }
 
 impl NotificationWindow {
@@ -41,14 +43,11 @@ impl NotificationWindow {
             window,
             stack,
             sender,
+            toasts: RefCell::new(Vec::new()),
         }
     }
 
-    fn actions(
-        &self,
-        toast_id: u32,
-        actions: &[super::model::NotificationAction],
-    ) -> gtk::Widget {
+    fn actions(&self, toast_id: u32, actions: &[super::model::NotificationAction]) -> gtk::Widget {
         let row = gtk::FlowBox::new();
         row.add_css_class("notification-actions");
         row.set_selection_mode(gtk::SelectionMode::None);
@@ -76,6 +75,14 @@ impl NotificationWindow {
     }
 
     pub(crate) fn set_toasts(&self, toasts: &[NotificationToast]) {
+        let unchanged = { self.toasts.borrow().as_slice() == toasts };
+
+        if unchanged {
+            return;
+        }
+
+        self.toasts.replace(toasts.to_vec());
+
         while let Some(child) = self.stack.first_child() {
             self.stack.remove(&child);
         }
@@ -153,19 +160,21 @@ impl NotificationWindow {
             body.append(&label);
         }
 
-        if toast.has_default_action() {
-            let sender = self.sender.clone();
-            let id = toast.id;
-            let gesture = gtk::GestureClick::new();
-
-            gesture.connect_released(move |_, _, _, _| {
-                let _ = sender.send(ShellMsg::InvokeNotificationDefaultAction(id));
-            });
-
-            body.add_controller(gesture); 
-            body.add_css_class("has-default-action");
+        if !toast.has_default_action() {
+            return body.upcast();
         }
 
-        body.upcast()
+        let button = gtk::Button::new();
+        button.add_css_class("notification-content-button");
+        button.add_css_class("flat");
+        button.set_child(Some(&body));
+
+        let sender = self.sender.clone();
+        let id = toast.id;
+        button.connect_clicked(move |_| {
+            let _ = sender.send(ShellMsg::InvokeNotificationDefaultAction(id));
+        });
+
+        button.upcast()
     }
 }

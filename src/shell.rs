@@ -11,6 +11,7 @@ pub(crate) struct Shell {
     item_states: Vec<bar::state::BarItemState>,
     focused_monitor_connector: Option<String>,
     notifications: Vec<crate::notifications::model::NotificationToast>,
+    notification_windows: Vec<RunningNotificationWindow>,
     osd_windows: Vec<RunningOsd>,
     services: crate::services::ShellServices,
 }
@@ -23,6 +24,11 @@ pub(crate) struct ShellInit {
 struct RunningOsd {
     connector: String,
     window: crate::osd::window::OsdWindow,
+}
+
+struct RunningNotificationWindow {
+    connector: String,
+    window: crate::notifications::window::NotificationWindow,
 }
 
 #[derive(Debug)]
@@ -222,6 +228,134 @@ impl Shell {
         }
     }
 
+    fn reconcile_notification_windows(&mut self, sender: &ComponentSender<Self>) {
+        let monitors = Self::available_monitors();
+
+        self.notification_windows.retain(|running| {
+            monitors.iter().any(|monitor| {
+                monitor_connector(monitor).as_deref() == Some(running.connector.as_str())
+            })
+        });
+
+        for monitor in monitors {
+            let Some(connector) = monitor_connector(&monitor) else {
+                continue;
+            };
+
+            if self
+                .notification_windows
+                .iter()
+                .any(|running| running.connector == connector)
+            {
+                continue;
+            }
+
+            self.notification_windows.push(RunningNotificationWindow {
+                connector,
+                window: crate::notifications::window::NotificationWindow::new(
+                    &monitor,
+                    sender.input_sender().clone(),
+                ),
+            });
+        }
+
+        self.show_notifications();
+    }
+
+    fn show_notifications(&self) {
+        let Some(focused_connector) = self.focused_monitor_connector.as_deref() else {
+            for running in &self.notification_windows {
+                running.window.set_toasts(&[]);
+            }
+            return;
+        };
+
+        for running in &self.notification_windows {
+            if running.connector == focused_connector {
+                running.window.set_toasts(&self.notifications);
+            } else {
+                running.window.set_toasts(&[]);
+            }
+        }
+    }
+
+    fn notification_by_id(
+        service: &wayle_notification::NotificationService,
+        id: u32,
+    ) -> Option<std::sync::Arc<wayle_notification::core::notification::Notification>> {
+        service
+            .popups
+            .get()
+            .into_iter()
+            .chain(service.notifications.get())
+            .find(|notification| notification.id == id)
+    }
+
+    fn dismiss_notification_popup(&self, id: u32) {
+        let Some(service) = self.services.notification.as_ref() else {
+            tracing::info!(
+                "Cannot dismiss notification popup because notification service is unavailable"
+            );
+            return;
+        };
+
+        service.dismiss_popup(id);
+    }
+
+    fn invoke_notification_action(&self, id: u32, action_id: String) {
+        let Some(service) = self.services.notification.clone() else {
+            tracing::info!(
+                "Cannot invoke notification action because notification service is unavailable"
+            );
+            return;
+        };
+
+        relm4::spawn(async move {
+            if let Some(notification) = Self::notification_by_id(service.as_ref(), id) {
+                if let Err(error) = notification.invoke(&action_id).await {
+                    tracing::error!(
+                        id,
+                        action_id,
+                        "Failed to invoke notification action: {error}"
+                    );
+                }
+            } else {
+                tracing::info!(id, action_id, "Notification action target disappeared");
+            }
+
+            service.dismiss_popup(id);
+        });
+    }
+
+    fn invoke_notification_default_action(&self, id: u32) {
+        let Some(service) = self.services.notification.clone() else {
+            tracing::info!(
+                "Cannot invoke default notification action because notification service is unavailable"
+            );
+            return;
+        };
+
+        relm4::spawn(async move {
+            if let Some(notification) = Self::notification_by_id(service.as_ref(), id) {
+                if let Some(action) = notification.default_action.get() {
+                    let action_id = action.id;
+
+                    if let Err(error) = notification.invoke(&action_id).await {
+                        tracing::error!(
+                            id,
+                            action_id = %action_id,
+                            "Failed to invoke default notification action: {error}"
+                        );
+                    }
+                }
+            } else {
+                tracing::info!(id, "Default notification action target disappeared");
+            }
+
+            service.dismiss_popup(id);
+        });
+    }
+
     fn available_monitors() -> Vec<gdk::Monitor> {
         let Some(display) = gdk::Display::default() else {
             tracing::error!("Could not determine default display");
@@ -359,12 +493,14 @@ impl SimpleComponent for Shell {
             item_states: crate::services::initial_item_states(),
             focused_monitor_connector: None,
             notifications: Vec::new(),
+            notification_windows: Vec::new(),
             osd_windows: Vec::new(),
             services,
         };
 
         model.reconcile_bars(&sender);
         model.reconcile_osd_windows();
+        model.reconcile_notification_windows(&sender);
 
         Self::start_config_hot_reload(&sender);
         Self::start_monitor_watch(&sender);
@@ -409,6 +545,7 @@ impl SimpleComponent for Shell {
             ShellMsg::ReconcileMonitors => {
                 self.reconcile_bars(&_sender);
                 self.reconcile_osd_windows();
+                self.reconcile_notification_windows(&_sender);
 
                 if Self::has_monitor_without_connector() {
                     let input_sender = _sender.input_sender().clone();
@@ -432,6 +569,8 @@ impl SimpleComponent for Shell {
                         .sender()
                         .send(bar::BarMsg::ItemStateChanged(state.clone()));
                 }
+
+                self.show_notifications();
             }
             ShellMsg::BarOutput(output) => match output {
                 bar::BarOutput::WidgetEvent(event) => {
@@ -443,15 +582,16 @@ impl SimpleComponent for Shell {
             }
             ShellMsg::NotificationsChanged(notifications) => {
                 self.notifications = notifications;
+                self.show_notifications();
             }
             ShellMsg::DismissNotificationPopup(id) => {
-                tracing::info!(id, "Notification popup dismiss requested");
+                self.dismiss_notification_popup(id);
             }
             ShellMsg::InvokeNotificationAction { id, action_id } => {
-                tracing::info!(id, action_id, "Notification action requested");
+                self.invoke_notification_action(id, action_id);
             }
             ShellMsg::InvokeNotificationDefaultAction(id) => {
-                tracing::info!(id, "Default notification action requested");
+                self.invoke_notification_default_action(id);
             }
         }
     }

@@ -4,8 +4,8 @@ use relm4::ComponentSender;
 use wayle_audio::AudioService;
 use wayle_battery::BatteryService;
 use wayle_brightness::BrightnessService;
-use wayle_notification::NotificationService;
 use wayle_niri::NiriService;
+use wayle_notification::NotificationService;
 use wayle_power_profiles::PowerProfilesService;
 use wayle_systray::SystemTrayService;
 
