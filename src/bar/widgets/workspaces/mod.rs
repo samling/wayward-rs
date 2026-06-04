@@ -18,8 +18,11 @@ use crate::shell::ShellMsg;
 use self::indicator::{IndicatorAnimationState, IndicatorBounds, start_indicator_animation};
 use self::render::{RenderedWorkspace, render_status, render_workspace_state};
 
+pub(crate) const ID: &str = "workspaces";
+
 struct WorkspacesRuntime {
     root: gtk::Box,
+    sender: relm4::Sender<BarMsg>,
     indicator_animation: Rc<RefCell<IndicatorAnimationState>>,
     indicator_layer: gtk::Fixed,
     indicator: gtk::Box,
@@ -44,6 +47,7 @@ impl BarWidgetRuntime for WorkspacesRuntime {
             state,
             context.monitor_connector.as_deref(),
             &self.config.label_format,
+            &self.sender,
         );
 
         self.update_indicator(active_workspace);
@@ -119,13 +123,13 @@ pub(crate) struct WorkspacesWidget;
 
 impl BarWidget for WorkspacesWidget {
     fn id(&self) -> &'static str {
-        "workspaces"
+        ID
     }
 
     fn build(
         &self,
         instance: &WidgetInstance,
-        _sender: &relm4::Sender<BarMsg>,
+        sender: &relm4::Sender<BarMsg>,
         _services: &crate::services::ShellServices,
         context: &BarContext,
     ) -> Box<dyn BarWidgetRuntime> {
@@ -165,6 +169,7 @@ impl BarWidget for WorkspacesWidget {
 
         Box::new(WorkspacesRuntime {
             root,
+            sender: sender.clone(),
             indicator_animation: Rc::new(RefCell::new(IndicatorAnimationState::default())),
             indicator_layer,
             indicator,

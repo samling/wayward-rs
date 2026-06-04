@@ -1,12 +1,15 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use futures::StreamExt;
 use relm4::Sender;
-use wayle_niri::NiriService;
+use wayle_niri::{NiriService, WorkspaceReferenceArg};
 
 use crate::bar::state::WorkspaceState;
+use crate::bar::widget::{WidgetAction, WidgetEvent};
 use crate::bar::widgets::workspaces::model::WorkspaceSummary;
 use crate::shell::ShellMsg;
+
+static SERVICE: Mutex<Option<Arc<NiriService>>> = Mutex::new(None);
 
 pub fn start_workspace_watcher(
     sender: relm4::Sender<ShellMsg>,
@@ -24,6 +27,8 @@ pub async fn run_workspace_watcher(sender: Sender<ShellMsg>, service: Option<Arc
         )));
         return;
     };
+
+    store_service(service.clone());
 
     let _ = send_workspace_snapshot(&sender, &service.as_ref());
 
@@ -56,6 +61,88 @@ fn send_workspace_snapshot(sender: &Sender<ShellMsg>, service: &NiriService) -> 
         .map_err(|_| ())
 }
 
+pub(crate) fn handle_event(event: WidgetEvent) {
+    match event.action {
+        WidgetAction::Clicked {
+            item_id, button, ..
+        } => {
+            handle_click(item_id, button);
+        }
+    }
+}
+
+fn clicked_workspace_reference(item_id: &str, button: u32) -> Option<WorkspaceReferenceArg> {
+    if button != 1 {
+        return None;
+    }
+
+    let Ok(workspace_id) = item_id.parse::<u64>() else {
+        tracing::warn!("Ignoring workspace click with invalid id: {item_id}");
+        return None;
+    };
+
+    Some(WorkspaceReferenceArg::Id(workspace_id))
+}
+
+fn handle_click(item_id: String, button: u32) {
+    let Some(reference) = clicked_workspace_reference(&item_id, button) else {
+        return;
+    };
+
+    let Some(service) = current_service() else {
+        tracing::warn!("Ignoring workspace click before service is ready");
+        return;
+    };
+
+    relm4::spawn(async move {
+        if let Err(error) = service.focus_workspace(reference).await {
+            tracing::error!("Failed to focus workspace {item_id}: {error}");
+        }
+    });
+}
+
+fn store_service(service: Arc<NiriService>) {
+    let Ok(mut stored_service) = SERVICE.lock() else {
+        tracing::error!("Failed to lock workspace service");
+        return;
+    };
+
+    *stored_service = Some(service);
+}
+
+fn current_service() -> Option<Arc<NiriService>> {
+    let Ok(stored_service) = SERVICE.lock() else {
+        tracing::error!("Failed to lock workspace service");
+        return None;
+    };
+
+    stored_service.clone()
+}
+
 fn workspace_message(state: WorkspaceState) -> ShellMsg {
     ShellMsg::ItemStateChanged(crate::bar::state::BarItemState::Workspaces(state))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn clicked_workspace_reference_uses_left_click_workspace_id() {
+        assert_eq!(
+            clicked_workspace_reference("42", 1),
+            Some(WorkspaceReferenceArg::Id(42))
+        );
+    }
+
+    #[test]
+    fn clicked_workspace_reference_ignores_non_left_clicks() {
+        assert_eq!(clicked_workspace_reference("42", 2), None);
+        assert_eq!(clicked_workspace_reference("42", 3), None);
+    }
+
+    #[test]
+    fn clicked_workspace_reference_ignores_invalid_workspace_ids() {
+        assert_eq!(clicked_workspace_reference("not-a-workspace", 1), None);
+    }
 }

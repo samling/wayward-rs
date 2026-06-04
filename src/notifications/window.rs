@@ -9,6 +9,19 @@ use crate::shell::ShellMsg;
 const TOP_MARGIN: i32 = 36;
 const RIGHT_MARGIN: i32 = 12;
 const STACK_SPACING: i32 = 8;
+const TEXT_WIDTH_CHARS: i32 = 42;
+const SUMMARY_MAX_LINES: i32 = 2;
+const BODY_MAX_LINES: i32 = 4;
+
+fn configure_wrapping_label(label: &gtk::Label, max_lines: i32) {
+    label.set_wrap(true);
+    label.set_wrap_mode(gtk::pango::WrapMode::WordChar);
+    label.set_width_chars(TEXT_WIDTH_CHARS);
+    label.set_max_width_chars(TEXT_WIDTH_CHARS);
+    label.set_lines(max_lines);
+    label.set_ellipsize(gtk::pango::EllipsizeMode::End);
+    label.set_xalign(0.0);
+}
 
 pub(crate) struct NotificationWindow {
     window: gtk::Window,
@@ -147,16 +160,14 @@ impl NotificationWindow {
         let summary = gtk::Label::new(Some(&toast.summary));
         summary.add_css_class("notification-summary");
         summary.set_halign(gtk::Align::Start);
-        summary.set_wrap(true);
-        summary.set_xalign(0.0);
+        configure_wrapping_label(&summary, SUMMARY_MAX_LINES);
         body.append(&summary);
 
         if let Some(text) = &toast.body {
             let label = gtk::Label::new(Some(text));
             label.add_css_class("notification-body");
             label.set_halign(gtk::Align::Start);
-            label.set_wrap(true);
-            label.set_xalign(0.0);
+            configure_wrapping_label(&label, BODY_MAX_LINES);
             body.append(&label);
         }
 

@@ -4,6 +4,9 @@ use std::{collections::BTreeMap, fs, path::PathBuf};
 const DEFAULT_CONFIG_TOML: &str = r#"# Wayward app configuration.
 # theme = "example"
 
+# [notifications]
+# monitor = "DP-1"
+
 [[bars]]
 name = "bar"
 edge = "top"
@@ -63,7 +66,16 @@ pub struct AppConfig {
     pub theme: Option<String>,
     #[serde(default)]
     pub widgets: BTreeMap<String, toml::value::Table>,
+    #[serde(default)]
+    pub notifications: NotificationConfig,
     pub bars: Vec<BarConfig>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NotificationConfig {
+    #[serde(default)]
+    pub monitor: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -112,6 +124,7 @@ impl Default for AppConfig {
         Self {
             theme: None,
             widgets: BTreeMap::new(),
+            notifications: NotificationConfig::default(),
             bars: vec![BarConfig::default()],
         }
     }
@@ -127,5 +140,43 @@ impl Default for BarConfig {
             center: None,
             end: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn config_accepts_notification_monitor() {
+        let config: AppConfig = toml::from_str(
+            r#"
+[notifications]
+monitor = "DP-1"
+
+[[bars]]
+start = []
+center = []
+end = []
+"#,
+        )
+        .unwrap();
+
+        assert_eq!(config.notifications.monitor.as_deref(), Some("DP-1"));
+    }
+
+    #[test]
+    fn config_defaults_notification_monitor_to_focused_monitor() {
+        let config: AppConfig = toml::from_str(
+            r#"
+[[bars]]
+start = []
+center = []
+end = []
+"#,
+        )
+        .unwrap();
+
+        assert_eq!(config.notifications.monitor, None);
     }
 }
