@@ -4,6 +4,7 @@ use super::format::{
     battery_energy_rate_text, battery_health_text, battery_icon_name, battery_percentage_text, initial_text,
 };
 
+#[derive(Clone, Debug)]
 pub(super) struct BatteryViewModel {
     pub(super) icon_name: &'static str,
     pub(super) percentage_text: String,

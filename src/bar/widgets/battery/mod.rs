@@ -1,6 +1,7 @@
+mod component;
+mod dropdown;
 mod format;
 mod service;
-mod view;
 mod view_model;
 
 use crate::bar::state::{BarItemState, BatteryState};
@@ -8,29 +9,33 @@ use crate::bar::widget::{
     BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetInstance,
 };
 use crate::shell::ShellMsg;
+use relm4::gtk::glib::object::Cast;
+use relm4::prelude::*;
+use relm4::Controller;
 use relm4::Sender;
 use relm4::gtk;
-use self::view::BatteryView;
+
+use self::component::{BatteryComponent, BatteryInit, BatteryInput};
 
 struct BatteryRuntime {
-    view: BatteryView,
+    controller: Controller<BatteryComponent>,
 }
 
 impl BarWidgetRuntime for BatteryRuntime {
     fn root(&self) -> gtk::Widget {
-        self.view.root()
+        self.controller.widget().clone().upcast()
     }
 
     fn update(&mut self, state: &BarItemState, context: &BarContext) {
-        self.view.set_edge(context.edge);
+        self.controller.emit(BatteryInput::SetEdge(context.edge));
 
         match state {
             BarItemState::Battery(BatteryState::Ready(snapshot)) => {
-                self.view.show_snapshot(snapshot);
+                self.controller.emit(BatteryInput::SetSnapshot(snapshot.clone()));
             }
 
             BarItemState::Battery(BatteryState::Unavailable) => {
-                self.view.show_unavailable();
+                self.controller.emit(BatteryInput::SetUnavailable);
             }
             _ => {}
         }
@@ -46,12 +51,17 @@ impl BarWidget for BatteryWidget {
 
     fn build(
         &self,
-        instance: &WidgetInstance,
+        _instance: &WidgetInstance,
         context: &WidgetBuildContext,
     ) -> Box<dyn BarWidgetRuntime> {
-        let view = BatteryView::new(instance, context);
+        let controller = BatteryComponent::builder()
+            .launch(BatteryInit {
+                edge: context.bar.edge,
+                power_profiles: context.services.power_profiles.clone(),
+            })
+            .detach();
 
-        Box::new(BatteryRuntime { view })
+        Box::new(BatteryRuntime { controller })
     }
 
     fn initial_state(&self) -> Option<BarItemState> {
