@@ -32,6 +32,7 @@ async fn run_battery_watcher(
     let mut percentage_updates = service.device.percentage.watch().fuse();
     let mut state_updates = service.device.state.watch().fuse();
     let mut energy_rate_updates = service.device.energy_rate.watch().fuse();
+    let mut capacity_updates = service.device.capacity.watch().fuse();
     let mut active_profile_updates = power_profiles
         .as_ref()
         .map(|service| service.power_profiles.active_profile.watch().fuse());
@@ -55,6 +56,13 @@ async fn run_battery_watcher(
                 send_battery_snapshot(&sender, &service, power_profiles.as_deref());
             }
             update = energy_rate_updates.next() => {
+                if update.is_none() {
+                    break;
+                }
+
+                send_battery_snapshot(&sender, &service, power_profiles.as_deref());
+            }
+            update = capacity_updates.next() => {
                 if update.is_none() {
                     break;
                 }
@@ -100,6 +108,7 @@ fn send_battery_snapshot(
     let percentage = service.device.percentage.get();
     let state = service.device.state.get();
     let energy_rate = service.device.energy_rate.get();
+    let capacity = service.device.capacity.get();
 
     let active_profile = power_profiles.map(|service| service.power_profiles.active_profile.get());
 
@@ -120,6 +129,7 @@ fn send_battery_snapshot(
         percentage,
         state,
         energy_rate,
+        capacity,
         active_profile,
         available_profiles,
     };

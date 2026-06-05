@@ -11,11 +11,10 @@ use relm4::Sender;
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
 use relm4::gtk::prelude::{BoxExt, ToggleButtonExt, WidgetExt};
-use wayle_power_profiles::types::profile::PowerProfile;
 
-use self::dropdown::{battery_dropdown_content, profile_buttons};
+use self::dropdown::{battery_dropdown_content, BatteryDropdown};
 use self::format::{
-    battery_energy_rate_text, battery_icon_name, battery_percentage_text, initial_text,
+    battery_energy_rate_text, battery_health_text, battery_icon_name, battery_percentage_text, initial_text,
 };
 
 struct BatteryRuntime {
@@ -24,7 +23,7 @@ struct BatteryRuntime {
     percentage_label: gtk::Label,
     energy_rate_label: gtk::Label,
     dropdown: crate::bar::dropdown::Dropdown,
-    profile_buttons: Vec<(PowerProfile, gtk::ToggleButton)>,
+    battery_dropdown: BatteryDropdown,
 }
 
 impl BarWidgetRuntime for BatteryRuntime {
@@ -41,8 +40,12 @@ impl BarWidgetRuntime for BatteryRuntime {
                 self.icon.set_icon_name(Some("battery-missing-symbolic"));
                 self.percentage_label.set_text(&initial_text());
                 self.energy_rate_label.set_text("");
+                self.battery_dropdown.meter.set_value(0.0);
+                self.battery_dropdown.percentage_label.set_text(&initial_text());
+                self.battery_dropdown.energy_rate_label.set_text("");
+                self.battery_dropdown.health_label.set_text("");
 
-                for (_, button) in &self.profile_buttons {
+                for (_, button) in &self.battery_dropdown.profile_buttons {
                     button.set_sensitive(false);
                     button.set_active(false);
                 }
@@ -58,8 +61,20 @@ impl BarWidgetRuntime for BatteryRuntime {
             .set_text(&battery_percentage_text(snapshot.percentage));
         self.energy_rate_label
             .set_text(&battery_energy_rate_text(snapshot.energy_rate));
+        self.battery_dropdown
+            .meter
+            .set_value(snapshot.percentage.clamp(0.0, 100.0));
+        self.battery_dropdown
+            .percentage_label
+            .set_text(&battery_percentage_text(snapshot.percentage));
+        self.battery_dropdown
+            .energy_rate_label
+            .set_text(&battery_energy_rate_text(snapshot.energy_rate));
+        self.battery_dropdown
+            .health_label
+            .set_text(&battery_health_text(snapshot.capacity));
 
-        for (profile, button) in &self.profile_buttons {
+        for (profile, button) in &self.battery_dropdown.profile_buttons {
             let available = snapshot.available_profiles.contains(profile);
             button.set_sensitive(available);
             button.set_active(snapshot.active_profile == Some(*profile));
@@ -95,8 +110,7 @@ impl BarWidget for BatteryWidget {
         content.append(&energy_rate_label);
 
         let power_profiles = context.services.power_profiles.clone();
-        let dropdown_content = battery_dropdown_content(power_profiles.clone());
-        let profile_buttons = profile_buttons(&dropdown_content);
+        let battery_dropdown = battery_dropdown_content(power_profiles.clone());
 
         let instance_class = instance.instance_css_class();
         let (root, dropdown) = crate::bar::dropdown::Dropdown::menu_button(
@@ -104,7 +118,7 @@ impl BarWidget for BatteryWidget {
             instance_class.as_deref(),
             context.bar.edge,
             &content,
-            &dropdown_content,
+            &battery_dropdown.root,
         );
 
         Box::new(BatteryRuntime {
@@ -113,7 +127,7 @@ impl BarWidget for BatteryWidget {
             percentage_label,
             energy_rate_label,
             dropdown,
-            profile_buttons,
+            battery_dropdown,
         })
     }
 

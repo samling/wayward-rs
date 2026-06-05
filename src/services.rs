@@ -8,8 +8,11 @@ use wayle_niri::NiriService;
 use wayle_notification::NotificationService;
 use wayle_power_profiles::PowerProfilesService;
 use wayle_systray::SystemTrayService;
+use zbus::zvariant::OwnedObjectPath;
 
 use crate::shell::Shell;
+
+const PRIMARY_BATTERY_PATH: &str = "/org/freedesktop/UPower/devices/battery_BAT0";
 
 #[derive(Clone, Default)]
 pub(crate) struct ShellServices {
@@ -34,7 +37,13 @@ pub(crate) async fn init_shell_services() -> ShellServices {
         }
     };
 
-    let battery = match BatteryService::new().await {
+    let battery_path =
+        OwnedObjectPath::try_from(PRIMARY_BATTERY_PATH).expect("primary battery path is valid");
+
+    let battery = match BatteryService::builder()
+        .device_path(battery_path)
+        .build()
+        .await {
         Ok(service) => {
             tracing::info!("Battery service started");
             Some(Arc::new(service))

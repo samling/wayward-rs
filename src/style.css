@@ -106,7 +106,12 @@ menubutton.bar-item > button:checked {
 }
 
 /* Dropdowns */
-popover.dropdown contents,
+popover.dropdown contents {
+    background: #202124;
+    border-spacing: 0.6em;
+    color: #f1f3f4;
+}
+
 popover.dropdown arrow {
     background: transparent;
     background-image: none;
@@ -116,9 +121,7 @@ popover.dropdown arrow {
 }
 
 .dropdown-content {
-    background: #202124;
     border-spacing: 0.6em;
-    color: #f1f3f4;
     padding: 0.75em;
 }
 
@@ -181,6 +184,39 @@ popover.dropdown arrow {
 
 .battery-dropdown-title {
     margin-bottom: 0.25em;
+}
+
+.battery-summary {
+    border-spacing: 0.75em;
+    margin-bottom: 0.35em;
+}
+
+.battery-meter {
+    min-width: 8em;
+}
+
+.battery-dropdown-percentage {
+    font-weight: 700;
+}
+
+.battery-details {
+    border-spacing: 0.6em;
+    margin-bottom: 0.35em;
+}
+
+.battery-detail {
+    background: rgba(241, 243, 244, 0.06);
+    border-radius: 0.35em;
+    border-spacing: 0.2em;
+    padding: 0.55em 0.65em;
+}
+
+.battery-detail-label {
+    opacity: 0.68;
+}
+
+.battery-detail-value {
+    font-weight: 600;
 }
 
 .profile-segments {
