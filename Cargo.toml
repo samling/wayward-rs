@@ -24,3 +24,4 @@ wayle-niri = "0.1"
 wayle-notification = "0.1"
 wayle-systray = { version = "0.1", features = ["adapter-gtk"] }
 wayle-power-profiles = "0.1"
+zbus = "5"

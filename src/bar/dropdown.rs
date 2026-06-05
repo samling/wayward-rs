@@ -3,6 +3,8 @@ use relm4::gtk;
 
 use crate::bar::layout::BarEdge;
 
+const DROPDOWN_GAP: i32 = 6;
+
 #[derive(Clone)]
 pub(crate) struct Dropdown {
     popover: gtk::Popover,
@@ -54,6 +56,7 @@ impl Dropdown {
     pub(crate) fn set_edge(&self, edge: BarEdge) {
         self.popover.set_position(position_for_edge(edge));
         self.set_position_class(edge);
+        self.popover.set_offset(0, offset_for_edge(edge));
     }
 
     fn set_position_class(&self, edge: BarEdge) {
@@ -81,5 +84,13 @@ fn position_for_edge(edge: BarEdge) -> gtk::PositionType {
         BarEdge::Bottom => gtk::PositionType::Top,
         BarEdge::Left => gtk::PositionType::Right,
         BarEdge::Right => gtk::PositionType::Left,
+    }
+}
+
+fn offset_for_edge(edge: BarEdge) -> i32 {
+    match edge {
+        BarEdge::Top => DROPDOWN_GAP,
+        BarEdge::Bottom => -DROPDOWN_GAP,
+        BarEdge::Left | BarEdge::Right => 0,
     }
 }
