@@ -74,8 +74,6 @@ impl BarWidget for ClockWidget {
             &child,
         );
 
-        dropdown.bind_to_menu_button(&root, context.bar.edge, &child);
-
         Box::new(ClockRuntime {
             root,
             label,

@@ -1,5 +1,7 @@
 use gtk::prelude::*;
 use relm4::gtk;
+use relm4::gtk::glib;
+use std::time::Duration;
 
 use crate::bar::layout::BarEdge;
 
@@ -8,6 +10,7 @@ const DROPDOWN_GAP: i32 = 6;
 #[derive(Clone)]
 pub(crate) struct Dropdown {
     popover: gtk::Popover,
+    revealer: gtk::Revealer,
 }
 
 impl Dropdown {
@@ -18,7 +21,11 @@ impl Dropdown {
         popover.add_css_class("dropdown");
         popover.add_css_class(class_name);
 
-        Self { popover }
+        let revealer = gtk::Revealer::new();
+        revealer.set_transition_duration(140);
+        revealer.set_reveal_child(false);
+
+        Self { popover, revealer }
     }
 
     pub(crate) fn menu_button(
@@ -49,14 +56,30 @@ impl Dropdown {
         child: &impl IsA<gtk::Widget>,
     ) {
         self.set_edge(edge);
-        self.popover.set_child(Some(child));
+        self.revealer.set_child(Some(child));
+        self.revealer.set_reveal_child(false);
+        self.popover.set_child(Some(&self.revealer));
         button.set_popover(Some(&self.popover));
+
+        let revealer = self.revealer.clone();
+        self.popover.connect_map(move |_| {
+            let revealer = revealer.clone();
+            glib::timeout_add_local_once(Duration::from_millis(16), move || {
+                revealer.set_reveal_child(true);
+            });
+        });
+
+        let revealer = self.revealer.clone();
+        self.popover.connect_closed(move |_| {
+            revealer.set_reveal_child(false);
+        });
     }
 
     pub(crate) fn set_edge(&self, edge: BarEdge) {
         self.popover.set_position(position_for_edge(edge));
         self.set_position_class(edge);
         self.popover.set_offset(0, offset_for_edge(edge));
+        self.revealer.set_transition_type(transition_for_edge(edge));
     }
 
     fn set_position_class(&self, edge: BarEdge) {
@@ -92,5 +115,14 @@ fn offset_for_edge(edge: BarEdge) -> i32 {
         BarEdge::Top => DROPDOWN_GAP,
         BarEdge::Bottom => -DROPDOWN_GAP,
         BarEdge::Left | BarEdge::Right => 0,
+    }
+}
+
+fn transition_for_edge(edge: BarEdge) -> gtk::RevealerTransitionType {
+    match edge {
+        BarEdge::Top => gtk::RevealerTransitionType::SlideDown,
+        BarEdge::Bottom => gtk::RevealerTransitionType::SlideUp,
+        BarEdge::Left => gtk::RevealerTransitionType::SlideRight,
+        BarEdge::Right => gtk::RevealerTransitionType::SlideLeft,
     }
 }
