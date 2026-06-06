@@ -25,7 +25,7 @@ pub(super) fn battery_icon_name(percentage: f64, state: DeviceState) -> &'static
 
     match state {
         DeviceState::FullyCharged => "battery-level-100-charged-symbolic",
-        DeviceState::Charging => charging_battery_icon_name(level),
+        DeviceState::Charging => charging_battery_icon_name(level.min(90)),
         _ => discharging_battery_icon_name(level),
     }
 }

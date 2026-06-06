@@ -13,7 +13,6 @@ use super::view_model::BatteryViewModel;
 // BatteryComponent is the Relm4 model
 pub(super) struct BatteryComponent {
     view_model: BatteryViewModel,
-    snapshot: Option<BatterySnapshot>,
     edge: BarEdge,
     dropdown: Controller<BatteryDropdown>,
 }
@@ -90,7 +89,6 @@ impl SimpleComponent for BatteryComponent {
             .detach();
         let model = Self {
             view_model: BatteryViewModel::unavailable(),
-            snapshot: None,
             edge: init.edge,
             dropdown,
         };
@@ -117,14 +115,12 @@ impl SimpleComponent for BatteryComponent {
                 });
 
                 self.view_model = view_model;
-                self.snapshot = Some(snapshot);
             }
             BatteryInput::SetUnavailable => {
                 let view_model = BatteryViewModel::unavailable();
                 self.dropdown
                     .emit(BatteryDropdownInput::SetViewModel(view_model.clone()));
                 self.view_model = view_model;
-                self.snapshot = None;
             }
         }
     }
