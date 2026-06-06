@@ -7,7 +7,7 @@ use relm4::prelude::*;
 use std::sync::Arc;
 use wayle_power_profiles::PowerProfilesService;
 
-use super::dropdown::{BatteryDropdown, BatteryDropdownInput};
+use super::dropdown::{BatteryDropdown,BatteryDropdownInit, BatteryDropdownInput};
 use super::view_model::BatteryViewModel;
 
 // BatteryComponent is the Relm4 model
@@ -85,7 +85,10 @@ impl SimpleComponent for BatteryComponent {
         _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let dropdown = BatteryDropdown::builder()
-            .launch(init.power_profiles.clone())
+            .launch(BatteryDropdownInit {
+                edge: init.edge,
+                power_profiles: init.power_profiles.clone(),
+            })
             .detach();
         let model = Self {
             view_model: BatteryViewModel::unavailable(),
@@ -104,6 +107,7 @@ impl SimpleComponent for BatteryComponent {
         match msg {
             BatteryInput::SetEdge(edge) => {
                 self.edge = edge;
+                self.dropdown.emit(BatteryDropdownInput::SetEdge(edge));
             }
             BatteryInput::SetSnapshot(snapshot) => {
                 let view_model = BatteryViewModel::from_snapshot(&snapshot);

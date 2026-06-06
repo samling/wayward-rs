@@ -1,6 +1,7 @@
 mod style;
 mod window;
 
+pub(crate) mod dropdown;
 pub(crate) mod layout;
 pub(crate) mod registry;
 pub(crate) mod state;

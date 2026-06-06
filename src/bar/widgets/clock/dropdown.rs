@@ -1,11 +1,8 @@
 use chrono::NaiveDate;
+use crate::bar::{dropdown, layout::BarEdge};
 use relm4::gtk;
 use relm4::gtk::prelude::*;
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};
-
-use crate::bar::layout::BarEdge;
-
-const DROPDOWN_GAP: i32 = 6;
 
 pub(super) struct ClockDropdown {
     date: NaiveDate,
@@ -25,6 +22,7 @@ pub(super) enum ClockDropdownInput {
 
 pub(super) struct ClockDropdownWidgets {
     popover: gtk::Popover,
+    revealer: gtk::Revealer,
     title: gtk::Label,
     day_labels: Vec<gtk::Label>,
 }
@@ -54,8 +52,6 @@ impl SimpleComponent for ClockDropdown {
             date: init.date,
             edge: init.edge,
         };
-
-        set_edge(&root, model.edge);
 
         let content = gtk::Box::new(gtk::Orientation::Vertical, 8);
         content.add_css_class("dropdown-content");
@@ -99,8 +95,12 @@ impl SimpleComponent for ClockDropdown {
         content.append(&grid);
         root.set_child(Some(&content));
 
+        let revealer = gtk::Revealer::new();
+        dropdown::install_revealer(&root, &revealer, model.edge);
+
         let widgets = ClockDropdownWidgets {
             popover: root,
+            revealer,
             title,
             day_labels,
         };
@@ -120,7 +120,7 @@ impl SimpleComponent for ClockDropdown {
     }
 
     fn update_view(&self, widgets: &mut Self::Widgets, _sender: ComponentSender<Self>) {
-        set_edge(&widgets.popover, self.edge);
+        dropdown::set_edge(&widgets.popover, &widgets.revealer, self.edge);
 
         widgets
             .title
@@ -172,28 +172,6 @@ fn update_day_label(label: &gtk::Label, day: &CalendarDay) {
 
     if day.is_today {
         label.add_css_class("today");
-    }
-}
-
-fn set_edge(popover: &gtk::Popover, edge: BarEdge) {
-    popover.set_position(position_for_edge(edge));
-    popover.set_offset(0, offset_for_edge(edge));
-}
-
-fn position_for_edge(edge: BarEdge) -> gtk::PositionType {
-    match edge {
-        BarEdge::Top => gtk::PositionType::Bottom,
-        BarEdge::Bottom => gtk::PositionType::Top,
-        BarEdge::Left => gtk::PositionType::Right,
-        BarEdge::Right => gtk::PositionType::Left,
-    }
-}
-
-fn offset_for_edge(edge: BarEdge) -> i32 {
-    match edge {
-        BarEdge::Top => DROPDOWN_GAP,
-        BarEdge::Bottom => -DROPDOWN_GAP,
-        BarEdge::Left | BarEdge::Right => 0,
     }
 }
 
