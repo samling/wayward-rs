@@ -3,7 +3,7 @@ use relm4::gtk::glib::object::Cast;
 use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 
-use super::model::SystrayItemSummary;
+use super::view_model::SystrayItemSummary;
 
 const ICON_EXTENSIONS: [&str; 3] = ["png", "svg", "xpm"];
 

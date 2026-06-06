@@ -16,12 +16,16 @@ pub(super) fn battery_health_text(capacity: f64) -> String {
     format!("{capacity:.0}%")
 }
 
+pub(super) fn battery_state_text(state: DeviceState) -> String {
+    state.to_string()
+}
+
 pub(super) fn battery_icon_name(percentage: f64, state: DeviceState) -> &'static str {
     let level = ((percentage / 10.0).round() as i32 * 10).clamp(0, 100);
 
     match state {
         DeviceState::FullyCharged => "battery-level-100-charged-symbolic",
-        DeviceState::Charging => charging_battery_icon_name(level),
+        DeviceState::Charging => charging_battery_icon_name(level.min(90)),
         _ => discharging_battery_icon_name(level),
     }
 }

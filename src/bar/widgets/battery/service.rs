@@ -105,6 +105,15 @@ fn send_battery_snapshot(
     service: &BatteryService,
     power_profiles: Option<&PowerProfilesService>,
 ) {
+    let snapshot = snapshot_from_services(service, power_profiles);
+
+    let _ = sender.send(battery_message(BatteryState::Ready(snapshot)));
+}
+
+pub(super) fn snapshot_from_services(
+    service: &BatteryService,
+    power_profiles: Option<&PowerProfilesService>,
+) -> BatterySnapshot {
     let percentage = service.device.percentage.get();
     let state = service.device.state.get();
     let energy_rate = service.device.energy_rate.get();
@@ -125,16 +134,14 @@ fn send_battery_snapshot(
         })
         .unwrap_or_default();
 
-    let snapshot = BatterySnapshot {
+    BatterySnapshot {
         percentage,
         state,
         energy_rate,
         capacity,
         active_profile,
         available_profiles,
-    };
-
-    let _ = sender.send(battery_message(BatteryState::Ready(snapshot)));
+    }
 }
 
 fn battery_message(state: BatteryState) -> ShellMsg {

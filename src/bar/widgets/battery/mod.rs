@@ -1,83 +1,44 @@
+mod component;
 mod dropdown;
 mod format;
 mod service;
+mod view_model;
 
 use crate::bar::state::{BarItemState, BatteryState};
 use crate::bar::widget::{
     BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetInstance,
 };
 use crate::shell::ShellMsg;
+use relm4::Controller;
 use relm4::Sender;
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
-use relm4::gtk::prelude::{BoxExt, ToggleButtonExt, WidgetExt};
+use relm4::prelude::*;
 
-use self::dropdown::{battery_dropdown_content, BatteryDropdown};
-use self::format::{
-    battery_energy_rate_text, battery_health_text, battery_icon_name, battery_percentage_text, initial_text,
-};
+use self::component::{BatteryComponent, BatteryInit, BatteryInput};
 
 struct BatteryRuntime {
-    root: gtk::MenuButton,
-    icon: gtk::Image,
-    percentage_label: gtk::Label,
-    energy_rate_label: gtk::Label,
-    dropdown: crate::bar::dropdown::Dropdown,
-    battery_dropdown: BatteryDropdown,
+    controller: Controller<BatteryComponent>,
 }
 
 impl BarWidgetRuntime for BatteryRuntime {
     fn root(&self) -> gtk::Widget {
-        self.root.clone().upcast()
+        self.controller.widget().clone().upcast()
     }
 
     fn update(&mut self, state: &BarItemState, context: &BarContext) {
-        self.dropdown.set_edge(context.edge);
+        self.controller.emit(BatteryInput::SetEdge(context.edge));
 
-        let snapshot = match state {
-            BarItemState::Battery(BatteryState::Ready(snapshot)) => snapshot,
-            BarItemState::Battery(BatteryState::Unavailable) => {
-                self.icon.set_icon_name(Some("battery-missing-symbolic"));
-                self.percentage_label.set_text(&initial_text());
-                self.energy_rate_label.set_text("");
-                self.battery_dropdown.meter.set_value(0.0);
-                self.battery_dropdown.percentage_label.set_text(&initial_text());
-                self.battery_dropdown.energy_rate_label.set_text("");
-                self.battery_dropdown.health_label.set_text("");
-
-                for (_, button) in &self.battery_dropdown.profile_buttons {
-                    button.set_sensitive(false);
-                    button.set_active(false);
-                }
-
-                return;
+        match state {
+            BarItemState::Battery(BatteryState::Ready(snapshot)) => {
+                self.controller
+                    .emit(BatteryInput::SetSnapshot(snapshot.clone()));
             }
-            _ => return,
-        };
 
-        self.icon
-            .set_icon_name(Some(battery_icon_name(snapshot.percentage, snapshot.state)));
-        self.percentage_label
-            .set_text(&battery_percentage_text(snapshot.percentage));
-        self.energy_rate_label
-            .set_text(&battery_energy_rate_text(snapshot.energy_rate));
-        self.battery_dropdown
-            .meter
-            .set_value(snapshot.percentage.clamp(0.0, 100.0));
-        self.battery_dropdown
-            .percentage_label
-            .set_text(&battery_percentage_text(snapshot.percentage));
-        self.battery_dropdown
-            .energy_rate_label
-            .set_text(&battery_energy_rate_text(snapshot.energy_rate));
-        self.battery_dropdown
-            .health_label
-            .set_text(&battery_health_text(snapshot.capacity));
-
-        for (profile, button) in &self.battery_dropdown.profile_buttons {
-            let available = snapshot.available_profiles.contains(profile);
-            button.set_sensitive(available);
-            button.set_active(snapshot.active_profile == Some(*profile));
+            BarItemState::Battery(BatteryState::Unavailable) => {
+                self.controller.emit(BatteryInput::SetUnavailable);
+            }
+            _ => {}
         }
     }
 }
@@ -91,44 +52,17 @@ impl BarWidget for BatteryWidget {
 
     fn build(
         &self,
-        instance: &WidgetInstance,
+        _instance: &WidgetInstance,
         context: &WidgetBuildContext,
     ) -> Box<dyn BarWidgetRuntime> {
-        let content = gtk::Box::new(context.bar.edge.orientation(), 0);
-        content.add_css_class("battery-content");
+        let controller = BatteryComponent::builder()
+            .launch(BatteryInit {
+                edge: context.bar.edge,
+                power_profiles: context.services.power_profiles.clone(),
+            })
+            .detach();
 
-        let icon = gtk::Image::from_icon_name("battery-missing-symbolic");
-        icon.add_css_class("battery-icon");
-        content.append(&icon);
-
-        let percentage_label = gtk::Label::new(Some(&initial_text()));
-        percentage_label.add_css_class("battery-percentage");
-        content.append(&percentage_label);
-
-        let energy_rate_label = gtk::Label::new(None);
-        energy_rate_label.add_css_class("battery-energy-rate");
-        content.append(&energy_rate_label);
-
-        let power_profiles = context.services.power_profiles.clone();
-        let battery_dropdown = battery_dropdown_content(power_profiles.clone());
-
-        let instance_class = instance.instance_css_class();
-        let (root, dropdown) = crate::bar::dropdown::Dropdown::menu_button(
-            "battery",
-            instance_class.as_deref(),
-            context.bar.edge,
-            &content,
-            &battery_dropdown.root,
-        );
-
-        Box::new(BatteryRuntime {
-            root,
-            icon,
-            percentage_label,
-            energy_rate_label,
-            dropdown,
-            battery_dropdown,
-        })
+        Box::new(BatteryRuntime { controller })
     }
 
     fn initial_state(&self) -> Option<BarItemState> {
