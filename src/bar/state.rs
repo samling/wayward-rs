@@ -1,4 +1,4 @@
-use crate::bar::widgets::systray::model::SystrayItemSummary;
+use crate::bar::widgets::systray::view_model::SystrayItemSummary;
 use crate::bar::widgets::workspaces::model::WorkspaceSummary;
 use wayle_battery::types::DeviceState;
 use wayle_power_profiles::types::profile::PowerProfile;

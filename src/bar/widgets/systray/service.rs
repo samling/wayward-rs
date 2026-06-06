@@ -4,7 +4,7 @@ use std::sync::Arc;
 use wayle_systray::SystemTrayService;
 use wayle_systray::types::Coordinates;
 
-use super::model::SystrayItemSummary;
+use super::view_model::SystrayItemSummary;
 use crate::bar::state::{BarItemState, SystrayState};
 use crate::bar::widget::{WidgetAction, WidgetEvent};
 use crate::shell::ShellMsg;

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use wayle_systray::SystemTrayService;
 use wayle_systray::adapters::gtk4::Adapter;
 
-use super::model::SystrayItemSummary;
+use super::view_model::SystrayItemSummary;
 use super::{ID, service};
 use crate::bar::BarMsg;
 use crate::bar::widget::{WidgetAction, WidgetEvent};
