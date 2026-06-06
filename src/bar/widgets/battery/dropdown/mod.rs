@@ -9,6 +9,8 @@ use std::sync::Arc;
 use wayle_power_profiles::PowerProfilesService;
 use wayle_power_profiles::types::profile::PowerProfile;
 
+use super::history::{graph_points, load_charge_history};
+use super::history_graph::BatteryHistoryGraph;
 use super::view_model::BatteryViewModel;
 
 pub(super) struct BatteryDropdownInit {
@@ -24,6 +26,7 @@ pub(super) struct BatteryDropdown {
     power_profiles: Option<Arc<PowerProfilesService>>,
     active_profile: Option<PowerProfile>,
     available_profiles: Vec<PowerProfile>,
+    history_graph: BatteryHistoryGraph,
 }
 
 #[derive(Debug)]
@@ -193,6 +196,16 @@ impl SimpleComponent for BatteryDropdown {
                         add_css_class: "dropdown-title",
                         add_css_class: "battery-dropdown-title",
                         set_halign: gtk::Align::Start,
+                        set_text: "Charge history",
+                    },
+
+                    #[local_ref]
+                    history_graph -> gtk::DrawingArea {},
+
+                    gtk::Label {
+                        add_css_class: "dropdown-title",
+                        add_css_class: "battery-dropdown-title",
+                        set_halign: gtk::Align::Start,
                         set_text: "Power profile",
                     },
 
@@ -277,6 +290,7 @@ impl SimpleComponent for BatteryDropdown {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let history_graph = BatteryHistoryGraph::new();
         let model = Self {
             view_model: BatteryViewModel::unavailable(),
             edge: init.edge,
@@ -284,8 +298,14 @@ impl SimpleComponent for BatteryDropdown {
             power_profiles: init.power_profiles,
             active_profile: None,
             available_profiles: Vec::new(),
+            history_graph,
         };
 
+        if let Ok(history) = load_charge_history() {
+            model.history_graph.set_points(graph_points(&history));
+        }
+
+        let history_graph = model.history_graph.root();
         let widgets = view_output!();
 
         dropdown::connect_revealer(&widgets.popover, &widgets.revealer);

@@ -1,6 +1,8 @@
 mod component;
 mod dropdown;
 mod format;
+mod history;
+mod history_graph;
 mod service;
 mod view_model;
 
