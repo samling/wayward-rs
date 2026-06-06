@@ -2,8 +2,8 @@ mod component;
 mod config;
 mod icon;
 mod interaction;
-pub(crate) mod view_model;
 pub(crate) mod service;
+pub(crate) mod view_model;
 
 pub(crate) const ID: &str = "systray";
 

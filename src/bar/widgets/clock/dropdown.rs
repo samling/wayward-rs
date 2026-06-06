@@ -1,5 +1,5 @@
-use chrono::NaiveDate;
 use crate::bar::{dropdown, layout::BarEdge};
+use chrono::NaiveDate;
 use relm4::gtk;
 use relm4::gtk::prelude::*;
 use relm4::{ComponentParts, ComponentSender, SimpleComponent};

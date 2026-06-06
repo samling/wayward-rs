@@ -8,11 +8,7 @@ use crate::bar::layout::BarEdge;
 const DROPDOWN_GAP: i32 = 6;
 pub(crate) const TRANSITION_MS: u32 = 140;
 
-pub(crate) fn install_revealer(
-    popover: &gtk::Popover,
-    revealer: &gtk::Revealer,
-    edge: BarEdge,
-) {
+pub(crate) fn install_revealer(popover: &gtk::Popover, revealer: &gtk::Revealer, edge: BarEdge) {
     revealer.set_transition_duration(TRANSITION_MS);
     revealer.set_reveal_child(false);
 

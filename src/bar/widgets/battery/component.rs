@@ -7,7 +7,7 @@ use relm4::prelude::*;
 use std::sync::Arc;
 use wayle_power_profiles::PowerProfilesService;
 
-use super::dropdown::{BatteryDropdown,BatteryDropdownInit, BatteryDropdownInput};
+use super::dropdown::{BatteryDropdown, BatteryDropdownInit, BatteryDropdownInput};
 use super::view_model::BatteryViewModel;
 
 // BatteryComponent is the Relm4 model
