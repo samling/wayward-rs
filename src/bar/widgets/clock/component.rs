@@ -6,11 +6,13 @@ use relm4::{
 };
 
 use crate::bar::layout::BarEdge;
+use crate::bar::widget::BarRegion;
 
 use super::dropdown::{ClockDropdown, ClockDropdownInit, ClockDropdownInput};
 
 pub(super) struct ClockComponent {
     edge: BarEdge,
+    region: BarRegion,
     format: String,
     time: DateTime<Local>,
     label_text: String,
@@ -19,13 +21,14 @@ pub(super) struct ClockComponent {
 
 pub(super) struct ClockInit {
     pub(super) edge: BarEdge,
+    pub(super) region: BarRegion,
     pub(super) format: String,
     pub(super) instance_class: Option<String>,
 }
 
 #[derive(Debug)]
 pub(super) enum ClockInput {
-    SetEdge(BarEdge),
+    SetPlacement { edge: BarEdge, region: BarRegion },
     SetTime(DateTime<Local>),
 }
 
@@ -56,11 +59,13 @@ impl SimpleComponent for ClockComponent {
             .launch(ClockDropdownInit {
                 date: time.date_naive(),
                 edge: init.edge,
+                region: init.region,
             })
             .detach();
 
         let model = Self {
             edge: init.edge,
+            region: init.region,
             format: init.format,
             time,
             label_text,
@@ -88,9 +93,11 @@ impl SimpleComponent for ClockComponent {
 
     fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
         match msg {
-            ClockInput::SetEdge(edge) => {
+            ClockInput::SetPlacement { edge, region } => {
                 self.edge = edge;
-                self.dropdown.emit(ClockDropdownInput::SetEdge(edge));
+                self.region = region;
+                self.dropdown
+                    .emit(ClockDropdownInput::SetPlacement { edge, region });
             }
             ClockInput::SetTime(time) => {
                 let previous_date = self.time.date_naive();

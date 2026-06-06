@@ -33,7 +33,10 @@ impl BarWidgetRuntime for ClockRuntime {
             return;
         };
 
-        self.controller.emit(ClockInput::SetEdge(context.edge));
+        self.controller.emit(ClockInput::SetPlacement {
+            edge: context.edge,
+            region: context.region,
+        });
         self.controller.emit(ClockInput::SetTime(Local::now()));
     }
 }
@@ -58,6 +61,7 @@ impl BarWidget for ClockWidget {
         let controller = ClockComponent::builder()
             .launch(ClockInit {
                 edge: context.bar.edge,
+                region: context.bar.region,
                 format,
                 instance_class: instance.instance_css_class(),
             })

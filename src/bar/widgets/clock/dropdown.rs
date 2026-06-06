@@ -1,4 +1,4 @@
-use crate::bar::{dropdown, layout::BarEdge};
+use crate::bar::{dropdown, layout::BarEdge, widget::BarRegion};
 use chrono::NaiveDate;
 use relm4::gtk;
 use relm4::gtk::prelude::*;
@@ -7,17 +7,19 @@ use relm4::{ComponentParts, ComponentSender, SimpleComponent};
 pub(super) struct ClockDropdown {
     date: NaiveDate,
     edge: BarEdge,
+    region: BarRegion,
 }
 
 pub(super) struct ClockDropdownInit {
     pub(super) date: NaiveDate,
     pub(super) edge: BarEdge,
+    pub(super) region: BarRegion,
 }
 
 #[derive(Debug)]
 pub(super) enum ClockDropdownInput {
     SetDate(NaiveDate),
-    SetEdge(BarEdge),
+    SetPlacement { edge: BarEdge, region: BarRegion },
 }
 
 pub(super) struct ClockDropdownWidgets {
@@ -51,6 +53,7 @@ impl SimpleComponent for ClockDropdown {
         let model = Self {
             date: init.date,
             edge: init.edge,
+            region: init.region,
         };
 
         let content = gtk::Box::new(gtk::Orientation::Vertical, 8);
@@ -96,7 +99,7 @@ impl SimpleComponent for ClockDropdown {
         root.set_child(Some(&content));
 
         let revealer = gtk::Revealer::new();
-        dropdown::install_revealer(&root, &revealer, model.edge);
+        dropdown::install_revealer(&root, &revealer, model.edge, model.region);
 
         let widgets = ClockDropdownWidgets {
             popover: root,
@@ -113,14 +116,15 @@ impl SimpleComponent for ClockDropdown {
             ClockDropdownInput::SetDate(date) => {
                 self.date = date;
             }
-            ClockDropdownInput::SetEdge(edge) => {
+            ClockDropdownInput::SetPlacement { edge, region } => {
                 self.edge = edge;
+                self.region = region;
             }
         }
     }
 
     fn update_view(&self, widgets: &mut Self::Widgets, _sender: ComponentSender<Self>) {
-        dropdown::set_edge(&widgets.popover, &widgets.revealer, self.edge);
+        dropdown::set_placement(&widgets.popover, &widgets.revealer, self.edge, self.region);
 
         widgets
             .title

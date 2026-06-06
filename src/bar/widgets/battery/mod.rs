@@ -27,7 +27,10 @@ impl BarWidgetRuntime for BatteryRuntime {
     }
 
     fn update(&mut self, state: &BarItemState, context: &BarContext) {
-        self.controller.emit(BatteryInput::SetEdge(context.edge));
+        self.controller.emit(BatteryInput::SetPlacement {
+            edge: context.edge,
+            region: context.region,
+        });
 
         match state {
             BarItemState::Battery(BatteryState::Ready(snapshot)) => {
@@ -58,6 +61,7 @@ impl BarWidget for BatteryWidget {
         let controller = BatteryComponent::builder()
             .launch(BatteryInit {
                 edge: context.bar.edge,
+                region: context.bar.region,
                 power_profiles: context.services.power_profiles.clone(),
             })
             .detach();

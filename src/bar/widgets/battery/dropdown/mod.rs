@@ -1,4 +1,4 @@
-use crate::bar::{dropdown, layout::BarEdge};
+use crate::bar::{dropdown, layout::BarEdge, widget::BarRegion};
 use relm4::gtk;
 use relm4::gtk::prelude::ButtonExt;
 use relm4::gtk::prelude::PopoverExt;
@@ -13,12 +13,14 @@ use super::view_model::BatteryViewModel;
 
 pub(super) struct BatteryDropdownInit {
     pub(super) edge: BarEdge,
+    pub(super) region: BarRegion,
     pub(super) power_profiles: Option<Arc<PowerProfilesService>>,
 }
 
 pub(super) struct BatteryDropdown {
     view_model: BatteryViewModel,
     edge: BarEdge,
+    region: BarRegion,
     power_profiles: Option<Arc<PowerProfilesService>>,
     active_profile: Option<PowerProfile>,
     available_profiles: Vec<PowerProfile>,
@@ -26,7 +28,10 @@ pub(super) struct BatteryDropdown {
 
 #[derive(Debug)]
 pub(super) enum BatteryDropdownInput {
-    SetEdge(BarEdge),
+    SetPlacement {
+        edge: BarEdge,
+        region: BarRegion,
+    },
     SetViewModel(BatteryViewModel),
     SetSnapshot {
         view_model: BatteryViewModel,
@@ -54,7 +59,22 @@ impl SimpleComponent for BatteryDropdown {
             set_position: dropdown::position_for_edge(model.edge),
 
             #[watch]
-            set_offset: (0, dropdown::offset_for_edge(model.edge)),
+            set_offset: (
+                dropdown::x_offset_for_placement(model.edge, model.region),
+                dropdown::y_offset_for_placement(model.edge, model.region),
+            ),
+
+            #[watch]
+            set_margin_start: dropdown::margin_start_for_placement(model.edge, model.region),
+
+            #[watch]
+            set_margin_end: dropdown::margin_end_for_placement(model.edge, model.region),
+
+            #[watch]
+            set_margin_top: dropdown::margin_top_for_placement(model.edge, model.region),
+
+            #[watch]
+            set_margin_bottom: dropdown::margin_bottom_for_placement(model.edge, model.region),
 
             #[name = "revealer"]
             gtk::Revealer {
@@ -260,6 +280,7 @@ impl SimpleComponent for BatteryDropdown {
         let model = Self {
             view_model: BatteryViewModel::unavailable(),
             edge: init.edge,
+            region: init.region,
             power_profiles: init.power_profiles,
             active_profile: None,
             available_profiles: Vec::new(),
@@ -274,8 +295,9 @@ impl SimpleComponent for BatteryDropdown {
 
     fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
         match msg {
-            BatteryDropdownInput::SetEdge(edge) => {
+            BatteryDropdownInput::SetPlacement { edge, region } => {
                 self.edge = edge;
+                self.region = region;
             }
             BatteryDropdownInput::SetViewModel(view_model) => {
                 self.view_model = view_model;
