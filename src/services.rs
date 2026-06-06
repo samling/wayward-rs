@@ -43,7 +43,8 @@ pub(crate) async fn init_shell_services() -> ShellServices {
     let battery = match BatteryService::builder()
         .device_path(battery_path)
         .build()
-        .await {
+        .await
+    {
         Ok(service) => {
             tracing::info!("Battery service started");
             Some(Arc::new(service))

@@ -110,12 +110,11 @@ impl SimpleComponent for BatteryComponent {
             BatteryInput::SetSnapshot(snapshot) => {
                 let view_model = BatteryViewModel::from_snapshot(&snapshot);
 
-                self.dropdown
-                    .emit(BatteryDropdownInput::SetSnapshot {
-                        view_model: view_model.clone(),
-                        active_profile: snapshot.active_profile,
-                        available_profiles: snapshot.available_profiles.clone(),
-                    });
+                self.dropdown.emit(BatteryDropdownInput::SetSnapshot {
+                    view_model: view_model.clone(),
+                    active_profile: snapshot.active_profile,
+                    available_profiles: snapshot.available_profiles.clone(),
+                });
 
                 self.view_model = view_model;
                 self.snapshot = Some(snapshot);

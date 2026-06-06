@@ -1,10 +1,10 @@
-use std::sync::Arc;
+use relm4::gtk;
 use relm4::gtk::prelude::ButtonExt;
 use relm4::gtk::prelude::PopoverExt;
 use relm4::gtk::prelude::ToggleButtonExt;
-use relm4::prelude::*;
-use relm4::gtk;
 use relm4::gtk::prelude::{BoxExt, OrientableExt, WidgetExt};
+use relm4::prelude::*;
+use std::sync::Arc;
 use wayle_power_profiles::PowerProfilesService;
 use wayle_power_profiles::types::profile::PowerProfile;
 

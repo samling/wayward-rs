@@ -1,7 +1,8 @@
 use crate::bar::state::BatterySnapshot;
 
 use super::format::{
-    battery_energy_rate_text, battery_health_text, battery_icon_name, battery_percentage_text, battery_state_text, initial_text,
+    battery_energy_rate_text, battery_health_text, battery_icon_name, battery_percentage_text,
+    battery_state_text, initial_text,
 };
 
 #[derive(Clone, Debug)]

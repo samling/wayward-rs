@@ -9,11 +9,11 @@ use crate::bar::widget::{
     BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetInstance,
 };
 use crate::shell::ShellMsg;
-use relm4::gtk::glib::object::Cast;
-use relm4::prelude::*;
 use relm4::Controller;
 use relm4::Sender;
 use relm4::gtk;
+use relm4::gtk::glib::object::Cast;
+use relm4::prelude::*;
 
 use self::component::{BatteryComponent, BatteryInit, BatteryInput};
 
@@ -31,7 +31,8 @@ impl BarWidgetRuntime for BatteryRuntime {
 
         match state {
             BarItemState::Battery(BatteryState::Ready(snapshot)) => {
-                self.controller.emit(BatteryInput::SetSnapshot(snapshot.clone()));
+                self.controller
+                    .emit(BatteryInput::SetSnapshot(snapshot.clone()));
             }
 
             BarItemState::Battery(BatteryState::Unavailable) => {
