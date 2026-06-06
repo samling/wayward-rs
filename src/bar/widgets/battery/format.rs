@@ -16,6 +16,10 @@ pub(super) fn battery_health_text(capacity: f64) -> String {
     format!("{capacity:.0}%")
 }
 
+pub(super) fn battery_state_text(state: DeviceState) -> String {
+    state.to_string()
+}
+
 pub(super) fn battery_icon_name(percentage: f64, state: DeviceState) -> &'static str {
     let level = ((percentage / 10.0).round() as i32 * 10).clamp(0, 100);
 

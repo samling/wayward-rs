@@ -1,7 +1,7 @@
 use crate::bar::state::BatterySnapshot;
 
 use super::format::{
-    battery_energy_rate_text, battery_health_text, battery_icon_name, battery_percentage_text, initial_text,
+    battery_energy_rate_text, battery_health_text, battery_icon_name, battery_percentage_text, battery_state_text, initial_text,
 };
 
 #[derive(Clone, Debug)]
@@ -10,6 +10,7 @@ pub(super) struct BatteryViewModel {
     pub(super) percentage_text: String,
     pub(super) energy_rate_text: String,
     pub(super) health_text: String,
+    pub(super) state_text: String,
     pub(super) meter_value: f64,
 }
 
@@ -20,6 +21,7 @@ impl BatteryViewModel {
             percentage_text: initial_text(),
             energy_rate_text: String::new(),
             health_text: String::new(),
+            state_text: "Unavailable".to_string(),
             meter_value: 0.0,
         }
     }
@@ -30,6 +32,7 @@ impl BatteryViewModel {
             percentage_text: battery_percentage_text(snapshot.percentage),
             energy_rate_text: battery_energy_rate_text(snapshot.energy_rate),
             health_text: battery_health_text(snapshot.capacity),
+            state_text: battery_state_text(snapshot.state),
             meter_value: snapshot.percentage.clamp(0.0, 100.0),
         }
     }

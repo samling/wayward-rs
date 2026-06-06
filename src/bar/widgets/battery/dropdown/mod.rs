@@ -47,11 +47,27 @@ impl SimpleComponent for BatteryDropdown {
                 set_orientation: gtk::Orientation::Vertical,
                 set_spacing: 8,
 
-                gtk::Label {
-                    add_css_class: "dropdown-title",
-                    add_css_class: "battery-dropdown-title",
-                    set_halign: gtk::Align::Start,
-                    set_text: "Battery",
+                gtk::Box {
+                    add_css_class: "battery-dropdown-header",
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_spacing: 8,
+                    set_hexpand: true,
+
+                    gtk::Label {
+                        add_css_class: "dropdown-title",
+                        add_css_class: "battery-dropdown-title",
+                        set_halign: gtk::Align::Start,
+                        set_hexpand: true,
+                        set_text: "Battery",
+                    },
+
+                    gtk::Label {
+                        add_css_class: "battery-state",
+                        set_halign: gtk::Align::End,
+
+                        #[watch]
+                        set_text: &model.view_model.state_text,
+                    }
                 },
 
                 gtk::Box {
@@ -149,16 +165,15 @@ impl SimpleComponent for BatteryDropdown {
                         #[watch]
                         set_sensitive: model.has_profile(PowerProfile::PowerSaver),
 
-                        #[watch]
-                        #[block_signal(saver_handler)]
-                        set_active: model.is_active_profile(PowerProfile::PowerSaver),
-
                         connect_toggled[sender] => move |button| {
                             if button.is_active() {
                                 sender.input(BatteryDropdownInput::SelectProfile(PowerProfile::PowerSaver))
                             }
                         } @saver_handler,
 
+                        #[watch]
+                        #[block_signal(saver_handler)]
+                        set_active: model.is_active_profile(PowerProfile::PowerSaver),
 
                         set_label: "Power Saver",
                     },
