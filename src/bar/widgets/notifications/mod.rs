@@ -1,4 +1,5 @@
 mod component;
+mod dropdown;
 
 use relm4::Controller;
 use relm4::gtk;
@@ -10,7 +11,7 @@ use crate::bar::widget::{
     BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetInstance,
 };
 
-use self::component::{NotificationsComponent, NotificationsInput};
+use self::component::{NotificationsComponent, NotificationsInit, NotificationsInput};
 
 pub(crate) struct NotificationsWidget;
 
@@ -23,7 +24,8 @@ impl BarWidgetRuntime for NotificationsRuntime {
         self.controller.widget().clone().upcast()
     }
 
-    fn update(&mut self, state: &BarItemState, _context: &BarContext) {
+    fn update(&mut self, state: &BarItemState, context: &BarContext) {
+        self.controller.emit(NotificationsInput::SetPlacement { edge: context.edge, region: context.region });
         match state {
             BarItemState::Notifications(NotificationState::Ready(notifications)) => {
                 self.controller
@@ -45,9 +47,12 @@ impl BarWidget for NotificationsWidget {
     fn build(
         &self,
         _instance: &WidgetInstance,
-        _context: &WidgetBuildContext<'_>,
+        context: &WidgetBuildContext<'_>,
     ) -> Box<dyn BarWidgetRuntime> {
-        let controller = NotificationsComponent::builder().launch(()).detach();
+        let controller = NotificationsComponent::builder().launch(NotificationsInit {
+            edge: context.bar.edge,
+            region: context.bar.region,
+        }).detach();
 
         Box::new(NotificationsRuntime { controller })
     }
