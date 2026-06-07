@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libdbus-1-dev \
     libgirepository1.0-dev \
     libgtk-4-dev \
+    libpulse-dev \
     libudev-dev \
     libwayland-dev \
     meson \
