@@ -28,6 +28,7 @@ jobs:
             libdbus-1-dev \
             libgtk-4-dev \
             libgtk-layer-shell-dev \
+            libudev-dev \
             pkg-config
 
       - name: Install Rust
