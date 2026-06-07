@@ -3,6 +3,7 @@ use relm4::gtk::prelude::*;
 use relm4::prelude::*;
 use relm4::{ComponentController, Controller};
 
+use crate::bar::BarMsg;
 use crate::bar::layout::BarEdge;
 use crate::bar::widget::BarRegion;
 use crate::notifications::model::NotificationToast;
@@ -26,6 +27,7 @@ pub(super) enum NotificationsInput {
 pub(super) struct NotificationsInit {
     pub(super) edge: BarEdge,
     pub(super) region: BarRegion,
+    pub(super) bar_sender: relm4::Sender<BarMsg>,
 }
 
 #[relm4::component(pub(super))]
@@ -75,6 +77,7 @@ impl SimpleComponent for NotificationsComponent {
             .launch(NotificationsDropdownInit {
                 edge: init.edge,
                 region: init.region,
+                bar_sender: init.bar_sender,
             })
             .detach();
 

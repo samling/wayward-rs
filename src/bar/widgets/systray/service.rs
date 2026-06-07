@@ -49,6 +49,7 @@ pub(crate) fn handle_event(event: WidgetEvent, service: Option<Arc<SystemTraySer
             let bus_name = item_id;
             handle_click(bus_name, button, x, y, service);
         }
+        _ => {}
     }
 }
 

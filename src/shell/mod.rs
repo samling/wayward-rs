@@ -35,9 +35,9 @@ pub(crate) enum ShellMsg {
     ItemStateChanged(bar::state::BarItemState),
     OsdChanged(crate::osd::OsdEvent),
     PopupNotificationsChanged(Vec<crate::notifications::model::NotificationToast>),
-    DismissNotificationPopup(u32),
     InvokeNotificationAction { id: u32, action_id: String },
     InvokeNotificationDefaultAction(u32),
+    DismissNotificationPopup(u32),
 }
 
 #[relm4::component(pub(crate))]

@@ -66,6 +66,17 @@ pub(crate) enum WidgetAction {
         x: i32,
         y: i32,
     },
+    InvokeNotificationDefault {
+        id: u32,
+    },
+    InvokeNotificationAction {
+        id: u32,
+        action_id: String,
+    },
+    DismissNotification {
+        id: u32,
+    },
+    DismissAllNotifications,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

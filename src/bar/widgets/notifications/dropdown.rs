@@ -1,20 +1,25 @@
+use crate::bar::widget::{WidgetAction, WidgetEvent};
+use crate::bar::BarMsg;
 use crate::bar::{dropdown, layout::BarEdge, widget::BarRegion};
 use crate::notifications::model::NotificationToast;
+use relm4::factory::FactoryVecDeque;
 use relm4::gtk;
 use relm4::gtk::prelude::*;
 use relm4::prelude::*;
-use std::cell::RefCell;
+use super::row::{NotificationRow, NotificationRowOutput};
 
 pub(super) struct NotificationsDropdown {
     edge: BarEdge,
     region: BarRegion,
     notifications: Vec<NotificationToast>,
-    rendered_notification_ids: RefCell<Vec<u32>>,
+    rows: FactoryVecDeque<NotificationRow>,
+    bar_sender: relm4::Sender<BarMsg>,
 }
 
 pub(super) struct NotificationsDropdownInit {
     pub(super) edge: BarEdge,
     pub(super) region: BarRegion,
+    pub(super) bar_sender: relm4::Sender<BarMsg>,
 }
 
 #[derive(Debug)]
@@ -22,6 +27,10 @@ pub(super) enum NotificationsDropdownInput {
     SetPlacement { edge: BarEdge, region: BarRegion },
     SetNotifications(Vec<NotificationToast>),
     SetUnavailable,
+    InvokeDefault(u32),
+    InvokeAction { id: u32, action_id: String },
+    Dismiss(u32),
+    DismissAll,
 }
 
 #[relm4::component(pub(super))]
@@ -84,6 +93,19 @@ impl SimpleComponent for NotificationsDropdown {
                             set_hexpand: true,
                             set_text: "Notifications",
                         },
+
+                        gtk::Button {
+                            add_css_class: "notification-clear-all",
+                            add_css_class: "flat",
+                            set_label: "Clear all",
+
+                            #[watch]
+                            set_visible: !model.notifications.is_empty(),
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(NotificationsDropdownInput::DismissAll);
+                            }
+                        }
                     },
 
                     #[name = "empty_label"]
@@ -110,11 +132,11 @@ impl SimpleComponent for NotificationsDropdown {
                             set_orientation: gtk::Orientation::Vertical,
                             set_spacing: 6,
 
-                            #[name = "list"]
-                            gtk::Box {
-                                set_orientation: gtk::Orientation::Vertical,
-                                set_spacing: 6,
-                            },
+                            #[local_ref]
+                            list -> gtk::ListBox {
+                                add_css_class: "notifications-list-items",
+                                set_selection_mode: gtk::SelectionMode::None,
+                            }
                         },
                     },
                 },
@@ -125,13 +147,25 @@ impl SimpleComponent for NotificationsDropdown {
     fn init(
         init: Self::Init,
         _root: Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        let list = gtk::ListBox::default();
+        let rows = FactoryVecDeque::builder()
+            .launch(list.clone())
+            .forward(sender.input_sender(), |output| match output {
+                NotificationRowOutput::InvokeDefault(id) => {
+                    NotificationsDropdownInput::InvokeDefault(id)
+                }
+                NotificationRowOutput::InvokeAction { id, action_id } => NotificationsDropdownInput::InvokeAction { id, action_id },
+                NotificationRowOutput::Dismiss(id) => NotificationsDropdownInput::Dismiss(id),
+            });
+
         let model = Self {
             edge: init.edge,
             region: init.region,
             notifications: Vec::new(),
-            rendered_notification_ids: RefCell::new(Vec::new()),
+            rows,
+            bar_sender: init.bar_sender,
         };
 
         let widgets = view_output!();
@@ -152,84 +186,59 @@ impl SimpleComponent for NotificationsDropdown {
                 self.region = region;
             }
             NotificationsDropdownInput::SetNotifications(notifications) => {
-                self.notifications = notifications;
+                self.notifications = notifications.clone();
+                self.sync_row_slots(notifications);
             }
             NotificationsDropdownInput::SetUnavailable => {
                 self.notifications.clear();
+                self.rows.guard().clear();
+            }
+            NotificationsDropdownInput::InvokeDefault(id) => {
+                let _ = self.bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
+                    widget_id: "notifications",
+                    action: WidgetAction::InvokeNotificationDefault { id },
+                }));
+            }
+            NotificationsDropdownInput::InvokeAction { id, action_id } => {
+                let _ = self.bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
+                    widget_id: "notifications",
+                    action: WidgetAction::InvokeNotificationAction { id, action_id },
+                }));
+            }
+            NotificationsDropdownInput::Dismiss(id) => {
+                let _ = self.bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
+                    widget_id: "notifications",
+                    action: WidgetAction::DismissNotification { id },
+                }));
+            }
+            NotificationsDropdownInput::DismissAll => {
+                let _ = self.bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
+                    widget_id: "notifications",
+                    action: WidgetAction::DismissAllNotifications,
+                }));
             }
         }
     }
-
-    fn post_view() {
-        let notification_ids = self
-            .notifications
-            .iter()
-            .map(|notification| notification.id)
-            .collect::<Vec<_>>();
-
-        if *self.rendered_notification_ids.borrow() == notification_ids {
-            return;
-        }
-
-        while let Some(child) = widgets.list.first_child() {
-            widgets.list.remove(&child);
-        }
-
-        for notification in &self.notifications {
-            widgets.list.append(&notification_row(notification));
-        }
-
-        self.rendered_notification_ids.replace(notification_ids);
-    }
 }
 
-fn notification_row(notification: &NotificationToast) -> gtk::Widget {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    row.add_css_class("notification-list-row");
-    row.set_width_request(320);
+impl NotificationsDropdown {
+    fn sync_row_slots(&mut self, notifications: Vec<NotificationToast>) {
+        let mut rows = self.rows.guard();
 
-    let icon = gtk::Image::from_icon_name(&notification.app_icon);
-    icon.add_css_class("notification-list-icon");
-    icon.set_valign(gtk::Align::Start);
-    row.append(&icon);
+        let shared_len = rows.len().min(notifications.len());
 
-    let text = gtk::Box::new(gtk::Orientation::Vertical, 2);
-    text.add_css_class("notification-list-text");
-    text.set_hexpand(true);
+        for (index, notification) in notifications.iter().take(shared_len).enumerate() {
+            if let Some(row) = rows.get_mut(index) {
+                row.set_notification(notification.clone());
+            }
+        }
 
-    let app_name = gtk::Label::new(Some(&notification.app_name));
-    app_name.add_css_class("notification-list-app-name");
-    app_name.set_halign(gtk::Align::Start);
-    app_name.set_xalign(0.0);
-    app_name.set_max_width_chars(34);
-    app_name.set_ellipsize(gtk::pango::EllipsizeMode::End);
-    text.append(&app_name);
+        while rows.len() > notifications.len() {
+            rows.pop_back();
+        }
 
-    let summary = gtk::Label::new(Some(&notification.summary));
-    summary.add_css_class("notification-list-summary");
-    summary.set_halign(gtk::Align::Start);
-    summary.set_hexpand(true);
-    summary.set_xalign(0.0);
-    summary.set_wrap(true);
-    summary.set_wrap_mode(gtk::pango::WrapMode::WordChar);
-    summary.set_max_width_chars(34);
-    text.append(&summary);
-
-    if let Some(body) = &notification.body {
-        let body = gtk::Label::new(Some(body));
-        body.add_css_class("notification-list-body");
-        body.set_halign(gtk::Align::Start);
-        body.set_hexpand(true);
-        body.set_xalign(0.0);
-        body.set_wrap(true);
-        body.set_wrap_mode(gtk::pango::WrapMode::WordChar);
-        body.set_max_width_chars(34);
-        body.set_lines(3);
-        body.set_ellipsize(gtk::pango::EllipsizeMode::End);
-        text.append(&body);
+        for notification in notifications.into_iter().skip(shared_len) {
+            rows.push_back(notification);
+        }
     }
-
-    row.append(&text);
-
-    row.upcast()
 }

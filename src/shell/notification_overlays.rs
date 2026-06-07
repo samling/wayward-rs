@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use relm4::prelude::ComponentSender;
 
 use super::{Shell, monitors};
@@ -85,18 +83,6 @@ impl Shell {
         }
     }
 
-    fn notification_by_id(
-        service: &wayle_notification::NotificationService,
-        id: u32,
-    ) -> Option<Arc<wayle_notification::core::notification::Notification>> {
-        service
-            .popups
-            .get()
-            .into_iter()
-            .chain(service.notifications.get())
-            .find(|notification| notification.id == id)
-    }
-
     pub(super) fn dismiss_notification_popup(&self, id: u32) {
         let Some(service) = self.services.notification.as_ref() else {
             tracing::info!(
@@ -107,7 +93,6 @@ impl Shell {
 
         service.dismiss_popup(id);
     }
-
     pub(super) fn invoke_notification_action(&self, id: u32, action_id: String) {
         let Some(service) = self.services.notification.clone() else {
             tracing::info!(
@@ -117,7 +102,7 @@ impl Shell {
         };
 
         relm4::spawn(async move {
-            if let Some(notification) = Self::notification_by_id(service.as_ref(), id) {
+            if let Some(notification) = crate::notifications::actions::notification_by_id(service.as_ref(), id) {
                 if let Err(error) = notification.invoke(&action_id).await {
                     tracing::error!(
                         id,
@@ -142,7 +127,7 @@ impl Shell {
         };
 
         relm4::spawn(async move {
-            if let Some(notification) = Self::notification_by_id(service.as_ref(), id) {
+            if let Some(notification) = crate::notifications::actions::notification_by_id(service.as_ref(), id) {
                 if let Some(action) = notification.default_action.get() {
                     let action_id = action.id;
 

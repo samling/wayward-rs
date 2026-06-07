@@ -64,6 +64,7 @@ pub(crate) fn handle_event(event: WidgetEvent, service: Option<Arc<NiriService>>
         } => {
             handle_click(item_id, button, service);
         }
+        _ => {}
     }
 }
 
