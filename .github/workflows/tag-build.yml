@@ -1,0 +1,56 @@
+name: Tag Build
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_VERSION: "1.93"
+
+jobs:
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libdbus-1-dev \
+            libgtk-4-dev \
+            libgtk4-layer-shell-dev \
+            pkg-config
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+
+      - name: Build release binary
+        run: cargo build --locked --release
+
+      - name: Package binary
+        run: |
+          mkdir -p dist
+          tar -C target/release -czf dist/wayward-${{ github.ref_name }}-x86_64-unknown-linux-gnu.tar.gz wayward
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wayward-${{ github.ref_name }}-x86_64-unknown-linux-gnu
+          path: dist/*.tar.gz
+          if-no-files-found: error
+
+      - name: Attach artifact to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.tar.gz
