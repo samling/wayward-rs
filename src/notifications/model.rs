@@ -41,6 +41,14 @@ pub(crate) struct NotificationToast {
 
 impl NotificationToast {
     pub(crate) fn from_notification(notification: &Notification) -> Self {
+        tracing::debug!(
+            id = notification.id,
+            app_name = ?notification.app_name.get(),
+            app_icon = ?notification.app_icon.get(),
+            image_path = ?notification.image_path.get(),
+            desktop_entry = ?notification.desktop_entry.get(),
+            "notification icon fields"
+        );
         Self::from_fields(NotificationToastFields {
             id: notification.id,
             app_name: notification.app_name.get(),
@@ -76,7 +84,7 @@ impl NotificationToast {
             app_icon: display_or_fallback(fields.app_icon, FALLBACK_ICON_NAME),
             image_path: fields.image_path,
             summary: fields.summary,
-            body: fields.body,
+            body: clean_body(fields.body),
             urgency: fields.urgency,
             timestamp: fields.timestamp,
             actions: fields.actions,
@@ -110,6 +118,54 @@ fn display_or_fallback(value: Option<String>, fallback: &str) -> String {
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| fallback.to_string())
+}
+
+fn clean_body(body: Option<String>) -> Option<String> {
+    body.and_then(|body| {
+        let body = strip_leading_origin_link(&body).trim().to_string();
+
+        if body.is_empty() {
+            None
+        } else {
+            Some(body)
+        }
+    })
+}
+
+fn strip_leading_origin_link(body: &str) -> &str {
+    let Some(rest) = body.strip_prefix("<a href=\"") else {
+        return body;
+    };
+
+    let Some((href, rest)) = rest.split_once("\">") else {
+        return body;
+    };
+
+    let Some((label, rest)) = rest.split_once("</a>") else {
+        return body;
+    };
+
+    if !origin_label_matches_href(label, href) {
+        return body;
+    }
+
+    rest.trim_start_matches(['\r', '\n'])
+}
+
+fn origin_label_matches_href(label: &str, href: &str) -> bool {
+    let Some(host) = href_host(href) else {
+        return false;
+    };
+
+    label == host || label.strip_prefix("www.") == Some(host) || host.strip_prefix("www.") == Some(label)
+}
+
+fn href_host(href: &str) -> Option<&str> {
+    let rest = href
+        .strip_prefix("https://")
+        .or_else(|| href.strip_prefix("http://"))?;
+
+    rest.split(['/', '?', '#']).next()
 }
 
 pub(crate) fn newest_first(mut toasts: Vec<NotificationToast>) -> Vec<NotificationToast> {

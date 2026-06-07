@@ -535,11 +535,11 @@ levelbar.osd-level block.filled {
 }
 
 .notification-list-icon {
-    -gtk-icon-size: 1.5em;
+    -gtk-icon-size: 1.85em;
     color: inherit;
     margin-top: 0.1em;
-    min-width: 1.5em;
-    opacity: 0.9;
+    min-width: 1.85em;
+    opacity: 0.95;
 }
 
 .notification-list-text {
@@ -636,9 +636,9 @@ levelbar.osd-level block.filled {
 }
 
 .notification-app-icon {
-    -gtk-icon-size: 1.1em;
+    -gtk-icon-size: 1.35em;
     color: inherit;
-    min-width: 1.1em;
+    min-width: 1.35em;
 }
 
 .notification-app-name,
