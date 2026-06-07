@@ -78,7 +78,7 @@ impl Shell {
 
         for running in &self.notification_windows {
             if running.connector == target_connector {
-                running.window.set_toasts(&self.notifications);
+                running.window.set_toasts(&self.popup_notifications);
             } else {
                 running.window.set_toasts(&[]);
             }
