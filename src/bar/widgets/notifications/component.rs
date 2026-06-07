@@ -52,6 +52,8 @@ impl SimpleComponent for NotificationsComponent {
 
                 gtk::Image {
                     add_css_class: "notifications-icon",
+
+                    #[watch]
                     set_icon_name: Some("preferences-system-notifications-symbolic"),
                 },
 

@@ -149,7 +149,14 @@ fn strip_leading_origin_link(body: &str) -> &str {
         return body;
     }
 
-    rest.trim_start_matches(['\r', '\n'])
+    let Some(rest) = rest
+        .strip_prefix("\n\n")
+        .or_else(|| rest.strip_prefix("\r\n\r\n"))
+    else {
+        return body;
+    };
+
+    rest
 }
 
 fn origin_label_matches_href(label: &str, href: &str) -> bool {
