@@ -10,7 +10,9 @@ pub(crate) mod widgets;
 
 use layout::{BarEdge, BarLayout};
 use state::BarItemState;
-use widget::{BarContext, BarWidgetRuntime, WidgetBuildContext, WidgetEvent, WidgetInstance};
+use widget::{
+    BarContext, BarRegion, BarWidgetRuntime, WidgetBuildContext, WidgetEvent, WidgetInstance,
+};
 
 use gtk::prelude::*;
 use relm4::gtk;
@@ -56,6 +58,7 @@ pub enum BarMsg {
 
 struct MountedWidget {
     widget_id: &'static str,
+    region: BarRegion,
     runtime: Box<dyn BarWidgetRuntime>,
 }
 
@@ -79,10 +82,11 @@ pub struct Bar {
 }
 
 impl Bar {
-    fn context(&self) -> BarContext {
+    fn context(&self, region: BarRegion) -> BarContext {
         BarContext {
             monitor_connector: self.monitor_connector.clone(),
             edge: self.edge,
+            region,
         }
     }
 
@@ -95,11 +99,17 @@ impl Bar {
     }
 
     fn apply_state_to_mounted_widgets(&mut self, state: &BarItemState) {
-        let context = self.context();
         let widget_id = state.widget_id();
+        let edge = self.edge;
+        let monitor_connector = self.monitor_connector.clone();
 
         for mounted in self.mounted_widgets_mut() {
             if mounted.widget_id == widget_id {
+                let context = BarContext {
+                    monitor_connector: monitor_connector.clone(),
+                    edge,
+                    region: mounted.region,
+                };
                 mounted.runtime.update(state, &context);
             }
         }
@@ -136,17 +146,24 @@ impl Bar {
         center_items: &gtk::Box,
         end_items: &gtk::Box,
     ) {
-        self.mounted_layout.start = self.mount_region(&self.layout.start, start_items);
-        self.mounted_layout.center = self.mount_region(&self.layout.center, center_items);
-        self.mounted_layout.end = self.mount_region(&self.layout.end, end_items);
+        self.mounted_layout.start =
+            self.mount_region(BarRegion::Start, &self.layout.start, start_items);
+        self.mounted_layout.center =
+            self.mount_region(BarRegion::Center, &self.layout.center, center_items);
+        self.mounted_layout.end = self.mount_region(BarRegion::End, &self.layout.end, end_items);
     }
 
-    fn mount_region(&self, widgets: &[WidgetInstance], container: &gtk::Box) -> Vec<MountedWidget> {
+    fn mount_region(
+        &self,
+        region: BarRegion,
+        widgets: &[WidgetInstance],
+        container: &gtk::Box,
+    ) -> Vec<MountedWidget> {
         while let Some(child) = container.first_child() {
             container.remove(&child);
         }
 
-        let context = self.context();
+        let context = self.context(region);
         let build_context = WidgetBuildContext {
             sender: &self.input_sender,
             services: &self.services,
@@ -163,6 +180,7 @@ impl Bar {
 
                 MountedWidget {
                     widget_id: instance.widget.id(),
+                    region,
                     runtime,
                 }
             })

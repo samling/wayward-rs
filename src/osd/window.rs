@@ -38,6 +38,9 @@ impl OsdWindow {
         level.set_min_value(0.0);
         level.set_max_value(100.0);
         level.set_width_request(180);
+        level.set_height_request(2);
+        level.set_valign(gtk::Align::Center);
+        level.set_vexpand(false);
         level.add_css_class("osd-level");
 
         root.append(&icon);

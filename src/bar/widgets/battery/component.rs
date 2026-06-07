@@ -1,5 +1,6 @@
 use crate::bar::layout::BarEdge;
 use crate::bar::state::BatterySnapshot;
+use crate::bar::widget::BarRegion;
 use relm4::Controller;
 use relm4::gtk;
 use relm4::gtk::prelude::{OrientableExt, WidgetExt};
@@ -14,19 +15,21 @@ use super::view_model::BatteryViewModel;
 pub(super) struct BatteryComponent {
     view_model: BatteryViewModel,
     edge: BarEdge,
+    region: BarRegion,
     dropdown: Controller<BatteryDropdown>,
 }
 
 // BatteryInit carries construction-time dependencies
 pub(super) struct BatteryInit {
     pub(super) edge: BarEdge,
+    pub(super) region: BarRegion,
     pub(super) power_profiles: Option<Arc<PowerProfilesService>>,
 }
 
 // BatteryInput is the component message API
 #[derive(Debug)]
 pub(super) enum BatteryInput {
-    SetEdge(BarEdge),
+    SetPlacement { edge: BarEdge, region: BarRegion },
     SetSnapshot(BatterySnapshot),
     SetUnavailable,
 }
@@ -87,12 +90,14 @@ impl SimpleComponent for BatteryComponent {
         let dropdown = BatteryDropdown::builder()
             .launch(BatteryDropdownInit {
                 edge: init.edge,
+                region: init.region,
                 power_profiles: init.power_profiles.clone(),
             })
             .detach();
         let model = Self {
             view_model: BatteryViewModel::unavailable(),
             edge: init.edge,
+            region: init.region,
             dropdown,
         };
 
@@ -105,9 +110,11 @@ impl SimpleComponent for BatteryComponent {
 
     fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
         match msg {
-            BatteryInput::SetEdge(edge) => {
+            BatteryInput::SetPlacement { edge, region } => {
                 self.edge = edge;
-                self.dropdown.emit(BatteryDropdownInput::SetEdge(edge));
+                self.region = region;
+                self.dropdown
+                    .emit(BatteryDropdownInput::SetPlacement { edge, region });
             }
             BatteryInput::SetSnapshot(snapshot) => {
                 let view_model = BatteryViewModel::from_snapshot(&snapshot);

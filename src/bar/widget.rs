@@ -68,6 +68,13 @@ pub(crate) enum WidgetAction {
     },
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum BarRegion {
+    Start,
+    Center,
+    End,
+}
+
 pub(crate) trait BarWidget: Sync {
     fn id(&self) -> &'static str;
 
@@ -102,6 +109,7 @@ pub(crate) trait BarWidget: Sync {
 pub(crate) struct BarContext {
     pub(crate) monitor_connector: Option<String>,
     pub(crate) edge: crate::bar::layout::BarEdge,
+    pub(crate) region: BarRegion,
 }
 
 pub(crate) struct WidgetBuildContext<'a> {

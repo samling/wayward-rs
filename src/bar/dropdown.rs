@@ -4,11 +4,17 @@ use relm4::gtk::glib;
 use std::time::Duration;
 
 use crate::bar::layout::BarEdge;
+use crate::bar::widget::BarRegion;
 
 const DROPDOWN_GAP: i32 = 6;
 pub(crate) const TRANSITION_MS: u32 = 140;
 
-pub(crate) fn install_revealer(popover: &gtk::Popover, revealer: &gtk::Revealer, edge: BarEdge) {
+pub(crate) fn install_revealer(
+    popover: &gtk::Popover,
+    revealer: &gtk::Revealer,
+    edge: BarEdge,
+    region: BarRegion,
+) {
     revealer.set_transition_duration(TRANSITION_MS);
     revealer.set_reveal_child(false);
 
@@ -18,7 +24,7 @@ pub(crate) fn install_revealer(popover: &gtk::Popover, revealer: &gtk::Revealer,
     }
 
     popover.set_child(Some(revealer));
-    set_edge(popover, revealer, edge);
+    set_placement(popover, revealer, edge, region);
 
     connect_revealer(popover, revealer);
 }
@@ -38,9 +44,19 @@ pub(crate) fn connect_revealer(popover: &gtk::Popover, revealer: &gtk::Revealer)
     });
 }
 
-pub(crate) fn set_edge(popover: &gtk::Popover, revealer: &gtk::Revealer, edge: BarEdge) {
+pub(crate) fn set_placement(
+    popover: &gtk::Popover,
+    revealer: &gtk::Revealer,
+    edge: BarEdge,
+    region: BarRegion,
+) {
     popover.set_position(position_for_edge(edge));
-    popover.set_offset(0, offset_for_edge(edge));
+    let (x_offset, y_offset) = offset_for_placement(edge, region);
+    popover.set_offset(x_offset, y_offset);
+    popover.set_margin_start(margin_start_for_placement(edge, region));
+    popover.set_margin_end(margin_end_for_placement(edge, region));
+    popover.set_margin_top(margin_top_for_placement(edge, region));
+    popover.set_margin_bottom(margin_bottom_for_placement(edge, region));
     revealer.set_transition_type(transition_for_edge(edge));
 }
 
@@ -53,11 +69,52 @@ pub(crate) fn position_for_edge(edge: BarEdge) -> gtk::PositionType {
     }
 }
 
-pub(crate) fn offset_for_edge(edge: BarEdge) -> i32 {
+fn offset_for_placement(edge: BarEdge, _region: BarRegion) -> (i32, i32) {
     match edge {
-        BarEdge::Top => DROPDOWN_GAP,
-        BarEdge::Bottom => -DROPDOWN_GAP,
-        BarEdge::Left | BarEdge::Right => 0,
+        BarEdge::Top => (0, DROPDOWN_GAP),
+        BarEdge::Bottom => (0, -DROPDOWN_GAP),
+        BarEdge::Left => (DROPDOWN_GAP, 0),
+        BarEdge::Right => (-DROPDOWN_GAP, 0),
+    }
+}
+
+pub(crate) fn x_offset_for_placement(edge: BarEdge, region: BarRegion) -> i32 {
+    offset_for_placement(edge, region).0
+}
+
+pub(crate) fn y_offset_for_placement(edge: BarEdge, region: BarRegion) -> i32 {
+    offset_for_placement(edge, region).1
+}
+
+pub(crate) fn margin_start_for_placement(edge: BarEdge, region: BarRegion) -> i32 {
+    if matches!(edge, BarEdge::Top | BarEdge::Bottom) && region == BarRegion::Start {
+        DROPDOWN_GAP
+    } else {
+        0
+    }
+}
+
+pub(crate) fn margin_end_for_placement(edge: BarEdge, region: BarRegion) -> i32 {
+    if matches!(edge, BarEdge::Top | BarEdge::Bottom) && region == BarRegion::End {
+        DROPDOWN_GAP
+    } else {
+        0
+    }
+}
+
+pub(crate) fn margin_top_for_placement(edge: BarEdge, region: BarRegion) -> i32 {
+    if matches!(edge, BarEdge::Left | BarEdge::Right) && region == BarRegion::Start {
+        DROPDOWN_GAP
+    } else {
+        0
+    }
+}
+
+pub(crate) fn margin_bottom_for_placement(edge: BarEdge, region: BarRegion) -> i32 {
+    if matches!(edge, BarEdge::Left | BarEdge::Right) && region == BarRegion::End {
+        DROPDOWN_GAP
+    } else {
+        0
     }
 }
 
@@ -67,5 +124,36 @@ pub(crate) fn transition_for_edge(edge: BarEdge) -> gtk::RevealerTransitionType 
         BarEdge::Bottom => gtk::RevealerTransitionType::SlideUp,
         BarEdge::Left => gtk::RevealerTransitionType::SlideRight,
         BarEdge::Right => gtk::RevealerTransitionType::SlideLeft,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn center_dropdowns_do_not_get_screen_edge_margin() {
+        assert_eq!(
+            margin_start_for_placement(BarEdge::Top, BarRegion::Center),
+            0
+        );
+        assert_eq!(margin_end_for_placement(BarEdge::Top, BarRegion::Center), 0);
+        assert_eq!(
+            margin_top_for_placement(BarEdge::Left, BarRegion::Center),
+            0
+        );
+        assert_eq!(
+            margin_bottom_for_placement(BarEdge::Left, BarRegion::Center),
+            0
+        );
+    }
+
+    #[test]
+    fn end_dropdown_on_top_bar_gets_right_edge_margin() {
+        assert_eq!(
+            margin_end_for_placement(BarEdge::Top, BarRegion::End),
+            DROPDOWN_GAP
+        );
+        assert_eq!(margin_start_for_placement(BarEdge::Top, BarRegion::End), 0);
     }
 }
