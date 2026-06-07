@@ -5,6 +5,7 @@ use std::path::{Path, PathBuf};
 const UPOWER_HISTORY_DIR: &str = "/var/lib/upower";
 const CHARGE_HISTORY_PREFIX: &str = "history-charge-";
 const CHARGE_HISTORY_SUFFIX: &str = ".dat";
+pub(super) const CHARGE_HISTORY_WINDOW_SECONDS: i64 = 8 * 60 * 60; // 8 hours
 
 #[derive(Clone, Debug, PartialEq)]
 pub(super) struct BatteryHistoryPoint {
@@ -81,6 +82,23 @@ pub(super) fn graph_points(points: &[BatteryHistoryPoint]) -> Vec<BatteryHistory
             x: (point.timestamp - first.timestamp) as f64 / duration,
             y: (point.percentage / 100.0).clamp(0.0, 1.0),
         })
+        .collect()
+}
+
+pub(super) fn recent_points(
+    points: &[BatteryHistoryPoint],
+    window_seconds: i64,
+) -> Vec<BatteryHistoryPoint> {
+    let Some(last) = points.last() else {
+        return Vec::new();
+    };
+
+    let cutoff = last.timestamp - window_seconds;
+
+    points
+        .iter()
+        .filter(|point| point.timestamp >= cutoff)
+        .cloned()
         .collect()
 }
 
