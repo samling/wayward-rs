@@ -1,5 +1,6 @@
 use crate::bar::widgets::systray::view_model::SystrayItemSummary;
 use crate::bar::widgets::workspaces::model::WorkspaceSummary;
+use crate::notifications::model::NotificationToast;
 use wayle_battery::types::DeviceState;
 use wayle_power_profiles::types::profile::PowerProfile;
 
@@ -9,6 +10,7 @@ pub(crate) enum BarItemState {
     Battery(BatteryState),
     Clock(ClockState),
     Systray(SystrayState),
+    Notifications(NotificationState),
 }
 
 #[derive(Clone, Debug)]
@@ -55,6 +57,12 @@ impl std::fmt::Debug for SystrayState {
     }
 }
 
+#[derive(Clone, Debug)]
+pub(crate) enum NotificationState {
+    Ready(Vec<NotificationToast>),
+    Unavailable,
+}
+
 impl BarItemState {
     pub(crate) fn widget_id(&self) -> &'static str {
         match self {
@@ -62,6 +70,7 @@ impl BarItemState {
             Self::Battery(_) => "battery",
             Self::Clock(_) => "clock",
             Self::Systray(_) => "systray",
+            Self::Notifications(_) => "notifications",
         }
     }
 

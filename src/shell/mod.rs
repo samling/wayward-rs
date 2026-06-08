@@ -15,7 +15,7 @@ pub(crate) struct Shell {
     config: AppConfig,
     item_states: Vec<bar::state::BarItemState>,
     focused_monitor_connector: Option<String>,
-    notifications: Vec<crate::notifications::model::NotificationToast>,
+    popup_notifications: Vec<crate::notifications::model::NotificationToast>,
     notification_windows: Vec<notification_overlays::RunningNotificationWindow>,
     osd_windows: Vec<osd_windows::RunningOsd>,
     services: crate::services::ShellServices,
@@ -34,10 +34,10 @@ pub(crate) enum ShellMsg {
     ReconcileMonitors,
     ItemStateChanged(bar::state::BarItemState),
     OsdChanged(crate::osd::OsdEvent),
-    NotificationsChanged(Vec<crate::notifications::model::NotificationToast>),
-    DismissNotificationPopup(u32),
+    PopupNotificationsChanged(Vec<crate::notifications::model::NotificationToast>),
     InvokeNotificationAction { id: u32, action_id: String },
     InvokeNotificationDefaultAction(u32),
+    DismissNotificationPopup(u32),
 }
 
 #[relm4::component(pub(crate))]
@@ -65,7 +65,7 @@ impl SimpleComponent for Shell {
             config,
             item_states: crate::services::initial_item_states(),
             focused_monitor_connector: None,
-            notifications: Vec::new(),
+            popup_notifications: Vec::new(),
             notification_windows: Vec::new(),
             osd_windows: Vec::new(),
             services,
@@ -148,8 +148,8 @@ impl SimpleComponent for Shell {
             ShellMsg::OsdChanged(event) => {
                 self.show_osd(&event);
             }
-            ShellMsg::NotificationsChanged(notifications) => {
-                self.notifications = notifications;
+            ShellMsg::PopupNotificationsChanged(notifications) => {
+                self.popup_notifications = notifications;
                 self.show_notifications();
             }
             ShellMsg::DismissNotificationPopup(id) => {

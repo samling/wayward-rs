@@ -127,8 +127,9 @@ impl NotificationWindow {
         let header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
         header.add_css_class("notification-header");
 
-        let icon = gtk::Image::from_icon_name(&toast.app_icon);
+        let icon = gtk::Image::new();
         icon.add_css_class("notification-app-icon");
+        crate::notifications::icon::set_notification_icon(&icon, toast);
         header.append(&icon);
 
         let app_name = gtk::Label::new(Some(&toast.app_name));
