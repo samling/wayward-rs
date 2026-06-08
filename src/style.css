@@ -224,9 +224,12 @@ popover.dropdown arrow {
 }
 
 /* Clock */
-.clock-dropdown-content,
+.clock-dropdown-content {
+    min-width: 16em;
+}
+
 .battery-dropdown-content {
-    min-width: 18em;
+    min-width: 360px;
 }
 
 .clock-dropdown-title,
