@@ -76,7 +76,11 @@ impl FactoryComponent for NotificationRow {
                     set_xalign: 0.0,
                     set_wrap: true,
                     set_wrap_mode: gtk::pango::WrapMode::WordChar,
+                    set_natural_wrap_mode: gtk::NaturalWrapMode::Word,
+                    set_lines: 2,
+                    set_width_chars: 34,
                     set_max_width_chars: 34,
+                    set_ellipsize: gtk::pango::EllipsizeMode::End,
 
                     #[watch]
                     set_text: &self.notification.summary,
@@ -88,8 +92,10 @@ impl FactoryComponent for NotificationRow {
                     set_xalign: 0.0,
                     set_wrap: true,
                     set_wrap_mode: gtk::pango::WrapMode::WordChar,
-                    set_max_width_chars: 34,
+                    set_natural_wrap_mode: gtk::NaturalWrapMode::Word,
                     set_lines: 3,
+                    set_width_chars: 34,
+                    set_max_width_chars: 34,
                     set_ellipsize: gtk::pango::EllipsizeMode::End,
 
                     #[watch]
