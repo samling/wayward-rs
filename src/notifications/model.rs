@@ -17,6 +17,7 @@ pub(crate) struct NotificationToastFields {
     pub(crate) app_name: Option<String>,
     pub(crate) app_icon: Option<String>,
     pub(crate) image_path: Option<String>,
+    pub(crate) desktop_entry: Option<String>,
     pub(crate) summary: String,
     pub(crate) body: Option<String>,
     pub(crate) urgency: Urgency,
@@ -31,6 +32,7 @@ pub(crate) struct NotificationToast {
     pub(crate) app_name: String,
     pub(crate) app_icon: String,
     pub(crate) image_path: Option<String>,
+    pub(crate) desktop_entry: Option<String>,
     pub(crate) summary: String,
     pub(crate) body: Option<String>,
     pub(crate) urgency: Urgency,
@@ -54,6 +56,7 @@ impl NotificationToast {
             app_name: notification.app_name.get(),
             app_icon: notification.app_icon.get(),
             image_path: notification.image_path.get(),
+            desktop_entry: notification.desktop_entry.get(),
             summary: notification.summary.get(),
             body: notification.body.get(),
             actions: notification
@@ -83,6 +86,7 @@ impl NotificationToast {
             app_name: display_or_fallback(fields.app_name, FALLBACK_APP_NAME),
             app_icon: display_or_fallback(fields.app_icon, FALLBACK_ICON_NAME),
             image_path: fields.image_path,
+            desktop_entry: normalized_optional(fields.desktop_entry),
             summary: fields.summary,
             body: clean_body(fields.body),
             urgency: fields.urgency,
@@ -118,6 +122,13 @@ fn display_or_fallback(value: Option<String>, fallback: &str) -> String {
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| fallback.to_string())
+}
+
+// This helper takes an optional string, trims whitespace, and returns None of the string is empty.
+fn normalized_optional(value: Option<String>) -> Option<String> {
+    value
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
 }
 
 fn clean_body(body: Option<String>) -> Option<String> {
@@ -286,6 +297,7 @@ mod tests {
             app_name,
             app_icon,
             image_path: None,
+            desktop_entry: None,
             summary: summary.to_string(),
             body: Some("Body".to_string()),
             urgency: Urgency::Normal,
