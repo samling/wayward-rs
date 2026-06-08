@@ -78,16 +78,14 @@ pub(crate) enum WidgetAction {
     },
     DismissAllNotifications,
     RunActionMenuAction {
-        action: ActionMenuAction,
+        command: ActionMenuCommand,
     }
 }
 
 #[derive(Clone, Debug)]
-pub(crate) enum ActionMenuAction {
-    ScreenshotRegion,
-    ScreenshotWindow,
-    ScreenshotScreen,
-    PowerMenu,
+pub(crate) struct ActionMenuCommand {
+    pub(crate) program: String,
+    pub(crate) args: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -99,6 +97,10 @@ pub(crate) enum BarRegion {
 
 pub(crate) trait BarWidget: Sync {
     fn id(&self) -> &'static str;
+
+    fn config_table_keys(&self) -> &'static [&'static str] {
+        &[]
+    }
 
     fn build(
         &self,

@@ -7,6 +7,7 @@ use crate::bar::BarMsg;
 use crate::bar::layout::BarEdge;
 use crate::bar::widget::BarRegion;
 
+use super::config::ActionMenuConfig;
 use super::dropdown::{ActionMenuDropdown, ActionMenuDropdownInit, ActionMenuDropdownInput};
 
 pub(super) struct ActionMenuComponent {
@@ -24,6 +25,7 @@ pub(super) struct ActionMenuInit {
     pub(super) edge: BarEdge,
     pub(super) region: BarRegion,
     pub(super) bar_sender: relm4::Sender<BarMsg>,
+    pub(super) config: ActionMenuConfig,
 }
 
 #[relm4::component(pub(super))]
@@ -64,6 +66,7 @@ impl SimpleComponent for ActionMenuComponent {
                 edge: init.edge,
                 region: init.region,
                 bar_sender: init.bar_sender,
+                config: init.config.clone(),
             })
             .detach();
 

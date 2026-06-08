@@ -104,6 +104,16 @@ menubutton.bar-item > button:checked {
     outline: none;
 }
 
+menubutton.action-menu > button,
+menubutton.action-menu > button.toggle {
+    padding: 0 8px;
+}
+
+.bar.vertical menubutton.action-menu > button,
+.bar.vertical menubutton.action-menu > button.toggle {
+    padding: 0;
+}
+
 /* Workspaces */
 .workspaces-overlay {
     background: transparent;
@@ -707,6 +717,8 @@ levelbar.osd-level block.filled {
 
 .action-menu-power,
 .action-menu-power.flat,
+.action-menu-action,
+.action-menu-action.flat,
 .action-menu-screenshot-action,
 .action-menu-screenshot-action.flat {
     background: transparent;
@@ -725,6 +737,7 @@ levelbar.osd-level block.filled {
     padding: 0;
 }
 
+.action-menu-action,
 .action-menu-screenshot-action {
     min-width: 4.8em;
     padding: 0.65em 0.75em;
@@ -742,6 +755,8 @@ levelbar.osd-level block.filled {
 
 .action-menu-power:hover,
 .action-menu-power.flat:hover,
+.action-menu-action:hover,
+.action-menu-action.flat:hover,
 .action-menu-screenshot-action:hover,
 .action-menu-screenshot-action.flat:hover {
     background: rgba(241, 243, 244, 0.08);
