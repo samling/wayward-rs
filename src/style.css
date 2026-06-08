@@ -2,8 +2,7 @@
 .bar {
     background-color: rgba(30, 30, 46, 0.7);
     color: #f1f3f4;
-    /* font-family: "JetBrainsMono"; */
-    font-family: "Symbols Nerd Font", "Symbols Nerd Font Mono", "JetBrainsMono Nerd Font", "JetBrainsMono";
+    font-family: "Adwaita Sans", "Symbols Nerd Font", "Symbols Nerd Font Mono", "JetBrainsMono Nerd Font";
     font-size: 12px;
     font-weight: 100;
     padding: 0;
@@ -71,6 +70,8 @@
 
 .bar-item-content {
     color: inherit;
+    margin-bottom: 4px;
+    margin-top: 4px;
     min-height: 0;
     min-width: 0;
     padding: 0;
@@ -122,7 +123,12 @@ menubutton.action-menu > button.toggle {
 }
 
 .workspaces-content {
+    background-color: rgba(255, 255, 255, 0.1);
     border-spacing: 0.4em;
+    border-radius: 4px;
+    margin-bottom: 0;
+    margin-top: 0;
+    padding: 4px;
 }
 
 .bar.vertical .workspaces-content {
@@ -167,6 +173,10 @@ menubutton.action-menu > button.toggle {
 .workspace-indicator {
     background-color: rgba(137, 180, 250, 0.5);
     border-radius: 0.4em;
+    margin: -4px;
+    min-height: 8px;
+    min-width: 8px;
+    padding: 0;
 }
 
 .status {
@@ -190,9 +200,9 @@ popover.dropdown contents,
 
 /* Dropdowns */
 popover.dropdown contents {
-    font-family: "JetBrainsMono";
+    font-family: "Adwaita Sans";
     font-size: 12px;
-    font-weight: 100;
+    font-weight: 500;
     padding: 0;
 }
 
@@ -385,7 +395,11 @@ button.profile-button.performance:checked {
 
 /* Systray */
 .systray-content {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
     border-spacing: 0.25em;
+    padding-left: 8px;
+    padding-right: 8px;
 }
 
 .systray-item {
@@ -430,9 +444,9 @@ popover.systray-menu button:focus-visible {
 
 .osd {
     box-shadow: none;
-    font-family: "JetBrainsMono";
-    font-size: 12px;
-    font-weight: 100;
+    font-family: "Adwaita Sans";
+    font-size: 14px;
+    font-weight: 500;
     padding: 0.8em 1em;
 }
 
@@ -469,7 +483,7 @@ levelbar.osd-level block.filled {
 /* Notifications */
 .notification-window {
     background: transparent;
-    font-family: "JetBrainsMono";
+    font-family: "Adwaita Sans";
     font-size: 12px;
     font-weight: 100;
 }
@@ -487,9 +501,20 @@ levelbar.osd-level block.filled {
     margin-bottom: 0.25em;
 }
 
-.notifications-list-scroll {
+/* .notifications-list-scroll {
     background: transparent;
 }
+
+.notifications-list-scroll scrollbar {
+    opacity: 0;
+    min-height: 0;
+    min-width: 0;
+}
+
+.notifications-list-scroll scrollbar slider {
+    min-height: 0;
+    min-width: 0;
+} */
 
 .notifications-list {
     background: transparent;
@@ -504,7 +529,7 @@ levelbar.osd-level block.filled {
     border: none;
     box-shadow: none;
     margin: 0 0 0.45em 0;
-    padding: 0;
+    padding: 2px 4px;
 }
 
 .notifications-list-items row:hover,
@@ -526,11 +551,20 @@ levelbar.osd-level block.filled {
     border-radius: 8px;
     color: inherit;
     padding: 0.7em;
+    transform: scale(1);
+    transform-origin: center;
+    transition:
+        transform 140ms ease-out,
+        background-color 140ms ease-out,
+        border-color 140ms ease-out;
 }
 
 .notification-list-row:hover {
     background-color: rgba(241, 243, 244, 0.085);
-    border-color: rgba(241, 243, 244, 0.18);
+    border-top-color: rgba(241, 243, 244, 0.18);
+    border-right-color: rgba(241, 243, 244, 0.18);
+    border-bottom-color: rgba(241, 243, 244, 0.18);
+    transform: scale(1.015);
 }
 
 .notification-list-row.low {
@@ -555,6 +589,7 @@ levelbar.osd-level block.filled {
 
 .notification-list-text {
     color: inherit;
+    font-family: "Adwaita Sans";
 }
 
 .notification-list-app-name {
@@ -564,12 +599,13 @@ levelbar.osd-level block.filled {
 }
 
 .notification-list-summary {
+    font-size: 1.15em;
     font-weight: 600;
 }
 
 .notification-list-body {
-    font-size: 0.92em;
-    font-weight: 400;
+    font-size: 1.1em;
+    font-weight: 500;
     opacity: 0.82;
 }
 
@@ -764,7 +800,7 @@ levelbar.osd-level block.filled {
 }
 
 .action-menu-action-icon {
-    font-family: "Symbols Nerd Font", "Symbols Nerd Font Mono", "JetBrainsMono Nerd Font", "JetBrainsMono";
+    font-family: "Symbols Nerd Font", "Symbols Nerd Font Mono", "Adwaita Sans";
     font-size: 1.65em;
     font-weight: 400;
     line-height: 1;

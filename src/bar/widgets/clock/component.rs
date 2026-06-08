@@ -81,6 +81,7 @@ impl SimpleComponent for ClockComponent {
         content.append(&label);
 
         root.set_always_show_arrow(false);
+        root.set_cursor_from_name(Some("pointer"));
         crate::bar::style::add_bar_item_classes(&root, "clock", init.instance_class.as_deref());
         root.add_css_class("flat");
         root.set_child(Some(&content));

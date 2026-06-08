@@ -39,6 +39,7 @@ impl SimpleComponent for NotificationsComponent {
     view! {
         gtk::MenuButton {
             set_always_show_arrow: false,
+            set_cursor_from_name: Some("pointer"),
             add_css_class: "bar-item",
             add_css_class: "notifications",
             add_css_class: "flat",

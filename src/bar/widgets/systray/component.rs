@@ -149,6 +149,7 @@ impl SystrayItemRuntime {
     ) -> Self {
         let root = gtk::Box::new(orientation, 0);
         root.add_css_class("systray-item");
+        root.set_cursor_from_name(Some("pointer"));
 
         attach_click_handler(root.upcast_ref(), sender, item, service);
 
