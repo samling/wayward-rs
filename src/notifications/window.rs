@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use super::model::NotificationToast;
 use crate::shell::ShellMsg;
 
-const TOP_MARGIN: i32 = 36;
+const TOP_MARGIN: i32 = 8;
 const RIGHT_MARGIN: i32 = 12;
 const STACK_SPACING: i32 = 8;
 const TEXT_WIDTH_CHARS: i32 = 42;
