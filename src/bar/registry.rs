@@ -1,19 +1,21 @@
 use crate::services::ShellServices;
 
 use super::widget::{BarWidget, WidgetEvent};
+use super::widgets::action_menu::ActionMenuWidget;
 use super::widgets::battery::BatteryWidget;
 use super::widgets::clock::ClockWidget;
 use super::widgets::notifications::NotificationsWidget;
 use super::widgets::systray::SystrayWidget;
 use super::widgets::workspaces::WorkspacesWidget;
 
+static ACTION_MENU: ActionMenuWidget = ActionMenuWidget;
 static BATTERY: BatteryWidget = BatteryWidget;
 static CLOCK: ClockWidget = ClockWidget;
 static NOTIFICATIONS: NotificationsWidget = NotificationsWidget;
 static SYSTRAY: SystrayWidget = SystrayWidget;
 static WORKSPACES: WorkspacesWidget = WorkspacesWidget;
 
-pub(crate) static WIDGETS: &[&dyn BarWidget] = &[&WORKSPACES, &CLOCK, &BATTERY, &NOTIFICATIONS, &SYSTRAY];
+pub(crate) static WIDGETS: &[&dyn BarWidget] = &[&WORKSPACES, &CLOCK, &BATTERY, &NOTIFICATIONS, &SYSTRAY, &ACTION_MENU];
 
 pub(crate) fn widget_by_id(id: &str) -> Option<&'static dyn BarWidget> {
     WIDGETS.iter().copied().find(|widget| widget.id() == id)

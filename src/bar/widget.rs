@@ -77,6 +77,17 @@ pub(crate) enum WidgetAction {
         id: u32,
     },
     DismissAllNotifications,
+    RunActionMenuAction {
+        action: ActionMenuAction,
+    }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum ActionMenuAction {
+    ScreenshotRegion,
+    ScreenshotWindow,
+    ScreenshotScreen,
+    PowerMenu,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

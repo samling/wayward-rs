@@ -1,3 +1,4 @@
+pub(crate) mod action_menu;
 pub(crate) mod battery;
 pub(crate) mod clock;
 pub(crate) mod notifications;
