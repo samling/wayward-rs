@@ -5,6 +5,8 @@ use relm4::prelude::*;
 
 use crate::notifications::model::NotificationToast;
 
+const BODY_PREVIEW_LINES: usize = 4;
+
 pub(super) struct NotificationRow {
     notification: NotificationToast,
 }
@@ -76,7 +78,11 @@ impl FactoryComponent for NotificationRow {
                     set_xalign: 0.0,
                     set_wrap: true,
                     set_wrap_mode: gtk::pango::WrapMode::WordChar,
+                    set_natural_wrap_mode: gtk::NaturalWrapMode::Word,
+                    set_lines: 2,
+                    set_width_chars: 34,
                     set_max_width_chars: 34,
+                    set_ellipsize: gtk::pango::EllipsizeMode::End,
 
                     #[watch]
                     set_text: &self.notification.summary,
@@ -88,15 +94,17 @@ impl FactoryComponent for NotificationRow {
                     set_xalign: 0.0,
                     set_wrap: true,
                     set_wrap_mode: gtk::pango::WrapMode::WordChar,
-                    set_max_width_chars: 34,
+                    set_natural_wrap_mode: gtk::NaturalWrapMode::Word,
                     set_lines: 3,
+                    set_width_chars: 34,
+                    set_max_width_chars: 34,
                     set_ellipsize: gtk::pango::EllipsizeMode::End,
 
                     #[watch]
                     set_visible: self.has_body(),
 
                     #[watch]
-                    set_text: &self.body_text(),
+                    set_text: &self.body_preview_text(),
                 },
 
                 #[name = "actions"]
@@ -178,8 +186,12 @@ impl NotificationRow {
         self.notification = notification;
     }
 
-    fn body_text(&self) -> &str {
-        self.notification.body.as_deref().unwrap_or("")
+    fn body_preview_text(&self) -> String {
+        self.notification
+            .body
+            .as_deref()
+            .map(compact_preview_text)
+            .unwrap_or_default()
     }
 
     fn has_body(&self) -> bool {
@@ -188,4 +200,15 @@ impl NotificationRow {
             .as_ref()
             .is_some_and(|body| !body.trim().is_empty())
     }
+}
+
+fn compact_preview_text(value: &str) -> String {
+    let mut lines = value.lines().take(BODY_PREVIEW_LINES).collect::<Vec<_>>();
+
+    if value.lines().count() > BODY_PREVIEW_LINES {
+        if let Some(last_line) = lines.last_mut() {
+            *last_line = "...";
+        }
+    }
+    lines.join("\n")
 }

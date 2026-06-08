@@ -14,6 +14,8 @@ const SUMMARY_MAX_LINES: i32 = 2;
 const BODY_MAX_LINES: i32 = 4;
 
 fn configure_wrapping_label(label: &gtk::Label, max_lines: i32) {
+    label.set_hexpand(true);
+    label.set_halign(gtk::Align::Fill);
     label.set_wrap(true);
     label.set_wrap_mode(gtk::pango::WrapMode::WordChar);
     label.set_width_chars(TEXT_WIDTH_CHARS);
@@ -133,9 +135,10 @@ impl NotificationWindow {
         header.append(&icon);
 
         let app_name = gtk::Label::new(Some(&toast.app_name));
-        app_name.add_css_class("notification-app-name");
         app_name.set_hexpand(true);
-        app_name.set_halign(gtk::Align::Start);
+        app_name.set_halign(gtk::Align::Fill);
+        app_name.set_xalign(0.0);
+        app_name.add_css_class("notification-app-name");
         app_name.set_ellipsize(gtk::pango::EllipsizeMode::End);
         header.append(&app_name);
 

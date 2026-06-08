@@ -1,4 +1,5 @@
 mod component;
+mod config;
 mod dropdown;
 mod service;
 
@@ -14,6 +15,7 @@ use crate::bar::widget::{
 
 use crate::services::ShellServices;
 
+use self::config::ActionMenuConfig;
 use self::component::{ActionMenuComponent, ActionMenuInit, ActionMenuInput};
 
 pub(crate) struct ActionMenuWidget;
@@ -40,16 +42,22 @@ impl BarWidget for ActionMenuWidget {
         "action_menu"
     }
 
+    fn config_table_keys(&self) -> &'static [&'static str] {
+        &["panel", "layout"]
+    }
+
     fn build(
         &self,
-        _instance: &WidgetInstance,
+        instance: &WidgetInstance,
         context: &WidgetBuildContext<'_>,
     ) -> Box<dyn BarWidgetRuntime> {
+        let config = instance.config_as::<ActionMenuConfig>();
         let controller = ActionMenuComponent::builder()
             .launch(ActionMenuInit {
                 edge: context.bar.edge,
                 region: context.bar.region,
                 bar_sender: context.sender.clone(),
+                config,
             })
             .detach();
 

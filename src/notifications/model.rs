@@ -17,6 +17,7 @@ pub(crate) struct NotificationToastFields {
     pub(crate) app_name: Option<String>,
     pub(crate) app_icon: Option<String>,
     pub(crate) image_path: Option<String>,
+    pub(crate) desktop_entry: Option<String>,
     pub(crate) summary: String,
     pub(crate) body: Option<String>,
     pub(crate) urgency: Urgency,
@@ -31,6 +32,7 @@ pub(crate) struct NotificationToast {
     pub(crate) app_name: String,
     pub(crate) app_icon: String,
     pub(crate) image_path: Option<String>,
+    pub(crate) desktop_entry: Option<String>,
     pub(crate) summary: String,
     pub(crate) body: Option<String>,
     pub(crate) urgency: Urgency,
@@ -41,21 +43,41 @@ pub(crate) struct NotificationToast {
 
 impl NotificationToast {
     pub(crate) fn from_notification(notification: &Notification) -> Self {
+        let app_name = notification.app_name.get();
+        let app_icon = notification.app_icon.get();
+        let image_path = notification.image_path.get();
+        let desktop_entry = notification.desktop_entry.get();
+        let summary = notification.summary.get();
+        let body = notification.body.get();
+
         tracing::debug!(
+            target: "wayward::notifications::debug",
             id = notification.id,
-            app_name = ?notification.app_name.get(),
-            app_icon = ?notification.app_icon.get(),
-            image_path = ?notification.image_path.get(),
-            desktop_entry = ?notification.desktop_entry.get(),
-            "notification icon fields"
+            app_name = ?app_name,
+            app_icon = ?app_icon,
+            image_path = ?image_path,
+            desktop_entry = ?desktop_entry,
+            summary_chars = summary.chars().count(),
+            summary_newlines = newline_count(&summary),
+            summary_max_line_chars = max_line_chars(&summary),
+            summary_has_code_block = has_code_block_marker(&summary),
+            summary_sample = %text_sample(&summary),
+            body_present = body.is_some(),
+            body_chars = ?body.as_deref().map(char_count),
+            body_newlines = ?body.as_deref().map(newline_count),
+            body_max_line_chars = ?body.as_deref().map(max_line_chars),
+            body_has_code_block = ?body.as_deref().map(has_code_block_marker),
+            body_sample = %body.as_deref().map(text_sample).unwrap_or_default(),
+            "notification received"
         );
         Self::from_fields(NotificationToastFields {
             id: notification.id,
-            app_name: notification.app_name.get(),
-            app_icon: notification.app_icon.get(),
-            image_path: notification.image_path.get(),
-            summary: notification.summary.get(),
-            body: notification.body.get(),
+            app_name,
+            app_icon,
+            image_path,
+            desktop_entry,
+            summary,
+            body,
             actions: notification
                 .actions
                 .get()
@@ -83,6 +105,7 @@ impl NotificationToast {
             app_name: display_or_fallback(fields.app_name, FALLBACK_APP_NAME),
             app_icon: display_or_fallback(fields.app_icon, FALLBACK_ICON_NAME),
             image_path: fields.image_path,
+            desktop_entry: normalized_optional(fields.desktop_entry),
             summary: fields.summary,
             body: clean_body(fields.body),
             urgency: fields.urgency,
@@ -118,6 +141,13 @@ fn display_or_fallback(value: Option<String>, fallback: &str) -> String {
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty())
         .unwrap_or_else(|| fallback.to_string())
+}
+
+// This helper takes an optional string, trims whitespace, and returns None of the string is empty.
+fn normalized_optional(value: Option<String>) -> Option<String> {
+    value
+        .map(|value| value.trim().to_string())
+        .filter(|value| !value.is_empty())
 }
 
 fn clean_body(body: Option<String>) -> Option<String> {
@@ -183,6 +213,32 @@ pub(crate) fn newest_first(mut toasts: Vec<NotificationToast>) -> Vec<Notificati
             .then_with(|| right.id.cmp(&left.id))
     });
     toasts
+}
+
+// Debugging
+const DEBUG_SAMPLE_CHARS: usize = 240;
+fn char_count(value: &str) -> usize {
+    value.chars().count()
+}
+
+fn newline_count(value: &str) -> usize {
+    value.matches('\n').count()
+}
+
+fn max_line_chars(value: &str) -> usize {
+    value.lines().map(char_count).max().unwrap_or(0)
+}
+
+fn has_code_block_marker(value: &str) -> bool {
+    value.contains("```") || value.contains("<pre") || value.contains("<code")
+}
+
+fn text_sample(value: &str) -> String {
+    value
+        .chars()
+        .flat_map(char::escape_debug)
+        .take(DEBUG_SAMPLE_CHARS)
+        .collect()
 }
 
 #[cfg(test)]
@@ -286,6 +342,7 @@ mod tests {
             app_name,
             app_icon,
             image_path: None,
+            desktop_entry: None,
             summary: summary.to_string(),
             body: Some("Body".to_string()),
             urgency: Urgency::Normal,

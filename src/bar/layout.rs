@@ -128,7 +128,7 @@ fn parse_item(app_config: &crate::config::AppConfig, reference: &str) -> Option<
         widget_type: widget_type.to_string(),
         instance: instance.map(str::to_string),
         widget,
-        config: resolved_config(app_config, widget_type, instance),
+        config: resolved_config(app_config, widget_type, instance, widget.config_table_keys()),
     })
 }
 
@@ -143,6 +143,7 @@ fn resolved_config(
     app_config: &crate::config::AppConfig,
     widget_type: &str,
     instance: Option<&str>,
+    config_table_keys: &[&str],
 ) -> toml::value::Table {
     let mut resolved = toml::value::Table::new();
 
@@ -151,7 +152,7 @@ fn resolved_config(
     };
 
     for (key, value) in type_table {
-        if !value.is_table() {
+        if !value.is_table() || config_table_keys.contains(&key.as_str()) {
             resolved.insert(key.clone(), value.clone());
         }
     }
