@@ -114,6 +114,8 @@ impl SimpleComponent for Shell {
 
                 self.config = config;
 
+                self.sync_settings_window();
+
                 if changes.bars_changed || changes.widgets_changed {
                     self.reconcile_bars(_sender.input_sender().clone());
                 }
@@ -221,10 +223,29 @@ impl Shell {
         }
 
         let settings_window = crate::settings::window::SettingsWindow::builder()
-            .launch(())
+            .launch(self.config.style.clone())
             .detach();
+
+        if let Some(settings_window) = &self.settings_window {
+            settings_window
+                .sender()
+                .send(crate::settings::window::SettingsInput::SetStyle(self.config.style.clone())).ok();
+
+            settings_window.widget().present();
+            return;
+        }
 
         settings_window.widget().present();
         self.settings_window = Some(settings_window);
+    }
+
+    fn sync_settings_window(&self) {
+        let Some(settings_window) = &self.settings_window else {
+            return;
+        };
+
+        settings_window
+            .sender()
+            .send(crate::settings::window::SettingsInput::SetStyle(self.config.style.clone())).ok();
     }
 }

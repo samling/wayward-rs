@@ -1,5 +1,5 @@
 use serde::Deserialize;
-use std::{collections::BTreeMap, fs, path::PathBuf};
+use std::{collections::BTreeMap, fs, io, path::PathBuf};
 
 const DEFAULT_CONFIG_TOML: &str = r#"# Wayward app configuration.
 # theme = "example"
@@ -56,6 +56,69 @@ fn write_default_file(path: Option<PathBuf>, contents: &str) {
 
     if let Err(error) = fs::write(&path, &contents) {
         tracing::error!("Failed to create default file {}: {error}", path.display())
+    }
+}
+
+#[derive(Debug)]
+pub(crate) enum ConfigValue {
+    Integer(i64),
+    String(String),
+    Bool(bool),
+}
+
+impl ConfigValue {
+    fn into_item(self) -> toml_edit::Item {
+        match self {
+            Self::Bool(value) => toml_edit::value(value),
+            Self::Integer(value) => toml_edit::value(value),
+            Self::String(value) => toml_edit::value(value),
+        }
+    }
+}
+
+pub(crate) fn set_config_value(path: &[&str], value: Option<ConfigValue>) -> io::Result<()> {
+    if path.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "config path cannot be empty",
+        ));
+    }
+
+    let Some(config_path) = config_path() else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "could not determine config path",
+        ));
+    };
+
+    let contents = fs::read_to_string(&config_path).unwrap_or_default();
+    let mut document = contents
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+
+    set_document_value(&mut document, path, value);
+
+    fs::write(config_path, document.to_string())
+}
+
+fn set_document_value(
+    document: &mut toml_edit::DocumentMut,
+    path: &[&str],
+    value: Option<ConfigValue>,
+) {
+    let mut item = document.as_item_mut();
+    
+    for segment in &path[..path.len() - 1] {
+        item[*segment].or_insert(toml_edit::table());
+        item = &mut item[*segment];
+    }
+
+    let key = path[path.len() - 1];
+
+    if let Some(value) = value {
+        item[key] = value.into_item();
+    } else if let Some(table) = item.as_table_like_mut() {
+        table.remove(key);
     }
 }
 

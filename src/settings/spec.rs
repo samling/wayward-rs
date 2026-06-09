@@ -1,0 +1,35 @@
+use crate::config::ConfigValue;
+
+#[derive(Clone, Debug)]
+pub(crate) struct SettingsPageSpec {
+    pub(crate) title: &'static str,
+    pub(crate) sections: Vec<SettingsSectionSpec>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct SettingsSectionSpec {
+    pub(crate) title: &'static str,
+    pub(crate) settings: Vec<SettingSpec>,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum SettingSpec {
+    Number(NumberSpec),
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct NumberSpec {
+    pub(crate) label: &'static str,
+    pub(crate) path: &'static [&'static str],
+    pub(crate) value: Option<u16>,
+    pub(crate) default: u16,
+    pub(crate) min: f64,
+    pub(crate) max: f64,
+    pub(crate) step: f64,
+}
+
+impl NumberSpec {
+    pub(crate) fn value_for_config(&self, value: f64) -> ConfigValue {
+        ConfigValue::Integer(value as i64)
+    }
+}
