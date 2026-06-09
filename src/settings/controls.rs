@@ -1,16 +1,13 @@
-use crate::config::ConfigValue;
-use std::{cell::RefCell, rc::Rc, time::Duration};
 use super::{
     spec::{NumberSpec, StringSpec, ToggleSpec},
     window::SettingsInput,
 };
+use crate::config::ConfigValue;
 use relm4::{
-    gtk::{
-        self,
-        prelude::*,
-    },
+    gtk::{self, prelude::*},
     prelude::*,
 };
+use std::{cell::RefCell, rc::Rc, time::Duration};
 
 const SETTING_WRITE_DEBOUNCE: Duration = Duration::from_millis(300);
 
@@ -22,10 +19,7 @@ struct SettingWriter {
 }
 
 impl SettingWriter {
-    fn new(
-        path: &'static [&'static str],
-        input_sender: relm4::Sender<SettingsInput>,
-    ) -> Self {
+    fn new(path: &'static [&'static str], input_sender: relm4::Sender<SettingsInput>) -> Self {
         Self {
             path,
             input_sender,
@@ -61,11 +55,7 @@ impl SettingWriter {
     }
 }
 
-fn append_reset_button(
-    row: &gtk::Box,
-    is_configured: bool,
-    writer: SettingWriter,
-) {
+fn append_reset_button(row: &gtk::Box, is_configured: bool, writer: SettingWriter) {
     let button = gtk::Button::from_icon_name("edit-undo-symbolic");
     button.add_css_class("settings-reset-button");
     button.set_tooltip_text(Some("Reset to default"));

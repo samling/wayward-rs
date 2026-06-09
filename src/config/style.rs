@@ -1,6 +1,6 @@
+use super::ConfigValue;
 use serde::Deserialize;
 use std::collections::BTreeMap;
-use super::ConfigValue;
 
 pub(crate) type StyleGroupConfig = BTreeMap<String, StyleValue>;
 

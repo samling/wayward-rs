@@ -148,7 +148,12 @@ impl Component for SettingsWindow {
 
         let page = super::pages::notifications::page(&model.style);
         widgets.page_title.set_label(page.title);
-        render_current_page(&widgets.page_content, &widgets.page_title, &model.style, &sender);
+        render_current_page(
+            &widgets.page_content,
+            &widgets.page_title,
+            &model.style,
+            &sender,
+        );
 
         ComponentParts { model, widgets }
     }
@@ -182,7 +187,12 @@ impl Component for SettingsWindow {
                     .apply_config_value(path, value_for_model.as_ref())
                     && value_for_model.is_none()
                 {
-                    render_current_page(&widgets.page_content, &widgets.page_title, &self.style, &sender);
+                    render_current_page(
+                        &widgets.page_content,
+                        &widgets.page_title,
+                        &self.style,
+                        &sender,
+                    );
                 }
             }
         }

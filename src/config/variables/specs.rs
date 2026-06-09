@@ -1,68 +1,138 @@
-use super::{CssValueKind, CssVariableSpec};
+use super::{CssValueKind, SettingUiSpec, StyleSettingSpec};
 
-pub(super) const CSS_VARIABLES: &[CssVariableSpec] = &[
-    CssVariableSpec {
+pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
+    StyleSettingSpec {
+        group: "bar",
+        key: "font-family",
+        path: &["style", "bar", "font-family"],
+        setting: Some(SettingUiSpec::String {
+            label: "Font family",
+            default: "Adwaita Sans",
+        }),
+        variable: "--bar-font-family",
+        css_kind: CssValueKind::String { quoted: true },
+    },
+    StyleSettingSpec {
+        group: "bar",
+        key: "font-size",
+        path: &["style", "bar", "font-size"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Font size",
+            default: 12,
+            min: 8.0,
+            max: 24.0,
+            step: 1.0,
+        }),
+        variable: "--bar-font-size",
+        css_kind: CssValueKind::Integer { unit: "px" },
+    },
+    StyleSettingSpec {
+        group: "bar",
+        key: "font-weight",
+        path: &["style", "bar", "font-weight"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Font weight",
+            default: 100,
+            min: 100.0,
+            max: 900.0,
+            step: 50.0,
+        }),
+        variable: "--bar-font-weight",
+        css_kind: CssValueKind::Integer { unit: "" },
+    },
+    StyleSettingSpec {
+        group: "bar",
+        key: "item-padding-x",
+        path: &["style", "bar", "item-padding-x"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Item horizontal padding",
+            default: 8,
+            min: 0.0,
+            max: 24.0,
+            step: 1.0,
+        }),
+        variable: "--bar-item-padding-x",
+        css_kind: CssValueKind::Integer { unit: "px" },
+    },
+    StyleSettingSpec {
+        group: "bar",
+        key: "item-content-margin-y",
+        path: &["style", "bar", "item-content-margin-y"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Item vertical margin",
+            default: 4,
+            min: 0.0,
+            max: 12.0,
+            step: 1.0,
+        }),
+        variable: "--bar-item-content-margin-y",
+        css_kind: CssValueKind::Integer { unit: "px" },
+    },
+    StyleSettingSpec {
         group: "notifications",
         key: "body-font-weight",
+        path: &["style", "notifications", "body-font-weight"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Body font weight",
+            default: 400,
+            min: 100.0,
+            max: 900.0,
+            step: 50.0,
+        }),
         variable: "--notification-body-font-weight",
-        kind: CssValueKind::Integer { unit: "" },
+        css_kind: CssValueKind::Integer { unit: "" },
     },
-    CssVariableSpec {
+    StyleSettingSpec {
         group: "notifications",
         key: "normal-border-width",
+        path: &["style", "notifications", "normal-border-width"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Normal border width",
+            default: 1,
+            min: 0.0,
+            max: 8.0,
+            step: 1.0,
+        }),
         variable: "--notification-normal-border-width",
-        kind: CssValueKind::Integer { unit: "px" },
+        css_kind: CssValueKind::Integer { unit: "px" },
     },
-    CssVariableSpec {
+    StyleSettingSpec {
         group: "notifications",
         key: "list-icon-size",
+        path: &["style", "notifications", "list-icon-size"],
+        setting: Some(SettingUiSpec::Number {
+            label: "List icon size",
+            default: 30,
+            min: 16.0,
+            max: 64.0,
+            step: 1.0,
+        }),
         variable: "--notification-list-icon-size",
-        kind: CssValueKind::Integer { unit: "px" },
+        css_kind: CssValueKind::Integer { unit: "px" },
     },
-    CssVariableSpec {
+    StyleSettingSpec {
         group: "notifications",
         key: "hide-scrollbar",
+        path: &["style", "notifications", "hide-scrollbar"],
+        setting: Some(SettingUiSpec::Toggle {
+            label: "Hide scrollbar",
+            default: true,
+        }),
         variable: "--notification-scrollbar-opacity",
-        kind: CssValueKind::Bool {
+        css_kind: CssValueKind::Bool {
             true_value: "0",
             false_value: "1",
         },
     },
-    CssVariableSpec {
+    StyleSettingSpec {
         group: "notifications",
         key: "font-family",
+        path: &["style", "notifications", "font-family"],
+        setting: Some(SettingUiSpec::String {
+            label: "Font family",
+            default: "Adwaita Sans",
+        }),
         variable: "--notification-font-family",
-        kind: CssValueKind::String { quoted: true },
-    },
-    CssVariableSpec {
-        group: "bar",
-        key: "font-family",
-        variable: "--bar-font-family",
-        kind: CssValueKind::String { quoted: true },
-    },
-    CssVariableSpec {
-        group: "bar",
-        key: "font-size",
-        variable: "--bar-font-size",
-        kind: CssValueKind::Integer { unit: "px" },
-    },
-    CssVariableSpec {
-        group: "bar",
-        key: "font-weight",
-        variable: "--bar-font-weight",
-        kind: CssValueKind::Integer { unit: "" },
-    },
-    CssVariableSpec {
-        group: "bar",
-        key: "item-padding-x",
-        variable: "--bar-item-padding-x",
-        kind: CssValueKind::Integer { unit: "px" },
-    },
-    CssVariableSpec {
-        group: "bar",
-        key: "item-content-margin-y",
-        variable: "--bar-item-content-margin-y",
-        kind: CssValueKind::Integer { unit: "px" },
+        css_kind: CssValueKind::String { quoted: true },
     },
 ];
-
