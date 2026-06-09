@@ -10,28 +10,28 @@
 
 .bar-region {
     background: transparent;
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .bar-region-start.horizontal,
 .bar-region-start.vertical {
-    border-radius: 0 0 8px 0;
+    border-radius: 0 0 6px 0;
 }
 
 .bar-region-center.horizontal {
-    border-radius: 0 0 8px 8px;
+    border-radius: 0 0 6px 6px;
 }
 
 .bar-region-center.vertical {
-    border-radius: 0 8px 8px 0;
+    border-radius: 0 6px 6px 0;
 }
 
 .bar-region-end.horizontal {
-    border-radius: 0 0 0 8px;
+    border-radius: 0 0 0 6px;
 }
 
 .bar-region-end.vertical {
-    border-radius: 0 8px 0 0;
+    border-radius: 0 6px 0 0;
 }
 
 .bar.vertical .bar-region {
@@ -125,7 +125,7 @@ menubutton.action-menu > button.toggle {
 .workspaces-content {
     background-color: rgba(255, 255, 255, 0.1);
     border-spacing: 0.4em;
-    border-radius: 4px;
+    border-radius: 6px;
     margin-bottom: 0;
     margin-top: 0;
     padding: 4px;
@@ -137,7 +137,7 @@ menubutton.action-menu > button.toggle {
 
 .workspace {
     background-color: transparent;
-    border-radius: 0.4em;
+    border-radius: 6px;
     color: inherit;
     padding: 0.12em 0.65em;
 }
@@ -172,7 +172,7 @@ menubutton.action-menu > button.toggle {
 
 .workspace-indicator {
     background-color: rgba(137, 180, 250, 0.5);
-    border-radius: 0.4em;
+    border-radius: 6px;
     margin: -4px;
     min-height: 8px;
     min-width: 8px;
@@ -189,7 +189,7 @@ popover.dropdown contents,
 .osd {
     background-color: rgba(30, 30, 46, 1);
     border: 1px solid rgba(241, 243, 244, 0.14);
-    border-radius: 16px;
+    border-radius: 6px;
     color: #f1f3f4;
 }
 
@@ -551,7 +551,7 @@ levelbar.osd-level block.filled {
     background-color: rgba(241, 243, 244, 0.055);
     border: 1px solid rgba(241, 243, 244, 0.12);
     border-left-width: 3px;
-    border-radius: 8px;
+    border-radius: 6px;
     color: inherit;
     padding: 0.7em;
     transform: scale(1);
@@ -763,7 +763,7 @@ levelbar.osd-level block.filled {
     background: transparent;
     background-image: none;
     border: 1px solid rgba(241, 243, 244, 0.14);
-    border-radius: 8px;
+    border-radius: 6px;
     box-shadow: none;
     color: inherit;
     min-height: 0;
