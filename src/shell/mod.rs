@@ -21,6 +21,7 @@ pub(crate) struct Shell {
     popup_notifications: Vec<crate::notifications::model::NotificationToast>,
     notification_windows: Vec<notification_overlays::RunningNotificationWindow>,
     osd_windows: Vec<osd_windows::RunningOsd>,
+    settings_window: Option<Controller<crate::settings::window::SettingsWindow>>,
     services: crate::services::ShellServices,
     style: Option<crate::style::StyleHandle>,
 }
@@ -42,6 +43,7 @@ pub(crate) enum ShellMsg {
     InvokeNotificationAction { id: u32, action_id: String },
     InvokeNotificationDefaultAction(u32),
     DismissNotificationPopup(u32),
+    OpenSettings,
 }
 
 #[relm4::component(pub(crate))]
@@ -72,12 +74,13 @@ impl SimpleComponent for Shell {
             popup_notifications: Vec::new(),
             notification_windows: Vec::new(),
             osd_windows: Vec::new(),
+            settings_window: None,
             services,
             style: style.clone(),
         };
 
         model.apply_generated_style();
-        model.reconcile_bars();
+        model.reconcile_bars(sender.input_sender().clone());
         model.reconcile_osd_windows();
         model.reconcile_notification_windows(&sender);
 
@@ -112,7 +115,7 @@ impl SimpleComponent for Shell {
                 self.config = config;
 
                 if changes.bars_changed || changes.widgets_changed {
-                    self.reconcile_bars();
+                    self.reconcile_bars(_sender.input_sender().clone());
                 }
 
                 if changes.notifications_changed {
@@ -141,7 +144,7 @@ impl SimpleComponent for Shell {
                 });
             }
             ShellMsg::ReconcileMonitors => {
-                self.reconcile_bars();
+                self.reconcile_bars(_sender.input_sender().clone());
                 self.reconcile_osd_windows();
                 self.reconcile_notification_windows(&_sender);
 
@@ -186,6 +189,9 @@ impl SimpleComponent for Shell {
             ShellMsg::InvokeNotificationDefaultAction(id) => {
                 self.invoke_notification_default_action(id);
             }
+            ShellMsg::OpenSettings => {
+                self.open_settings_window();
+            }
         }
     }
 }
@@ -206,5 +212,19 @@ impl Shell {
                     .send(bar::BarMsg::StyleChanged);
             }
         }
+    }
+
+    fn open_settings_window(&mut self) {
+        if let Some(settings_window) = &self.settings_window {
+            settings_window.widget().present();
+            return;
+        }
+
+        let settings_window = crate::settings::window::SettingsWindow::builder()
+            .launch(())
+            .detach();
+
+        settings_window.widget().present();
+        self.settings_window = Some(settings_window);
     }
 }

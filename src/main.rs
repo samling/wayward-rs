@@ -4,6 +4,7 @@ mod file_watch;
 mod notifications;
 mod osd;
 mod services;
+mod settings;
 mod shell;
 mod style;
 

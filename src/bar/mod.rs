@@ -8,10 +8,11 @@ pub(crate) mod state;
 pub(crate) mod widget;
 pub(crate) mod widgets;
 
+use crate::shell::ShellMsg;
 use layout::{BarEdge, BarLayout};
 use state::BarItemState;
 use widget::{
-    BarContext, BarRegion, BarWidgetRuntime, WidgetBuildContext, WidgetEvent, WidgetInstance,
+    BarContext, BarRegion, BarWidgetRuntime, WidgetAction, WidgetBuildContext, WidgetEvent, WidgetInstance,
 };
 
 use gtk::prelude::*;
@@ -69,7 +70,7 @@ struct MountedLayout {
     end: Vec<MountedWidget>,
 }
 
-pub struct Bar {
+pub(crate) struct Bar {
     name: Option<String>,
     layout: BarLayout,
     mounted_layout: MountedLayout,
@@ -188,11 +189,11 @@ impl Bar {
     }
 }
 
-#[relm4::component(pub)]
+#[relm4::component(pub(crate))]
 impl Component for Bar {
     type Init = BarInit;
     type Input = BarMsg;
-    type Output = ();
+    type Output = ShellMsg;
     type CommandOutput = ();
 
     view! {
@@ -341,7 +342,11 @@ impl Component for Bar {
                 self.apply_state_to_mounted_widgets(&state);
             }
             BarMsg::WidgetEvent(event) => {
-                registry::handle_widget_event(event, &self.services);
+                if matches!(event.action, WidgetAction::OpenSettings) {
+                    let _ = sender.output(ShellMsg::OpenSettings);
+                } else {
+                    registry::handle_widget_event(event, &self.services);
+                }
             }
         }
 

@@ -828,3 +828,41 @@ levelbar.osd-level block.filled {
     margin: 0;
     padding: 0;
 }
+
+/* Settings */
+.settings-window {
+  font-family: "Adwaita Sans";
+  background-color: rgba(18, 20, 24, 0.96);
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.settings-sidebar {
+  background-color: rgba(255, 255, 255, 0.06);
+  padding: 16px 12px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.settings-sidebar-title {
+  font-size: 1.2em;
+  font-weight: 700;
+  margin-bottom: 16px;
+}
+
+.settings-sidebar-item {
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+
+.settings-page {
+  padding: 24px;
+}
+
+.settings-page-title {
+  font-size: 1.8em;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.settings-page-description {
+  color: rgba(255, 255, 255, 0.68);
+}

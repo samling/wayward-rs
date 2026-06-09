@@ -88,7 +88,8 @@ pub(crate) enum WidgetAction {
     DismissAllNotifications,
     RunActionMenuAction {
         command: ActionMenuCommand,
-    }
+    },
+    OpenSettings,
 }
 
 #[derive(Clone, Debug)]
