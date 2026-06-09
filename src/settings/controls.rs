@@ -55,7 +55,7 @@ impl SettingWriter {
     }
 }
 
-fn append_reset_button(row: &gtk::Box, is_configured: bool, writer: SettingWriter) {
+fn append_reset_button(row: &gtk::Box, is_configured: bool, writer: SettingWriter) -> gtk::Button {
     let button = gtk::Button::from_icon_name("edit-undo-symbolic");
     button.add_css_class("settings-reset-button");
     button.set_tooltip_text(Some("Reset to default"));
@@ -66,6 +66,7 @@ fn append_reset_button(row: &gtk::Box, is_configured: bool, writer: SettingWrite
     });
 
     row.append(&button);
+    button
 }
 
 pub(crate) fn number_row(
@@ -90,12 +91,13 @@ pub(crate) fn number_row(
     let writer = SettingWriter::new(path, sender.input_sender().clone());
     let change_writer = writer.clone();
 
+    row.append(&spin);
+    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
+
     spin.connect_value_changed(move |spin| {
+        reset_button.set_sensitive(true);
         change_writer.send_debounced(saved_setting.value_for_config(spin.value()));
     });
-
-    row.append(&spin);
-    append_reset_button(&row, setting.value.is_some(), writer);
     row
 }
 
@@ -121,12 +123,13 @@ pub(crate) fn toggle_row(
     let writer = SettingWriter::new(path, sender.input_sender().clone());
     let change_writer = writer.clone();
 
+    row.append(&toggle);
+    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
+
     toggle.connect_active_notify(move |toggle| {
+        reset_button.set_sensitive(true);
         change_writer.send_now(Some(saved_setting.value_for_config(toggle.is_active())));
     });
-
-    row.append(&toggle);
-    append_reset_button(&row, setting.value.is_some(), writer);
     row
 }
 
@@ -152,11 +155,12 @@ pub(crate) fn string_row(
     let writer = SettingWriter::new(path, sender.input_sender().clone());
     let change_writer = writer.clone();
 
+    row.append(&entry);
+    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
+
     entry.connect_changed(move |entry| {
+        reset_button.set_sensitive(true);
         change_writer.send_debounced(saved_setting.value_for_config(entry.text().to_string()));
     });
-
-    row.append(&entry);
-    append_reset_button(&row, setting.value.is_some(), writer);
     row
 }
