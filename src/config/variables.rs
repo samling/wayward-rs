@@ -1,47 +1,12 @@
+mod specs;
 use super::style::{StyleConfig, StyleGroupConfig, StyleGroupExt};
-
-const CSS_VARIABLES: &[CssVariableSpec] = &[
-    CssVariableSpec {
-        group: "notifications",
-        key: "body-font-weight",
-        variable: "--notification-body-font-weight",
-        kind: CssValueKind::Integer { unit: "" },
-    },
-    CssVariableSpec {
-        group: "notifications",
-        key: "normal-border-width",
-        variable: "--notification-normal-border-width",
-        kind: CssValueKind::Integer { unit: "px" },
-    },
-    CssVariableSpec {
-        group: "notifications",
-        key: "list-icon-size",
-        variable: "--notification-list-icon-size",
-        kind: CssValueKind::Integer { unit: "px" },
-    },
-    CssVariableSpec {
-        group: "notifications",
-        key: "hide-scrollbar",
-        variable: "--notification-scrollbar-opacity",
-        kind: CssValueKind::Bool {
-            true_value: "0",
-            false_value: "1",
-        },
-    },
-    CssVariableSpec {
-        group: "notifications",
-        key: "font-family",
-        variable: "--notification-font-family",
-        kind: CssValueKind::String { quoted: true },
-    },
-];
 
 pub(crate) trait CssVariables {
     fn write_css_variables(&self, css: &mut String);
 }
 
 #[derive(Clone, Copy)]
-enum CssValueKind {
+pub(super) enum CssValueKind {
     Integer { unit: &'static str },
     String { quoted: bool },
     Bool {
@@ -50,7 +15,7 @@ enum CssValueKind {
     },
 }
 
-struct CssVariableSpec {
+pub(super) struct CssVariableSpec {
     group: &'static str,
     key: &'static str,
     variable: &'static str,
@@ -59,7 +24,7 @@ struct CssVariableSpec {
 
 impl CssVariables for StyleConfig {
     fn write_css_variables(&self, css: &mut String) {
-        for spec in CSS_VARIABLES {
+        for spec in specs::CSS_VARIABLES {
             let Some(group) = self.group(spec.group) else {
                 continue;
             };
