@@ -42,6 +42,15 @@ pub(crate) fn page(style: &StyleConfig) -> SettingsPageSpec {
                     value: notifications.string("font-family"),
                     default: "Adwaita Sans",
                 }),
+                SettingSpec::Number(NumberSpec {
+                    label: "List icon size",
+                    path: &["style", "notifications", "list-icon-size"],
+                    value: notifications.integer("list-icon-size"),
+                    default: 30,
+                    min: 16.0,
+                    max: 64.0,
+                    step: 1.0,
+                }),
             ],
         }],
     }

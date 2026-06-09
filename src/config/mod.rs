@@ -62,7 +62,7 @@ fn write_default_file(path: Option<PathBuf>, contents: &str) {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub(crate) enum ConfigValue {
     Integer(i64),
     String(String),

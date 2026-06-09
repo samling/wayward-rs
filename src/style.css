@@ -586,10 +586,10 @@ levelbar.osd-level block.filled {
 }
 
 .notification-list-icon {
-    -gtk-icon-size: 1.85em;
+    -gtk-icon-size: var(--notification-list-icon-size, 30px);
     color: inherit;
     margin-top: 0.1em;
-    min-width: 1.85em;
+    min-width: var(--notification-list-icon-size, 30px);
     opacity: 0.95;
 }
 

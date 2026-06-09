@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use std::collections::BTreeMap;
+use super::ConfigValue;
 
 pub(crate) trait CssVariables {
     fn write_css_variables(&self, css: &mut String);
@@ -14,12 +15,56 @@ pub struct StyleConfig {
     pub notifications: StyleGroupConfig,
 }
 
+impl StyleConfig {
+    pub(crate) fn apply_config_value(
+        &mut self,
+        path: &[&str],
+        value: Option<&ConfigValue>,
+    ) -> bool {
+        let ["style", group, key] = path else {
+            return false;
+        };
+
+        let Some(group) = self.group_mut(group) else {
+            return false;
+        };
+
+        match value {
+            Some(value) => {
+                group.insert((*key).to_string(), StyleValue::from(value));
+            }
+            None => {
+                group.remove(*key);
+            }
+        }
+
+        true
+    }
+
+    fn group_mut(&mut self, group: &str) -> Option<&mut StyleGroupConfig> {
+        match group {
+            "notifications" => Some(&mut self.notifications),
+            _ => None,
+        }
+    }
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
 pub(crate) enum StyleValue {
     Integer(i64),
     Bool(bool),
     String(String),
+}
+
+impl From<&ConfigValue> for StyleValue {
+    fn from(value: &ConfigValue) -> Self {
+        match value {
+            ConfigValue::Integer(value) => Self::Integer(*value),
+            ConfigValue::Bool(value) => Self::Bool(*value),
+            ConfigValue::String(value) => Self::String(value.clone()),
+        }
+    }
 }
 
 pub(crate) trait StyleGroupExt {
@@ -71,7 +116,12 @@ impl CssVariables for StyleGroupConfig {
             self.integer("normal-border-width"),
             "px",
         );
-
+        write_optional(
+            css,
+            "--notification-list-icon-size",
+            self.integer("list-icon-size"),
+            "px",
+        );
         if let Some(hide_scrollbar) = self.bool("hide-scrollbar") {
             let opacity = if hide_scrollbar { 0 } else { 1 };
             write_css_variable(css, "--notification-scrollbar-opacity", opacity, "");

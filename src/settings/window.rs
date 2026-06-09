@@ -162,17 +162,27 @@ impl Component for SettingsWindow {
     ) {
         match msg {
             SettingsInput::SetStyle(style) => {
-                self.style = style;
-                render_current_page(
-                    &widgets.page_content,
-                    &widgets.page_title,
-                    &self.style,
-                    &sender,
-                );
+                if self.style != style {
+                    self.style = style;
+                    render_current_page(
+                        &widgets.page_content,
+                        &widgets.page_title,
+                        &self.style,
+                        &sender,
+                    );
+                }
             }
             SettingsInput::SetValue { path, value } => {
+                let value_for_model = value.clone();
+
                 if let Err(error) = crate::config::set_config_value(path, value) {
                     tracing::error!(?path, "Failed to save setting: {error}")
+                } else if self
+                    .style
+                    .apply_config_value(path, value_for_model.as_ref())
+                    && value_for_model.is_none()
+                {
+                    render_current_page(&widgets.page_content, &widgets.page_title, &self.style, &sender);
                 }
             }
         }
