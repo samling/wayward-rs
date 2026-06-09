@@ -2,6 +2,7 @@ use serde::Deserialize;
 use std::{collections::BTreeMap, fs, io, path::PathBuf};
 
 pub(crate) mod style;
+pub(crate) mod variables;
 pub(crate) use style::StyleConfig;
 
 const DEFAULT_CONFIG_TOML: &str = r#"# Wayward app configuration.

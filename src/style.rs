@@ -1,4 +1,4 @@
-use crate::config::{StyleConfig, style::CssVariables};
+use crate::config::{StyleConfig, variables::CssVariables};
 use futures::{StreamExt, channel::mpsc};
 use std::{
     cell::RefCell,

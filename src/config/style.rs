@@ -2,20 +2,29 @@ use serde::Deserialize;
 use std::collections::BTreeMap;
 use super::ConfigValue;
 
-pub(crate) trait CssVariables {
-    fn write_css_variables(&self, css: &mut String);
-}
-
 pub(crate) type StyleGroupConfig = BTreeMap<String, StyleValue>;
+
+const BAR_GROUP: &str = "bar";
+const NOTIFICATIONS_GROUP: &str = "notifications";
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct StyleConfig {
     #[serde(default)]
+    pub bar: StyleGroupConfig,
+    #[serde(default)]
     pub notifications: StyleGroupConfig,
 }
 
 impl StyleConfig {
+    pub(crate) fn group(&self, group: &str) -> Option<&StyleGroupConfig> {
+        match group {
+            BAR_GROUP => Some(&self.bar),
+            NOTIFICATIONS_GROUP => Some(&self.notifications),
+            _ => None,
+        }
+    }
+
     pub(crate) fn apply_config_value(
         &mut self,
         path: &[&str],
@@ -43,7 +52,8 @@ impl StyleConfig {
 
     fn group_mut(&mut self, group: &str) -> Option<&mut StyleGroupConfig> {
         match group {
-            "notifications" => Some(&mut self.notifications),
+            BAR_GROUP => Some(&mut self.bar),
+            NOTIFICATIONS_GROUP => Some(&mut self.notifications),
             _ => None,
         }
     }
@@ -94,61 +104,4 @@ impl StyleGroupExt for StyleGroupConfig {
             _ => None,
         }
     }
-}
-
-impl CssVariables for StyleConfig {
-    fn write_css_variables(&self, css: &mut String) {
-        self.notifications.write_css_variables(css);
-    }
-}
-
-impl CssVariables for StyleGroupConfig {
-    fn write_css_variables(&self, css: &mut String) {
-        write_optional(
-            css,
-            "--notification-body-font-weight",
-            self.integer("body-font-weight"),
-            "",
-        );
-        write_optional(
-            css,
-            "--notification-normal-border-width",
-            self.integer("normal-border-width"),
-            "px",
-        );
-        write_optional(
-            css,
-            "--notification-list-icon-size",
-            self.integer("list-icon-size"),
-            "px",
-        );
-        if let Some(hide_scrollbar) = self.bool("hide-scrollbar") {
-            let opacity = if hide_scrollbar { 0 } else { 1 };
-            write_css_variable(css, "--notification-scrollbar-opacity", opacity, "");
-        }
-
-        if let Some(font_family) = &self.string("font-family") {
-            write_css_variable(
-                css,
-                "--notification-font-family",
-                format!("\"{font_family}\""),
-                "",
-            );
-        }
-    }
-}
-
-fn write_optional<T: std::fmt::Display>(
-    css: &mut String,
-    name: &str,
-    value: Option<T>,
-    unit: &str,
-) {
-    if let Some(value) = value {
-        write_css_variable(css, name, value, unit);
-    }
-}
-
-fn write_css_variable<T: std::fmt::Display>(css: &mut String, name: &str, value: T, unit: &str) {
-    css.push_str(&format!("  {name}: {value}{unit};\n"));
 }
