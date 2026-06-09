@@ -132,7 +132,7 @@ pub(crate) fn toggle_row(
     let change_writer = writer.clone();
 
     toggle.connect_active_notify(move |toggle| {
-        change_writer.send_debounced(saved_setting.value_for_config(toggle.is_active()));
+        change_writer.send_now(Some(saved_setting.value_for_config(toggle.is_active())));
     });
 
     row.append(&toggle);
