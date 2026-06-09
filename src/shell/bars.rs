@@ -7,6 +7,8 @@ use crate::{bar, config::AppConfig};
 
 pub(super) struct RunningBar {
     pub(super) key: String,
+    pub(super) layout: bar::layout::BarLayout,
+    pub(super) edge: bar::layout::BarEdge,
     pub(super) controller: Controller<bar::Bar>,
 }
 
@@ -101,6 +103,21 @@ impl Shell {
                 self.services.clone(),
             );
 
+            if running_bar.layout == init.layout && running_bar.edge == init.edge {
+                continue;
+            }
+
+            let Some(running_bar) = self
+                .bars
+                .iter_mut()
+                .find(|bar| bar.key == desired_bar.key)
+            else {
+                continue;
+            };
+
+            running_bar.layout = init.layout.clone();
+            running_bar.edge = init.edge;
+
             if running_bar
                 .controller
                 .sender()
@@ -110,7 +127,7 @@ impl Shell {
                 })
                 .is_err()
             {
-                tracing::error!("Failed to send layout update to bar {}", desired_bar.key);
+                tracing::error!("Reconciled {} configured bar(s)", self.config.bars.len());
             }
         }
 
@@ -138,9 +155,16 @@ impl Shell {
         tracing::info!("Launching bar {key}");
 
         let init = bar::BarInit::from_config(app_config, Some(bar_config), Some(monitor), services);
+        let layout = init.layout.clone();
+        let edge = init.edge;
         let controller = bar::Bar::builder().launch(init).detach();
 
-        Some(RunningBar { key, controller })
+        Some(RunningBar {
+            key,
+            layout,
+            edge,
+            controller,
+        })
     }
 
     pub(super) fn send_item_states_to_bar(&self, running_bar: &RunningBar) {

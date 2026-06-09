@@ -59,7 +59,7 @@ fn write_default_file(path: Option<PathBuf>, contents: &str) {
     }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct AppConfig {
     #[serde(default)]
@@ -68,17 +68,35 @@ pub struct AppConfig {
     pub widgets: BTreeMap<String, toml::value::Table>,
     #[serde(default)]
     pub notifications: NotificationConfig,
+    #[serde(default)]
+    pub style: StyleConfig,
     pub bars: Vec<BarConfig>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct NotificationConfig {
     #[serde(default)]
     pub monitor: Option<String>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct StyleConfig {
+    #[serde(default)]
+    pub notifications: NotificationStyleConfig,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
+pub struct NotificationStyleConfig {
+    #[serde(default)]
+    pub body_font_weight: Option<u16>,
+    #[serde(default)]
+    pub normal_border_width_px: Option<u16>,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct BarConfig {
     pub name: Option<String>,
@@ -87,6 +105,32 @@ pub struct BarConfig {
     pub start: Option<Vec<String>>,
     pub center: Option<Vec<String>>,
     pub end: Option<Vec<String>>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct ConfigChanges {
+    pub(crate) bars_changed: bool,
+    pub(crate) notifications_changed: bool,
+    pub(crate) style_changed: bool,
+    pub(crate) widgets_changed: bool,
+}
+
+impl ConfigChanges {
+    pub(crate) fn between(previous: &AppConfig, next: &AppConfig) -> Self {
+        Self {
+            bars_changed: previous.bars != next.bars,
+            notifications_changed: previous.notifications != next.notifications,
+            style_changed: previous.theme != next.theme || previous.style != next.style,
+            widgets_changed: previous.widgets != next.widgets,
+        }
+    }
+
+    pub(crate) fn has_changes(&self) -> bool {
+        self.bars_changed
+            || self.notifications_changed
+            || self.style_changed
+            || self.widgets_changed
+    }
 }
 
 impl AppConfig {
@@ -125,6 +169,7 @@ impl Default for AppConfig {
             theme: None,
             widgets: BTreeMap::new(),
             notifications: NotificationConfig::default(),
+            style: StyleConfig::default(),
             bars: vec![BarConfig::default()],
         }
     }
@@ -178,5 +223,77 @@ end = []
         .unwrap();
 
         assert_eq!(config.notifications.monitor, None);
+    }
+
+    fn config_with_notification_monitor(monitor: Option<&str>) -> AppConfig {
+        AppConfig {
+            notifications: NotificationConfig {
+                monitor: monitor.map(ToOwned::to_owned),
+            },
+            ..AppConfig::default()
+        }
+    }
+
+    fn config_with_theme(theme: Option<&str>) -> AppConfig {
+        AppConfig {
+            theme: theme.map(ToOwned::to_owned),
+            ..AppConfig::default()
+        }
+    }
+
+    #[test]
+    fn config_changes_detects_noop_reload() {
+        let previous = AppConfig::default();
+        let next = AppConfig::default();
+
+        assert_eq!(ConfigChanges::between(&previous, &next), ConfigChanges::default());
+        assert!(!ConfigChanges::between(&previous, &next).has_changes());
+    }
+
+    #[test]
+    fn config_changes_detects_notification_domain() {
+        let previous = config_with_notification_monitor(None);
+        let next = config_with_notification_monitor(Some("DP-1"));
+
+        let changes = ConfigChanges::between(&previous, &next);
+
+        assert!(changes.notifications_changed);
+        assert!(!changes.bars_changed);
+        assert!(!changes.style_changed);
+        assert!(!changes.widgets_changed);
+    }
+
+    #[test]
+    fn config_changes_detects_style_domain() {
+        let previous = config_with_theme(None);
+        let next = config_with_theme(Some("dark"));
+
+        let changes = ConfigChanges::between(&previous, &next);
+
+        assert!(changes.style_changed);
+        assert!(!changes.bars_changed);
+        assert!(!changes.notifications_changed);
+        assert!(!changes.widgets_changed);
+    }
+
+    #[test]
+    fn config_accepts_notification_style_controls() {
+        let config: AppConfig = toml::from_str(
+            r#"
+    [style.notifications]
+    body_font_weight = 500
+    normal_border_width_px = 2
+
+    [[bars]]
+    name = "bar"
+    start = []
+    center = []
+    end = []
+    "#,
+        )
+        .unwrap();
+
+        assert_eq!(config.style.notifications.body_font_weight, Some(500));
+        assert_eq!(config.style.notifications.normal_border_width_px, Some(2));
     }
 }

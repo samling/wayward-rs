@@ -62,7 +62,7 @@ impl BarEdge {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct BarLayout {
     pub(super) start: Vec<WidgetInstance>,
     pub(super) center: Vec<WidgetInstance>,

@@ -195,6 +195,9 @@ popover.dropdown contents,
 
 popover.dropdown contents,
 .notification-toast {
+    font-family: "Adwaita Sans";
+    font-size: 12px;
+    font-weight: 500;
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
 }
 
@@ -671,6 +674,7 @@ levelbar.osd-level block.filled {
 }
 
 .notification-toast {
+    border-width: var(--notification-normal-border-width, 1px);
     border-color: rgba(241, 243, 244, 0.28);
     min-width: 18em;
     padding: 0;
@@ -722,6 +726,7 @@ levelbar.osd-level block.filled {
 }
 
 .notification-body {
+    font-weight: var(--notification-body-font-weight, 400);
     opacity: 1;
 }
 

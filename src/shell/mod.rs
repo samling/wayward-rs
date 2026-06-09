@@ -8,7 +8,10 @@ use gtk::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::{bar, config::AppConfig};
+use crate::{
+    bar,
+    config::{AppConfig, ConfigChanges},
+};
 
 pub(crate) struct Shell {
     bars: Vec<bars::RunningBar>,
@@ -19,6 +22,7 @@ pub(crate) struct Shell {
     notification_windows: Vec<notification_overlays::RunningNotificationWindow>,
     osd_windows: Vec<osd_windows::RunningOsd>,
     services: crate::services::ShellServices,
+    style: Option<crate::style::StyleHandle>,
 }
 
 pub(crate) struct ShellInit {
@@ -69,8 +73,10 @@ impl SimpleComponent for Shell {
             notification_windows: Vec::new(),
             osd_windows: Vec::new(),
             services,
+            style: style.clone(),
         };
 
+        model.apply_generated_style();
         model.reconcile_bars();
         model.reconcile_osd_windows();
         model.reconcile_notification_windows(&sender);
@@ -95,8 +101,27 @@ impl SimpleComponent for Shell {
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
             ShellMsg::ConfigChanged(config) => {
+                let changes = ConfigChanges::between(&self.config, &config);
+
+                if !changes.has_changes() {
+                    return;
+                }
+
+                tracing::info!(?changes, "Config changed");
+
                 self.config = config;
-                self.reconcile_bars();
+
+                if changes.bars_changed || changes.widgets_changed {
+                    self.reconcile_bars();
+                }
+
+                if changes.notifications_changed {
+                    self.show_notifications();
+                }
+
+                if changes.style_changed {
+                    self.apply_generated_style();
+                }
             }
             ShellMsg::StyleChanged => {
                 for running_bar in &self.bars {
@@ -160,6 +185,25 @@ impl SimpleComponent for Shell {
             }
             ShellMsg::InvokeNotificationDefaultAction(id) => {
                 self.invoke_notification_default_action(id);
+            }
+        }
+    }
+}
+
+impl Shell {
+    fn apply_generated_style(&self) {
+        let Some(style) = &self.style else {
+            return;
+        };
+
+        let css = crate::style::generated_style_config(&self.config.style);
+
+        if style.set_generated_css(css) {
+            for running_bar in &self.bars {
+                let _ = running_bar
+                    .controller
+                    .sender()
+                    .send(bar::BarMsg::StyleChanged);
             }
         }
     }
