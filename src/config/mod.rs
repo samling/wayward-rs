@@ -1,6 +1,9 @@
 use serde::Deserialize;
 use std::{collections::BTreeMap, fs, io, path::PathBuf};
 
+pub(crate) mod style;
+pub(crate) use style::StyleConfig;
+
 const DEFAULT_CONFIG_TOML: &str = r#"# Wayward app configuration.
 # theme = "example"
 
@@ -141,22 +144,6 @@ pub struct AppConfig {
 pub struct NotificationConfig {
     #[serde(default)]
     pub monitor: Option<String>,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct StyleConfig {
-    #[serde(default)]
-    pub notifications: NotificationStyleConfig,
-}
-
-#[derive(Clone, Debug, Default, Deserialize, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct NotificationStyleConfig {
-    #[serde(default)]
-    pub body_font_weight: Option<u16>,
-    #[serde(default)]
-    pub normal_border_width_px: Option<u16>,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]

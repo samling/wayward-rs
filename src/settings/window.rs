@@ -2,7 +2,7 @@ use crate::config::StyleConfig;
 use relm4::{gtk::{self, prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt}}, prelude::*};
 
 use super::{
-    controls::number_row,
+    controls::{number_row, toggle_row},
     spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec},
 };
 
@@ -50,6 +50,9 @@ fn render_section(
             SettingSpec::Number(setting) => {
                 group.append(&number_row(setting, sender));
             }
+            SettingSpec::Toggle(setting) => {
+                group.append(&toggle_row(setting, sender));
+            }
         }
     }
 
@@ -88,9 +91,11 @@ impl SimpleComponent for SettingsWindow {
                         add_css_class: "settings-sidebar-item",
                         set_sensitive: false,
 
+                        #[name = "page_title"]
                         gtk::Label {
-                            set_label: "Notifications",
+                            set_label: "",
                             set_halign: gtk::Align::Start,
+                            add_css_class: "settings-page-title",
                         },
                     },
                 },
@@ -112,9 +117,11 @@ impl SimpleComponent for SettingsWindow {
         let model = Self { style };
         let widgets = view_output!();
 
+        let page = super::pages::notifications::page(&model.style);
+        widgets.page_title.set_label(page.title);
         render_page(
             &widgets.page_content,
-            super::pages::notifications::page(&model.style),
+            page,
             &sender,
         );
 

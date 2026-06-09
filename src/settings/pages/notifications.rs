@@ -1,6 +1,6 @@
 use crate::config::StyleConfig;
 
-use super::super::spec::{NumberSpec, SettingSpec, SettingsPageSpec, SettingsSectionSpec};
+use super::super::spec::{NumberSpec, ToggleSpec, SettingSpec, SettingsPageSpec, SettingsSectionSpec};
 
 pub(crate) fn page(style: &StyleConfig) -> SettingsPageSpec {
     SettingsPageSpec {
@@ -25,6 +25,12 @@ pub(crate) fn page(style: &StyleConfig) -> SettingsPageSpec {
                     min: 0.0,
                     max: 8.0,
                     step: 1.0,
+                }),
+                SettingSpec::Toggle(ToggleSpec {
+                    label: "Hide scrollbar",
+                    path: &["style", "notifications", "hide_scrollbar"],
+                    value: style.notifications.hide_scrollbar,
+                    default: true,
                 }),
             ],
         }],

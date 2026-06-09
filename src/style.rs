@@ -1,4 +1,4 @@
-use crate::config::StyleConfig;
+use crate::config::{StyleConfig, style::CssVariables};
 use futures::{StreamExt, channel::mpsc};
 use std::{
     cell::RefCell,
@@ -21,19 +21,7 @@ pub(crate) fn generated_style_config(style: &StyleConfig) -> String {
     let mut css = String::new();
 
     css.push_str(":root {\n");
-
-    if let Some(font_weight) = style.notifications.body_font_weight {
-        css.push_str(&format!(
-            "  --notification-body-font-weight: {font_weight};\n"
-        ));
-    }
-
-    if let Some(border_width) = style.notifications.normal_border_width_px {
-        css.push_str(&format!(
-            "  --notification-normal-border-width: {border_width}px;\n"
-        ));
-    }
-
+    style.write_css_variables(&mut css);
     css.push_str("}\n");
 
     css
@@ -167,7 +155,8 @@ fn is_style_reload_path(path: &Path) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{DEFAULT_CSS, generated_style_config};
-    use crate::config::{NotificationStyleConfig, StyleConfig};
+    use crate::config::StyleConfig;
+    use crate::config::style::NotificationStyleConfig;
 
     #[test]
     fn default_css_has_one_bar_item_base_rule() {

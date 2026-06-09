@@ -507,12 +507,12 @@ levelbar.osd-level block.filled {
     margin-bottom: 0.25em;
 }
 
-/* .notifications-list-scroll {
+.notifications-list-scroll {
     background: transparent;
 }
 
 .notifications-list-scroll scrollbar {
-    opacity: 0;
+    opacity: var(--notification-scrollbar-opacity, 0);
     min-height: 0;
     min-width: 0;
 }
@@ -520,7 +520,7 @@ levelbar.osd-level block.filled {
 .notifications-list-scroll scrollbar slider {
     min-height: 0;
     min-width: 0;
-} */
+}
 
 .notifications-list {
     background: transparent;

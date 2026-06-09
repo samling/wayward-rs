@@ -15,6 +15,7 @@ pub(crate) struct SettingsSectionSpec {
 #[derive(Clone, Debug)]
 pub(crate) enum SettingSpec {
     Number(NumberSpec),
+    Toggle(ToggleSpec),
 }
 
 #[derive(Clone, Debug)]
@@ -29,7 +30,29 @@ pub(crate) struct NumberSpec {
 }
 
 impl NumberSpec {
+    pub(crate) fn display_value(&self) -> f64 {
+        self.value.unwrap_or(self.default) as f64
+    }
+
     pub(crate) fn value_for_config(&self, value: f64) -> ConfigValue {
         ConfigValue::Integer(value as i64)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct ToggleSpec {
+    pub(crate) label: &'static str,
+    pub(crate) path: &'static [&'static str],
+    pub(crate) value: Option<bool>,
+    pub(crate) default: bool,
+}
+
+impl ToggleSpec {
+    pub(crate) fn display_value(&self) -> bool {
+        self.value.unwrap_or(self.default)
+    }
+
+    pub(crate) fn value_for_config(&self, value: bool) -> ConfigValue {
+        ConfigValue::Bool(value)
     }
 }
