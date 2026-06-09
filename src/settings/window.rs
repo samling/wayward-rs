@@ -1,8 +1,14 @@
 use crate::config::StyleConfig;
-use relm4::{gtk::{self, prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt}}, prelude::*};
+use relm4::{
+    gtk::{
+        self,
+        prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt},
+    },
+    prelude::*,
+};
 
 use super::{
-    controls::{number_row, toggle_row, string_row},
+    controls::{number_row, string_row, toggle_row},
     spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec},
 };
 
@@ -16,7 +22,26 @@ pub(crate) enum SettingsInput {
     SetValue {
         path: &'static [&'static str],
         value: Option<crate::config::ConfigValue>,
+    },
+}
+
+fn clear_container(container: &gtk::Box) {
+    while let Some(child) = container.first_child() {
+        container.remove(&child);
     }
+}
+
+fn render_current_page(
+    container: &gtk::Box,
+    title: &gtk::Label,
+    style: &StyleConfig,
+    sender: &ComponentSender<SettingsWindow>,
+) {
+    clear_container(container);
+
+    let page = super::pages::notifications::page(style);
+    title.set_label(page.title);
+    render_page(container, page, sender);
 }
 
 fn render_page(
@@ -64,10 +89,11 @@ fn render_section(
 }
 
 #[relm4::component(pub(crate))]
-impl SimpleComponent for SettingsWindow {
+impl Component for SettingsWindow {
     type Init = StyleConfig;
     type Input = SettingsInput;
     type Output = ();
+    type CommandOutput = ();
 
     view! {
         gtk::Window {
@@ -122,28 +148,35 @@ impl SimpleComponent for SettingsWindow {
 
         let page = super::pages::notifications::page(&model.style);
         widgets.page_title.set_label(page.title);
-        render_page(
-            &widgets.page_content,
-            page,
-            &sender,
-        );
+        render_current_page(&widgets.page_content, &widgets.page_title, &model.style, &sender);
 
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
+    fn update_with_view(
+        &mut self,
+        widgets: &mut Self::Widgets,
+        msg: Self::Input,
+        sender: ComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
         match msg {
             SettingsInput::SetStyle(style) => {
                 self.style = style;
+                render_current_page(
+                    &widgets.page_content,
+                    &widgets.page_title,
+                    &self.style,
+                    &sender,
+                );
             }
             SettingsInput::SetValue { path, value } => {
-                if let Err(error) = crate::config::set_config_value(
-                    path,
-                    value,
-                ) {
+                if let Err(error) = crate::config::set_config_value(path, value) {
                     tracing::error!(?path, "Failed to save setting: {error}")
                 }
             }
         }
+
+        self.update_view(widgets, sender);
     }
 }

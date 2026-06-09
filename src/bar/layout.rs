@@ -128,7 +128,12 @@ fn parse_item(app_config: &crate::config::AppConfig, reference: &str) -> Option<
         widget_type: widget_type.to_string(),
         instance: instance.map(str::to_string),
         widget,
-        config: resolved_config(app_config, widget_type, instance, widget.config_table_keys()),
+        config: resolved_config(
+            app_config,
+            widget_type,
+            instance,
+            widget.config_table_keys(),
+        ),
     })
 }
 

@@ -115,7 +115,6 @@ fn load_css_with_generated(generated_css: &str) -> String {
     if !generated_css.is_empty() {
         css.push('\n');
         css.push_str(generated_css);
-
     }
 
     css
@@ -156,7 +155,7 @@ fn is_style_reload_path(path: &Path) -> bool {
 mod tests {
     use super::{DEFAULT_CSS, generated_style_config};
     use crate::config::StyleConfig;
-    use crate::config::style::NotificationStyleConfig;
+    use crate::config::style::StyleValue;
 
     #[test]
     fn default_css_has_one_bar_item_base_rule() {
@@ -193,12 +192,10 @@ mod tests {
 
     #[test]
     fn generated_style_config_includes_notification_body_font_weight() {
-        let style = StyleConfig {
-            notifications: NotificationStyleConfig {
-                body_font_weight: Some(500),
-                ..NotificationStyleConfig::default()
-            },
-        };
+        let mut style = StyleConfig::default();
+        style
+            .notifications
+            .insert("body-font-weight".to_string(), StyleValue::Integer(500));
 
         let css = generated_style_config(&style);
 
@@ -207,12 +204,10 @@ mod tests {
 
     #[test]
     fn generated_style_config_includes_notification_border_width() {
-        let style = StyleConfig {
-            notifications: NotificationStyleConfig {
-                normal_border_width_px: Some(2),
-                ..NotificationStyleConfig::default()
-            },
-        };
+        let mut style = StyleConfig::default();
+        style
+            .notifications
+            .insert("normal-border-width".to_string(), StyleValue::Integer(2));
 
         let css = generated_style_config(&style);
 

@@ -229,7 +229,10 @@ impl Shell {
         if let Some(settings_window) = &self.settings_window {
             settings_window
                 .sender()
-                .send(crate::settings::window::SettingsInput::SetStyle(self.config.style.clone())).ok();
+                .send(crate::settings::window::SettingsInput::SetStyle(
+                    self.config.style.clone(),
+                ))
+                .ok();
 
             settings_window.widget().present();
             return;
@@ -246,6 +249,9 @@ impl Shell {
 
         settings_window
             .sender()
-            .send(crate::settings::window::SettingsInput::SetStyle(self.config.style.clone())).ok();
+            .send(crate::settings::window::SettingsInput::SetStyle(
+                self.config.style.clone(),
+            ))
+            .ok();
     }
 }

@@ -29,7 +29,9 @@ fn invoke_default(id: u32, service: Option<Arc<NotificationService>>) {
     };
 
     relm4::spawn(async move {
-        let Some(notification) = crate::notifications::actions::notification_by_id(service.as_ref(), id) else {
+        let Some(notification) =
+            crate::notifications::actions::notification_by_id(service.as_ref(), id)
+        else {
             tracing::info!(id, "Default notification action target disappeared");
             return;
         };
@@ -50,21 +52,28 @@ fn invoke_default(id: u32, service: Option<Arc<NotificationService>>) {
     });
 }
 
-
 fn invoke_action(id: u32, action_id: String, service: Option<Arc<NotificationService>>) {
     let Some(service) = service else {
-        tracing::info!("Cannot invoke notification action because notification service is unavailable");
+        tracing::info!(
+            "Cannot invoke notification action because notification service is unavailable"
+        );
         return;
     };
 
     relm4::spawn(async move {
-        let Some(notification) = crate::notifications::actions::notification_by_id(service.as_ref(), id) else {
+        let Some(notification) =
+            crate::notifications::actions::notification_by_id(service.as_ref(), id)
+        else {
             tracing::info!(id, action_id, "Notification action target disappeared");
             return;
         };
 
         if let Err(error) = notification.invoke(&action_id).await {
-            tracing::error!(id, action_id, "Failed to invoke notification action: {error}");
+            tracing::error!(
+                id,
+                action_id,
+                "Failed to invoke notification action: {error}"
+            );
         }
 
         service.dismiss_popup(id);
@@ -77,7 +86,9 @@ fn dismiss_notification(id: u32, service: Option<Arc<NotificationService>>) {
         return;
     };
 
-    let Some(notification) = crate::notifications::actions::notification_by_id(service.as_ref(), id) else {
+    let Some(notification) =
+        crate::notifications::actions::notification_by_id(service.as_ref(), id)
+    else {
         tracing::info!(id, "Notification target disappeared");
         return;
     };

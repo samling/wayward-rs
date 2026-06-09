@@ -1,5 +1,34 @@
-use relm4::{gtk::{self, prelude::{BoxExt, EditableExt, WidgetExt}}, prelude::*};
-use super::{spec::{NumberSpec, ToggleSpec, StringSpec}, window::SettingsInput};
+use super::{
+    spec::{NumberSpec, StringSpec, ToggleSpec},
+    window::SettingsInput,
+};
+use relm4::{
+    gtk::{
+        self,
+        prelude::*,
+    },
+    prelude::*,
+};
+
+fn append_reset_button(
+    row: &gtk::Box,
+    path: &'static [&'static str],
+    is_configured: bool,
+    sender: &ComponentSender<super::window::SettingsWindow>,
+) {
+    let button = gtk::Button::from_icon_name("edit-undo-symbolic");
+    button.add_css_class("settings-reset-button");
+    button.set_tooltip_text(Some("Reset to default"));
+    button.set_sensitive(is_configured);
+
+    let input_sender = sender.input_sender().clone();
+
+    button.connect_clicked(move |_| {
+        let _ = input_sender.send(SettingsInput::SetValue { path, value: None });
+    });
+
+    row.append(&button);
+}
 
 pub(crate) fn number_row(
     setting: NumberSpec,
@@ -30,6 +59,7 @@ pub(crate) fn number_row(
     });
 
     row.append(&spin);
+    append_reset_button(&row, path, setting.value.is_some(), sender);
     row
 }
 
@@ -62,6 +92,7 @@ pub(crate) fn toggle_row(
     });
 
     row.append(&toggle);
+    append_reset_button(&row, path, setting.value.is_some(), sender);
     row
 }
 
@@ -94,5 +125,6 @@ pub(crate) fn string_row(
     });
 
     row.append(&entry);
+    append_reset_button(&row, path, setting.value.is_some(), sender);
     row
 }

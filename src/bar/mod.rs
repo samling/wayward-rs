@@ -12,7 +12,8 @@ use crate::shell::ShellMsg;
 use layout::{BarEdge, BarLayout};
 use state::BarItemState;
 use widget::{
-    BarContext, BarRegion, BarWidgetRuntime, WidgetAction, WidgetBuildContext, WidgetEvent, WidgetInstance,
+    BarContext, BarRegion, BarWidgetRuntime, WidgetAction, WidgetBuildContext, WidgetEvent,
+    WidgetInstance,
 };
 
 use gtk::prelude::*;

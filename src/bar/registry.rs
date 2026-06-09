@@ -15,7 +15,14 @@ static NOTIFICATIONS: NotificationsWidget = NotificationsWidget;
 static SYSTRAY: SystrayWidget = SystrayWidget;
 static WORKSPACES: WorkspacesWidget = WorkspacesWidget;
 
-pub(crate) static WIDGETS: &[&dyn BarWidget] = &[&WORKSPACES, &CLOCK, &BATTERY, &NOTIFICATIONS, &SYSTRAY, &ACTION_MENU];
+pub(crate) static WIDGETS: &[&dyn BarWidget] = &[
+    &WORKSPACES,
+    &CLOCK,
+    &BATTERY,
+    &NOTIFICATIONS,
+    &SYSTRAY,
+    &ACTION_MENU,
+];
 
 pub(crate) fn widget_by_id(id: &str) -> Option<&'static dyn BarWidget> {
     WIDGETS.iter().copied().find(|widget| widget.id() == id)

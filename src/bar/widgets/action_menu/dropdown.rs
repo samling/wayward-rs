@@ -5,7 +5,10 @@ use relm4::prelude::*;
 use crate::bar::widget::{ActionMenuCommand, WidgetAction, WidgetEvent};
 use crate::bar::{BarMsg, dropdown, layout::BarEdge, widget::BarRegion};
 
-use super::config::{ActionMenuActionConfig, ActionMenuActionKind, ActionMenuConfig, ActionMenuLayoutConfig, ActionMenuSectionConfig, ActionMenuSectionAlign};
+use super::config::{
+    ActionMenuActionConfig, ActionMenuActionKind, ActionMenuConfig, ActionMenuLayoutConfig,
+    ActionMenuSectionAlign, ActionMenuSectionConfig,
+};
 
 pub(super) struct ActionMenuDropdown {
     edge: BarEdge,
@@ -27,11 +30,7 @@ pub(super) enum ActionMenuDropdownInput {
     Run(WidgetAction),
 }
 
-fn configure_panel(
-    scroller: &gtk::ScrolledWindow,
-    content: &gtk::Box,
-    config: &ActionMenuConfig,
-) {
+fn configure_panel(scroller: &gtk::ScrolledWindow, content: &gtk::Box, config: &ActionMenuConfig) {
     content.set_spacing(config.layout.row_spacing.max(0));
 
     if let Some(width) = config.panel.width {

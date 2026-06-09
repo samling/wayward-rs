@@ -154,11 +154,7 @@ fn clean_body(body: Option<String>) -> Option<String> {
     body.and_then(|body| {
         let body = strip_leading_origin_link(&body).trim().to_string();
 
-        if body.is_empty() {
-            None
-        } else {
-            Some(body)
-        }
+        if body.is_empty() { None } else { Some(body) }
     })
 }
 
@@ -194,7 +190,9 @@ fn origin_label_matches_href(label: &str, href: &str) -> bool {
         return false;
     };
 
-    label == host || label.strip_prefix("www.") == Some(host) || host.strip_prefix("www.") == Some(label)
+    label == host
+        || label.strip_prefix("www.") == Some(host)
+        || host.strip_prefix("www.") == Some(label)
 }
 
 fn href_host(href: &str) -> Option<&str> {

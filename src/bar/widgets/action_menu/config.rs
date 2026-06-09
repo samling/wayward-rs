@@ -38,7 +38,7 @@ impl Default for ActionMenuConfig {
                             class: Some("action-menu-power".to_string()),
                             tooltip: Some("Power menu".to_string()),
                             show_label: false,
-                        }
+                        },
                     ],
                 },
                 ActionMenuSectionConfig {

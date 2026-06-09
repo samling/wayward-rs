@@ -108,10 +108,7 @@ impl Shell {
                 continue;
             }
 
-            let Some(running_bar) = self
-                .bars
-                .iter_mut()
-                .find(|bar| bar.key == desired_bar.key)
+            let Some(running_bar) = self.bars.iter_mut().find(|bar| bar.key == desired_bar.key)
             else {
                 continue;
             };
@@ -159,7 +156,9 @@ impl Shell {
         let init = bar::BarInit::from_config(app_config, Some(bar_config), Some(monitor), services);
         let layout = init.layout.clone();
         let edge = init.edge;
-        let controller = bar::Bar::builder().launch(init).forward(&shell_sender, |message| message);
+        let controller = bar::Bar::builder()
+            .launch(init)
+            .forward(&shell_sender, |message| message);
 
         Some(RunningBar {
             key,

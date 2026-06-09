@@ -15,8 +15,8 @@ use crate::bar::widget::{
 
 use crate::services::ShellServices;
 
-use self::config::ActionMenuConfig;
 use self::component::{ActionMenuComponent, ActionMenuInit, ActionMenuInput};
+use self::config::ActionMenuConfig;
 
 pub(crate) struct ActionMenuWidget;
 

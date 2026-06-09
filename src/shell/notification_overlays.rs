@@ -102,7 +102,9 @@ impl Shell {
         };
 
         relm4::spawn(async move {
-            if let Some(notification) = crate::notifications::actions::notification_by_id(service.as_ref(), id) {
+            if let Some(notification) =
+                crate::notifications::actions::notification_by_id(service.as_ref(), id)
+            {
                 if let Err(error) = notification.invoke(&action_id).await {
                     tracing::error!(
                         id,
@@ -127,7 +129,9 @@ impl Shell {
         };
 
         relm4::spawn(async move {
-            if let Some(notification) = crate::notifications::actions::notification_by_id(service.as_ref(), id) {
+            if let Some(notification) =
+                crate::notifications::actions::notification_by_id(service.as_ref(), id)
+            {
                 if let Some(action) = notification.default_action.get() {
                     let action_id = action.id;
 

@@ -8,7 +8,9 @@ use crate::bar::layout::BarEdge;
 use crate::bar::widget::BarRegion;
 use crate::notifications::model::NotificationToast;
 
-use super::dropdown::{NotificationsDropdown, NotificationsDropdownInit, NotificationsDropdownInput};
+use super::dropdown::{
+    NotificationsDropdown, NotificationsDropdownInit, NotificationsDropdownInput,
+};
 
 pub(super) struct NotificationsComponent {
     edge: BarEdge,
@@ -108,11 +110,14 @@ impl SimpleComponent for NotificationsComponent {
             }
             NotificationsInput::SetNotifications(notifications) => {
                 self.dropdown
-                    .emit(NotificationsDropdownInput::SetNotifications(notifications.clone()));
+                    .emit(NotificationsDropdownInput::SetNotifications(
+                        notifications.clone(),
+                    ));
                 self.notifications = notifications;
             }
             NotificationsInput::SetUnavailable => {
-                self.dropdown.emit(NotificationsDropdownInput::SetUnavailable);
+                self.dropdown
+                    .emit(NotificationsDropdownInput::SetUnavailable);
                 self.notifications.clear();
             }
         }

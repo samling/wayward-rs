@@ -110,7 +110,7 @@ fn set_document_value(
     value: Option<ConfigValue>,
 ) {
     let mut item = document.as_item_mut();
-    
+
     for segment in &path[..path.len() - 1] {
         item[*segment].or_insert(toml_edit::table());
         item = &mut item[*segment];
@@ -296,7 +296,10 @@ end = []
         let previous = AppConfig::default();
         let next = AppConfig::default();
 
-        assert_eq!(ConfigChanges::between(&previous, &next), ConfigChanges::default());
+        assert_eq!(
+            ConfigChanges::between(&previous, &next),
+            ConfigChanges::default()
+        );
         assert!(!ConfigChanges::between(&previous, &next).has_changes());
     }
 
@@ -331,8 +334,8 @@ end = []
         let config: AppConfig = toml::from_str(
             r#"
     [style.notifications]
-    body_font_weight = 500
-    normal_border_width_px = 2
+    body-font-weight = 500
+    normal-border-width = 2
 
     [[bars]]
     name = "bar"
@@ -343,7 +346,15 @@ end = []
         )
         .unwrap();
 
-        assert_eq!(config.style.notifications.body_font_weight, Some(500));
-        assert_eq!(config.style.notifications.normal_border_width_px, Some(2));
+        use crate::config::style::StyleGroupExt;
+
+        assert_eq!(
+            config.style.notifications.integer("body-font-weight"),
+            Some(500)
+        );
+        assert_eq!(
+            config.style.notifications.integer("normal-border-width"),
+            Some(2)
+        );
     }
 }

@@ -134,7 +134,9 @@ impl FactoryComponent for NotificationRow {
             widgets.root.remove_css_class(class_name);
         }
 
-        widgets.root.add_css_class(self.notification.urgency_class());
+        widgets
+            .root
+            .add_css_class(self.notification.urgency_class());
 
         crate::notifications::icon::set_notification_icon(&widgets.icon, &self.notification);
 
@@ -161,7 +163,7 @@ impl FactoryComponent for NotificationRow {
     fn init_model(
         notification: Self::Init,
         _index: &DynamicIndex,
-        _sender: FactorySender<Self>
+        _sender: FactorySender<Self>,
     ) -> Self {
         Self { notification }
     }
@@ -172,7 +174,10 @@ impl FactoryComponent for NotificationRow {
                 let _ = sender.output(NotificationRowOutput::InvokeDefault(self.notification.id));
             }
             NotificationRowInput::InvokeAction(action_id) => {
-                let _ = sender.output(NotificationRowOutput::InvokeAction { id: self.notification.id, action_id });
+                let _ = sender.output(NotificationRowOutput::InvokeAction {
+                    id: self.notification.id,
+                    action_id,
+                });
             }
             NotificationRowInput::Dismiss => {
                 let _ = sender.output(NotificationRowOutput::Dismiss(self.notification.id));
