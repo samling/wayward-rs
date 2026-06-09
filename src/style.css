@@ -595,7 +595,7 @@ levelbar.osd-level block.filled {
 
 .notification-list-text {
     color: inherit;
-    font-family: "Adwaita Sans";
+    font-family: var(--notification-font-family, "Adwaita Sans");
 }
 
 .notification-list-app-name {

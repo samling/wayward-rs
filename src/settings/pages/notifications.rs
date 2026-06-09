@@ -1,6 +1,6 @@
 use crate::config::StyleConfig;
 
-use super::super::spec::{NumberSpec, ToggleSpec, SettingSpec, SettingsPageSpec, SettingsSectionSpec};
+use super::super::spec::{NumberSpec, ToggleSpec, StringSpec, SettingSpec, SettingsPageSpec, SettingsSectionSpec};
 
 pub(crate) fn page(style: &StyleConfig) -> SettingsPageSpec {
     SettingsPageSpec {
@@ -31,6 +31,13 @@ pub(crate) fn page(style: &StyleConfig) -> SettingsPageSpec {
                     path: &["style", "notifications", "hide_scrollbar"],
                     value: style.notifications.hide_scrollbar,
                     default: true,
+                }),
+
+                SettingSpec::String(StringSpec {
+                    label: "Font family",
+                    path: &["style", "notifications", "font_family"],
+                    value: style.notifications.font_family.clone(),
+                    default: "Adwaita Sans",
                 }),
             ],
         }],

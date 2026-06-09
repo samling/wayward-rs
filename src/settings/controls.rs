@@ -1,5 +1,5 @@
 use relm4::{gtk::{self, prelude::{BoxExt, EditableExt, WidgetExt}}, prelude::*};
-use super::{spec::{NumberSpec, ToggleSpec}, window::SettingsInput};
+use super::{spec::{NumberSpec, ToggleSpec, StringSpec}, window::SettingsInput};
 
 pub(crate) fn number_row(
     setting: NumberSpec,
@@ -62,5 +62,37 @@ pub(crate) fn toggle_row(
     });
 
     row.append(&toggle);
+    row
+}
+
+pub(crate) fn string_row(
+    setting: StringSpec,
+    sender: &ComponentSender<super::window::SettingsWindow>,
+) -> gtk::Box {
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    row.add_css_class("settings-row");
+
+    let label = gtk::Label::new(Some(setting.label));
+    label.set_hexpand(true);
+    label.set_halign(gtk::Align::Start);
+    label.add_css_class("settings-row-label");
+    row.append(&label);
+
+    let entry = gtk::Entry::new();
+    entry.set_text(&setting.display_value());
+    entry.set_width_chars(18);
+
+    let path = setting.path;
+    let saved_setting = setting.clone();
+    let input_sender = sender.input_sender().clone();
+
+    entry.connect_changed(move |entry| {
+        let _ = input_sender.send(SettingsInput::SetValue {
+            path,
+            value: Some(saved_setting.value_for_config(entry.text().to_string())),
+        });
+    });
+
+    row.append(&entry);
     row
 }

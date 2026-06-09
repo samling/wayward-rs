@@ -2,7 +2,7 @@ use crate::config::StyleConfig;
 use relm4::{gtk::{self, prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt}}, prelude::*};
 
 use super::{
-    controls::{number_row, toggle_row},
+    controls::{number_row, toggle_row, string_row},
     spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec},
 };
 
@@ -52,6 +52,9 @@ fn render_section(
             }
             SettingSpec::Toggle(setting) => {
                 group.append(&toggle_row(setting, sender));
+            }
+            SettingSpec::String(setting) => {
+                group.append(&string_row(setting, sender));
             }
         }
     }

@@ -24,6 +24,15 @@ impl CssVariables for NotificationStyleConfig {
             let opacity = if hide_scrollbar { 0 } else { 1 };
             write_css_variable(css, "--notification-scrollbar-opacity", opacity, "");
         }
+
+        if let Some(font_family) = &self.font_family {
+            write_css_variable(
+                css,
+                "--notification-font-family",
+                format!("\"{font_family}\""),
+                "",
+            );
+        }
     }
 }
 
@@ -63,4 +72,6 @@ pub struct NotificationStyleConfig {
     pub normal_border_width_px: Option<u16>,
     #[serde(default)]
     pub hide_scrollbar: Option<bool>,
+    #[serde(default)]
+    pub font_family: Option<String>,
 }
