@@ -59,6 +59,7 @@ pub enum BarMsg {
 }
 
 struct MountedWidget {
+    instance: WidgetInstance,
     widget_id: &'static str,
     region: BarRegion,
     runtime: Box<dyn BarWidgetRuntime>,
@@ -69,6 +70,16 @@ struct MountedLayout {
     start: Vec<MountedWidget>,
     center: Vec<MountedWidget>,
     end: Vec<MountedWidget>,
+}
+
+impl MountedWidget {
+    fn root(&self) -> gtk::Widget {
+        self.runtime.root()
+    }
+
+    fn matches_instance(&self, instance: &WidgetInstance) -> bool {
+        self.instance == *instance
+    }
 }
 
 pub(crate) struct Bar {
@@ -155,6 +166,32 @@ impl Bar {
         self.mounted_layout.end = self.mount_region(BarRegion::End, &self.layout.end, end_items);
     }
 
+    fn mount_widget(
+        &self,
+        region: BarRegion,
+        instance: &WidgetInstance,
+        container: &gtk::Box,
+    ) -> MountedWidget {
+        let context = self.context(region);
+        let build_context = WidgetBuildContext {
+            sender: &self.input_sender,
+            services: &self.services,
+            bar: &context,
+        };
+
+        let runtime = instance.widget.build(instance, &build_context);
+        let root = runtime.root();
+
+        container.append(&root);
+
+        MountedWidget {
+            instance: instance.clone(),
+            widget_id: instance.widget.id(),
+            region,
+            runtime,
+        }
+    }
+
     fn mount_region(
         &self,
         region: BarRegion,
@@ -165,28 +202,82 @@ impl Bar {
             container.remove(&child);
         }
 
-        let context = self.context(region);
-        let build_context = WidgetBuildContext {
-            sender: &self.input_sender,
-            services: &self.services,
-            bar: &context,
-        };
-
         widgets
             .iter()
-            .map(|instance| {
-                let runtime = instance.widget.build(instance, &build_context);
-                let root = runtime.root();
-
-                container.append(&root);
-
-                MountedWidget {
-                    widget_id: instance.widget.id(),
-                    region,
-                    runtime,
-                }
-            })
+            .map(|instance| self.mount_widget(region, instance, container))
             .collect()
+    }
+
+    fn reconcile_layout(
+        &mut self,
+        start_items: &gtk::Box,
+        center_items: &gtk::Box,
+        end_items: &gtk::Box,
+    ) {
+        let start_widgets = self.layout.start.clone();
+        let start_mounted = std::mem::take(&mut self.mounted_layout.start);
+        let start = self.reconcile_region(
+            BarRegion::Start,
+            &start_widgets,
+            start_mounted,
+            start_items,
+        );
+        self.mounted_layout.start = start;
+
+        let center_widgets = self.layout.center.clone();
+        let center_mounted = std::mem::take(&mut self.mounted_layout.center);
+        let center = self.reconcile_region(
+            BarRegion::Center,
+            &center_widgets,
+            center_mounted,
+            center_items,
+        );
+        self.mounted_layout.center = center;
+
+        let end_widgets = self.layout.end.clone();
+        let end_mounted = std::mem::take(&mut self.mounted_layout.end);
+        let end = self.reconcile_region(
+            BarRegion::End,
+            &end_widgets,
+            end_mounted,
+            end_items,
+        );
+        self.mounted_layout.end = end;
+    }
+
+    fn reconcile_region(
+        &self,
+        region: BarRegion,
+        widgets: &[WidgetInstance],
+        mut mounted: Vec<MountedWidget>,
+        container: &gtk::Box,
+    ) -> Vec<MountedWidget> {
+        let mut reconciled: Vec<MountedWidget> = Vec::new();
+
+        for instance in widgets {
+            if let Some(index) = mounted
+                .iter()
+                .position(|mounted| mounted.matches_instance(instance))
+            {
+                let mounted = mounted.remove(index);
+                let root = mounted.root();
+                if let Some(previous) = reconciled.last() {
+                    container.reorder_child_after(&root, Some(&previous.root()));
+                } else {
+                    container.reorder_child_after(&root, None::<&gtk::Widget>);
+                }
+
+                reconciled.push(mounted);
+            } else {
+                reconciled.push(self.mount_widget(region, instance, container));
+            }
+        }
+
+        for mounted in mounted {
+            container.remove(&mounted.root());
+        }
+
+        reconciled
     }
 }
 
@@ -312,17 +403,21 @@ impl Component for Bar {
     ) {
         match message {
             BarMsg::LayoutChanged { layout, edge } => {
+                let edge_changed = self.edge != edge;
+
                 self.layout = layout;
                 self.edge = edge;
 
-                window::configure_window(
-                    root,
-                    self.edge,
-                    self.name.as_deref(),
-                    self.monitor.as_ref(),
-                );
+                if edge_changed {
+                    window::configure_window(
+                        root,
+                        self.edge,
+                        self.name.as_deref(),
+                        self.monitor.as_ref(),
+                    );
+                }
 
-                self.mount_layout(
+                self.reconcile_layout(
                     &widgets.start_items,
                     &widgets.center_items,
                     &widgets.end_items,
