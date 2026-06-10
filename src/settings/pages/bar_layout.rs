@@ -1,6 +1,6 @@
 use crate::config::{BarConfig, BarRegionKey};
 use relm4::{
-    gtk::{self, prelude::*},
+    gtk::{self, glib::prelude::{StaticType, ToValue}, prelude::*},
     prelude::ComponentSender,
 };
 
@@ -205,6 +205,47 @@ fn bar_widget_token(
         });
     });
 
+    if bar_name.is_some() {
+        let drag = gtk::DragSource::new();
+        drag.set_actions(gtk::gdk::DragAction::MOVE);
+
+        drag.connect_prepare(move |_, _, _| {
+            Some(gtk::gdk::ContentProvider::for_value(&(index as u32).to_value()))
+        });
+
+        token.add_controller(drag);
+
+        let drop = gtk::DropTarget::new(u32::static_type(), gtk::gdk::DragAction::MOVE);
+
+        let bar_name_drop = bar_name.map(str::to_string);
+        let widgets_drop = widgets.to_vec();
+        let sender_drop = sender.input_sender().clone();
+
+        drop.connect_drop(move |_, value, _, _| {
+            let Ok(from) = value.get::<u32>() else {
+                return false;
+            };
+
+            let from = from as usize;
+
+            let Some(bar_name) = &bar_name_drop else {
+                return false;
+            };
+
+            let widgets = move_widget(&widgets_drop, from, index);
+
+            let _ = sender_drop.send(SettingsInput::SetBarRegion {
+                bar_name: bar_name.clone(),
+                region: region.key(),
+                widgets,
+            });
+
+            true
+        });
+
+        token.add_controller(drop)
+    }
+
     token
 }
 
@@ -213,4 +254,16 @@ fn available_widget_ids() -> Vec<&'static str> {
         .iter()
         .map(|widget| widget.id())
         .collect()
+}
+
+fn move_widget(widgets: &[String], from: usize, to: usize) -> Vec<String> {
+    let mut reordered = widgets.to_vec();
+
+    if from >= reordered.len() || to >= reordered.len() || from == to {
+        return reordered;
+    }
+
+    let widget = reordered.remove(from);
+    reordered.insert(to, widget);
+    reordered
 }
