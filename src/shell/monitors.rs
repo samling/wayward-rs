@@ -27,6 +27,13 @@ pub(super) fn available() -> Vec<gdk::Monitor> {
     available
 }
 
+pub(super) fn available_connectors() -> Vec<String> {
+    available()
+        .iter()
+        .filter_map(connector)
+        .collect()
+}
+
 pub(super) fn target(bar_config: &crate::config::BarConfig) -> Vec<gdk::Monitor> {
     let available_monitors = available();
 

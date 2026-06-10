@@ -29,6 +29,16 @@ pub(crate) enum SettingsInput {
         region: BarRegionKey,
         widgets: Vec<String>,
     },
+    AddBar {
+        name: String,
+    },
+    RemoveBar {
+        name: String
+    },
+    SetBarMonitors {
+        bar_name: String,
+        monitors: Vec<String>,
+    }
 }
 
 #[relm4::component(pub(crate))]
@@ -196,6 +206,21 @@ impl Component for SettingsWindow {
             } => {
                 if let Err(error) = crate::config::set_bar_region(&bar_name, region, &widgets) {
                     tracing::error!(bar_name, ?region, "Failed to save bar region: {error}")
+                }
+            }
+            SettingsInput::AddBar { name } => {
+                if let Err(error) = crate::config::add_bar(&name) {
+                    tracing::error!(name, "Failed to add bar: {error}")
+                }
+            }
+            SettingsInput::RemoveBar { name } => {
+                if let Err(error) = crate::config::remove_bar(&name) {
+                    tracing::error!(name, "Failed to remove bar: {error}")
+                }
+            }
+            SettingsInput::SetBarMonitors { bar_name, monitors } => {
+                if let Err(error) = crate::config::set_bar_monitors(&bar_name, &monitors) {
+                    tracing::error!(bar_name, ?monitors, "Failed to save bar monitors: {error}");
                 }
             }
         }

@@ -49,6 +49,13 @@ impl Shell {
 
                 let key = running_bar_key(&name, &connector);
 
+                let layout = bar::layout::BarLayout::from_config(&self.config, Some(bar_config));
+
+                if layout.is_empty() {
+                    tracing::debug!("skipping empty bar {key}");
+                    continue;
+                }
+
                 if desired.iter().any(|bar: &DesiredBar| bar.key == key) {
                     tracing::error!("Duplicate bar key {key}, skipping duplicate");
                     continue;

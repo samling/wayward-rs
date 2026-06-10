@@ -17,13 +17,18 @@ use super::{
 pub(crate) struct SettingsConfig {
     pub(crate) style: StyleConfig,
     pub(crate) bars: Vec<BarConfig>,
+    pub(crate) available_monitors: Vec<String>,
 }
 
-impl From<&crate::config::AppConfig> for SettingsConfig {
-    fn from(config: &crate::config::AppConfig) -> Self {
+impl SettingsConfig {
+    pub(crate) fn new(
+        config: &crate::config::AppConfig,
+        available_monitors: Vec<String>,
+    ) -> Self {
         Self {
             style: config.style.clone(),
             bars: config.bars.clone(),
+            available_monitors,
         }
     }
 }
@@ -60,7 +65,7 @@ pub(crate) fn render_current_page(
         }
         SettingsPage::BarLayout => {
             title.set_label(SettingsPage::BarLayout.title());
-            super::pages::bar_layout::render(container, &config.bars, sender);
+            super::pages::bar_layout::render(container, &config.bars, &config.available_monitors, sender);
         }
     };
 }

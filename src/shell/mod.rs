@@ -199,6 +199,13 @@ impl SimpleComponent for Shell {
 }
 
 impl Shell {
+    fn settings_config(&self) -> crate::settings::window::SettingsConfig {
+        crate::settings::window::SettingsConfig::new(
+            &self.config,
+            monitors::available_connectors(),
+        )
+    }
+
     fn apply_generated_style(&self) {
         let Some(style) = &self.style else {
             return;
@@ -223,14 +230,14 @@ impl Shell {
         }
 
         let settings_window = crate::settings::window::SettingsWindow::builder()
-            .launch(crate::settings::window::SettingsConfig::from(&self.config))
+            .launch(self.settings_config())
             .detach();
 
         if let Some(settings_window) = &self.settings_window {
             settings_window
                 .sender()
                 .send(crate::settings::window::SettingsInput::SetConfig(
-                    crate::settings::window::SettingsConfig::from(&self.config),
+                    self.settings_config(),
                 ))
                 .ok();
 
@@ -250,7 +257,7 @@ impl Shell {
         settings_window
             .sender()
             .send(crate::settings::window::SettingsInput::SetConfig(
-                crate::settings::window::SettingsConfig::from(&self.config),
+                self.settings_config(),
             ))
             .ok();
     }

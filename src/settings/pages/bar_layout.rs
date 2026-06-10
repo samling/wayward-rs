@@ -42,17 +42,59 @@ impl BarRegionView {
 pub(crate) fn render(
     container: &gtk::Box,
     bars: &[BarConfig],
+    available_monitors: &[String],
     sender: &ComponentSender<SettingsWindow>,
 ) {
+    container.append(&add_bar_row(sender));
+
+    let can_remove = bars.len() > 1;
+
     for (index, bar) in bars.iter().enumerate() {
-        render_bar_layout_section(container, index, bar, sender);
+        render_bar_layout_section(
+            container,
+            index,
+            bar,
+            available_monitors,
+            can_remove,
+            sender
+        );
     }
+}
+
+fn add_bar_row(sender: &ComponentSender<SettingsWindow>) -> gtk::Box {
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    row.add_css_class("settings-row");
+
+    let entry = gtk::Entry::new();
+    entry.set_placeholder_text(Some("New bar name"));
+    entry.set_hexpand(true);
+    row.append(&entry);
+
+    let add = gtk::Button::with_label("Add bar");
+    add.add_css_class("suggested-action");
+    row.append(&add);
+
+    let sender_add = sender.input_sender().clone();
+    add.connect_clicked(move |_| {
+        let name = entry.text().trim().to_string();
+
+        if name.is_empty() {
+            return;
+        }
+
+        let _ = sender_add.send(SettingsInput::AddBar { name });
+        entry.set_text("");
+    });
+
+    row
 }
 
 fn render_bar_layout_section(
     container: &gtk::Box,
     index: usize,
     bar: &BarConfig,
+    available_monitors: &[String],
+    can_remove: bool,
     sender: &ComponentSender<SettingsWindow>,
 ) {
     let section_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
@@ -63,13 +105,41 @@ fn render_bar_layout_section(
         .clone()
         .unwrap_or_else(|| format!("Bar {}", index + 1));
 
+    let header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+
     let title = gtk::Label::new(Some(&title_text));
     title.set_halign(gtk::Align::Start);
+    title.set_hexpand(true);
     title.add_css_class("settings-section-title");
-    section_box.append(&title);
+    header.append(&title);
+
+    if let Some(bar_name) = bar.name.clone() {
+        let remove = gtk::Button::from_icon_name("user-trash-symbolic");
+        remove.add_css_class("flat");
+        remove.set_tooltip_markup(Some("Remove bar"));
+        remove.set_sensitive(can_remove);
+
+        let sender_remove = sender.input_sender().clone();
+        remove.connect_clicked(move |_| {
+            let _ = sender_remove.send(SettingsInput::RemoveBar {
+                name: bar_name.clone(),
+            });
+        });
+
+        header.append(&remove);
+    }
+
+    section_box.append(&header);
 
     let group = gtk::Box::new(gtk::Orientation::Vertical, 12);
     group.add_css_class("settings-group");
+
+    group.append(&bar_monitors_row(
+        bar.name.as_deref(),
+        bar.monitors.as_deref(),
+        available_monitors,
+        sender,
+    ));
 
     for region in [
         BarRegionView::Start,
@@ -87,6 +157,124 @@ fn render_bar_layout_section(
 
     section_box.append(&group);
     container.append(&section_box);
+}
+
+fn bar_monitors_row(
+    bar_name: Option<&str>,
+    monitors: Option<&[String]>,
+    available_monitors: &[String],
+    sender: &ComponentSender<SettingsWindow>,
+) -> gtk::Box {
+    let monitors = monitors.unwrap_or(&[]);
+
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    row.add_css_class("settings-row");
+    row.add_css_class("bar-monitor-settings-row");
+
+    let label = gtk::Label::new(Some("Monitors"));
+    label.set_halign(gtk::Align::Start);
+    label.set_width_chars(8);
+    label.add_css_class("settings-row-label");
+    row.append(&label);
+
+    let values = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    values.set_hexpand(true);
+    values.add_css_class("bar-region-widget-list");
+
+    if monitors.is_empty() {
+        let all = gtk::Label::new(Some("All monitors"));
+        all.add_css_class("settings-row-value");
+        values.append(&all);
+    } else {
+        for index in 0..monitors.len() {
+            values.append(&monitor_token(bar_name, monitors, index, sender));
+        }
+    }
+
+    row.append(&values);
+
+    let mut options = vec!["Add monitor".to_string()];
+    options.extend(available_monitors.iter().cloned());
+
+    let string_list = gtk::StringList::new(&options.iter().map(String::as_str).collect::<Vec<_>>());
+    let add = gtk::DropDown::new(Some(string_list), None::<gtk::Expression>);
+    add.add_css_class("bar-monitor-add");
+    add.set_sensitive(bar_name.is_some() && !available_monitors.is_empty());
+    add.set_selected(0);
+    row.append(&add);
+
+    let bar_name_add = bar_name.map(str::to_string);
+    let monitors_add = monitors.to_vec();
+    let available_monitors_add = available_monitors.to_vec();
+    let sender_add = sender.input_sender().clone();
+
+    add.connect_selected_notify(move |dropdown| {
+        let Some(bar_name) = &bar_name_add else {
+            return;
+        };
+
+        let selected = dropdown.selected();
+
+        if selected == 0 || selected == gtk::INVALID_LIST_POSITION {
+            return;
+        }
+
+        let Some(monitor) = available_monitors_add.get((selected - 1) as usize) else {
+            return;
+        };
+
+        let mut monitors = monitors_add.clone();
+
+        if !monitors.contains(monitor) {
+            monitors.push(monitor.clone());
+        }
+
+        let _ = sender_add.send(SettingsInput::SetBarMonitors { bar_name: bar_name.clone(), monitors });
+
+        dropdown.set_selected(0);
+    });
+
+    row
+}
+
+fn monitor_token(
+    bar_name: Option<&str>,
+    monitors: &[String],
+    index: usize,
+    sender: &ComponentSender<SettingsWindow>,
+) -> gtk::Box {
+    let token = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    token.add_css_class("bar-widget-token");
+
+    let label = gtk::Label::new(Some(&monitors[index]));
+    label.add_css_class("bar-widget-token-label");
+    token.append(&label);
+
+    let remove = gtk::Button::from_icon_name("window-close-symbolic");
+    remove.add_css_class("flat");
+    remove.add_css_class("bar-widget-token-button");
+    remove.set_sensitive(bar_name.is_some());
+    token.append(&remove);
+
+    let bar_name_remove = bar_name.map(str::to_string);
+    let monitors_remove = monitors.to_vec();
+    let sender_remove = sender.input_sender().clone();
+
+    remove.connect_clicked(move |_| {
+        let Some(bar_name) = &bar_name_remove else {
+            return;
+        };
+
+        let mut monitors = monitors_remove.clone();
+        monitors.remove(index);
+
+        let _ = sender_remove.send(SettingsInput::SetBarMonitors {
+            bar_name: bar_name.clone(),
+            monitors,
+        });
+    });
+
+    token
 }
 
 fn bar_region_row(

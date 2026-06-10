@@ -142,12 +142,182 @@ fn set_bar_region_in_document(
         ));
     };
 
-    let mut values = toml_edit::Array::new();
-    for widget in widgets {
-        values.push(widget.as_str());
+    bar[region.as_str()] = toml_edit::value(string_array(widgets));
+
+    Ok(())
+}
+
+pub(crate) fn set_bar_monitors(bar_name: &str, monitors: &[String]) -> io::Result<()> {
+    let bar_name = bar_name.trim();
+
+    if bar_name.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "bar name cannot be empty",
+        ));
     }
 
-    bar[region.as_str()] = toml_edit::value(values);
+    let Some(config_path) = config_path() else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "could not determine config path",
+        ));
+    };
+
+    let contents = fs::read_to_string(&config_path).unwrap_or_default();
+    let mut document = contents
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+
+    set_bar_monitors_in_document(&mut document, bar_name, monitors)?;
+
+    fs::write(config_path, document.to_string())
+}
+
+fn set_bar_monitors_in_document(
+    document: &mut toml_edit::DocumentMut,
+    bar_name: &str,
+    monitors: &[String],
+) -> io::Result<()> {
+    let Some(bars) = document["bars"].as_array_of_tables_mut() else {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "config does not contain [[bars]]",
+        ));
+    };
+
+    let Some(bar) = bars
+        .iter_mut()
+        .find(|bar| bar.get("name").and_then(|item| item.as_str()) == Some(bar_name))
+    else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("bar {bar_name} was not found"),
+        ));
+    };
+
+    if monitors.is_empty() {
+        bar.remove("monitors");
+    } else {
+        bar["monitors"] = toml_edit::value(string_array(monitors));
+    }
+
+    Ok(())
+}
+
+pub(crate) fn add_bar(name: &str) -> io::Result<()> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "bar name cannot be empty",
+        ));
+    }
+
+    let Some(config_path) = config_path() else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "could not determine config path",
+        ));
+    };
+
+    let contents = fs::read_to_string(&config_path).unwrap_or_default();
+    let mut document = contents
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+
+    add_bar_to_document(&mut document, name)?;
+
+    fs::write(config_path, document.to_string())
+}
+
+fn add_bar_to_document(document: &mut toml_edit::DocumentMut, name: &str) -> io::Result<()> {
+    if document["bars"].is_none() {
+        document["bars"] = toml_edit::ArrayOfTables::new().into();
+    }
+
+    let Some(bars) = document["bars"].as_array_of_tables_mut() else {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "config bars must be an array of tables",
+        ));
+    };
+
+    if bars
+        .iter()
+        .any(|bar| bar.get("name").and_then(|item| item.as_str()) == Some(name))
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!("bar {name} already exists"),
+        ));
+    }
+
+    let mut bar = toml_edit::Table::new();
+    bar["name"] = toml_edit::value(name);
+    bar["edge"] = toml_edit::value("top");
+    bar["start"] = toml_edit::value(toml_edit::Array::new());
+    bar["center"] = toml_edit::value(toml_edit::Array::new());
+    bar["end"] = toml_edit::value(toml_edit::Array::new());
+
+    bars.push(bar);
+
+    Ok(())
+}
+
+pub(crate) fn remove_bar(name: &str) -> io::Result<()> {
+    let name = name.trim();
+
+    if name.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "bar name cannot be empty",
+        ));
+    }
+
+    let Some(config_path) = config_path() else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "could not determine config path",
+        ));
+    };
+
+    let contents = fs::read_to_string(&config_path).unwrap_or_default();
+    let mut document = contents
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+
+    remove_bar_from_document(&mut document, name)?;
+
+    fs::write(config_path, document.to_string())
+}
+
+fn remove_bar_from_document(document: &mut toml_edit::DocumentMut, name: &str) -> io::Result<()> {
+    let Some(bars) = document["bars"].as_array_of_tables_mut() else {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "config does not contain [[bars]]",
+        ));
+    };
+
+    if bars.len() <= 1 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "cannot remove the last bar",
+        ));
+    }
+
+    let Some(index) = bars
+        .iter()
+        .position(|bar| bar.get("name").and_then(|item| item.as_str()) == Some(name))
+    else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("bar {name} was not found"),
+        ));
+    };
+
+    bars.remove(index);
 
     Ok(())
 }
@@ -196,6 +366,16 @@ fn set_document_value(
     } else if let Some(table) = item.as_table_like_mut() {
         table.remove(key);
     }
+}
+
+fn string_array(values: &[String]) -> toml_edit::Array {
+    let mut array = toml_edit::Array::new();
+
+    for value in values {
+        array.push(value.as_str());
+    }
+
+    array
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]
