@@ -182,10 +182,11 @@ fn build_action_button(
 }
 
 #[relm4::component(pub(super))]
-impl SimpleComponent for ActionMenuDropdown {
+impl Component for ActionMenuDropdown {
     type Init = ActionMenuDropdownInit;
     type Input = ActionMenuDropdownInput;
     type Output = ();
+    type CommandOutput = ();
 
     view! {
         #[root]
@@ -259,18 +260,22 @@ impl SimpleComponent for ActionMenuDropdown {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
+    fn update_with_view(&mut self, widgets: &mut Self::Widgets, msg: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match msg {
             ActionMenuDropdownInput::SetPlacement { edge, region } => {
                 self.edge = edge;
                 self.region = region;
             }
             ActionMenuDropdownInput::Run(action) => {
+                widgets.popover.popdown();
+
                 let _ = self.bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
                     widget_id: "action_menu",
                     action,
                 }));
             }
         }
+
+        self.update_view(widgets, sender);
     }
 }

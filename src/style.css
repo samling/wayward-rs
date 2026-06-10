@@ -853,6 +853,11 @@ levelbar.osd-level block.filled {
   border-radius: 6px;
 }
 
+.settings-sidebar-item.active {
+    background: rgba(137, 180, 250, 0.18);
+    color: #f1f3f4;
+}
+
 .settings-page {
   padding: 24px;
 }

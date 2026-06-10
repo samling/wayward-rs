@@ -2,7 +2,7 @@ use crate::config::StyleConfig;
 use relm4::{
     gtk::{
         self,
-        prelude::{BoxExt, GtkWindowExt, OrientableExt, WidgetExt},
+        prelude::{BoxExt, ButtonExt, GtkWindowExt, OrientableExt, WidgetExt},
     },
     prelude::*,
 };
@@ -14,10 +14,27 @@ use super::{
 
 pub(crate) struct SettingsWindow {
     style: StyleConfig,
+    active_page: SettingsPage,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum SettingsPage {
+    Appearance,
+    BarLayout,
+}
+
+impl SettingsPage {
+    fn title(self) -> &'static str {
+        match self {
+            Self::Appearance => "Appearance",
+            Self::BarLayout => "Bar Layout",
+        }
+    }
 }
 
 #[derive(Debug)]
 pub(crate) enum SettingsInput {
+    SetPage(SettingsPage),
     SetStyle(StyleConfig),
     SetValue {
         path: &'static [&'static str],
@@ -34,14 +51,29 @@ fn clear_container(container: &gtk::Box) {
 fn render_current_page(
     container: &gtk::Box,
     title: &gtk::Label,
+    active_page: SettingsPage,
     style: &StyleConfig,
     sender: &ComponentSender<SettingsWindow>,
 ) {
     clear_container(container);
 
-    let page = super::pages::notifications::page(style);
+    let page = match active_page {
+        SettingsPage::Appearance => super::pages::notifications::page(style),
+        SettingsPage::BarLayout => bar_layout_page(),
+    };
+
     title.set_label(page.title);
     render_page(container, page, sender);
+}
+
+fn bar_layout_page() -> SettingsPageSpec {
+    SettingsPageSpec {
+        title: "Bar Layout",
+        sections: vec![SettingsSectionSpec {
+            title: "Widgets",
+            settings: Vec::new(),
+        }],
+    }
 }
 
 fn render_page(
@@ -88,6 +120,14 @@ fn render_section(
     container.append(&section_box);
 }
 
+fn sidebar_button_classes(active_page: SettingsPage, page: SettingsPage) -> Vec<&'static str> {
+    if active_page == page {
+        vec!["settings-sidebar-item", "active"]
+    } else {
+        vec!["settings-sidebar-item"]
+    }
+}
+
 #[relm4::component(pub(crate))]
 impl Component for SettingsWindow {
     type Init = StyleConfig;
@@ -116,23 +156,57 @@ impl Component for SettingsWindow {
                         add_css_class: "settings-sidebar-title",
                     },
 
+                    #[name = "appearance_button"]
                     gtk::Button {
                         add_css_class: "settings-sidebar-item",
-                        set_sensitive: false,
 
-                        #[name = "page_title"]
+                        #[watch]
+                        set_css_classes: &sidebar_button_classes(model.active_page, SettingsPage::Appearance),
+
+                        connect_clicked[sender] => move |_| {
+                            sender.input(SettingsInput::SetPage(SettingsPage::Appearance));
+                        },
+
                         gtk::Label {
-                            set_label: "",
+                            set_label: SettingsPage::Appearance.title(),
                             set_halign: gtk::Align::Start,
-                            add_css_class: "settings-page-title",
+                        },
+                    },
+
+                    #[name = "bar_layout_button"]
+                    gtk::Button {
+                        add_css_class: "settings-sidebar-item",
+
+                        #[watch]
+                        set_css_classes: &sidebar_button_classes(model.active_page, SettingsPage::BarLayout),
+
+                        connect_clicked[sender] => move |_| {
+                            sender.input(SettingsInput::SetPage(SettingsPage::BarLayout));
+                        },
+
+                        gtk::Label {
+                            set_label: SettingsPage::BarLayout.title(),
+                            set_halign: gtk::Align::Start,
                         },
                     },
                 },
 
-                #[name = "page_content"]
                 gtk::Box {
                     set_orientation: gtk::Orientation::Vertical,
                     set_spacing: 18,
+
+                    #[name = "page_title"]
+                    gtk::Label {
+                        set_label: "",
+                        set_halign: gtk::Align::Start,
+                        add_css_class: "settings-page-title",
+                    },
+
+                    #[name = "page_content"]
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_spacing: 18,
+                    }
                 },
             },
         }
@@ -143,7 +217,10 @@ impl Component for SettingsWindow {
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = Self { style };
+        let model = Self {
+            style,
+            active_page: SettingsPage::Appearance,
+        };
         let widgets = view_output!();
 
         let page = super::pages::notifications::page(&model.style);
@@ -151,6 +228,7 @@ impl Component for SettingsWindow {
         render_current_page(
             &widgets.page_content,
             &widgets.page_title,
+            model.active_page,
             &model.style,
             &sender,
         );
@@ -166,12 +244,25 @@ impl Component for SettingsWindow {
         _root: &Self::Root,
     ) {
         match msg {
+            SettingsInput::SetPage(page) => {
+                if self.active_page != page {
+                    self.active_page = page;
+                    render_current_page(
+                        &widgets.page_content,
+                        &widgets.page_title,
+                        self.active_page,
+                        &self.style,
+                        &sender,
+                    );
+                }
+            }
             SettingsInput::SetStyle(style) => {
                 if self.style != style {
                     self.style = style;
                     render_current_page(
                         &widgets.page_content,
                         &widgets.page_title,
+                        self.active_page,
                         &self.style,
                         &sender,
                     );
@@ -190,6 +281,7 @@ impl Component for SettingsWindow {
                     render_current_page(
                         &widgets.page_content,
                         &widgets.page_title,
+                        self.active_page,
                         &self.style,
                         &sender,
                     );
