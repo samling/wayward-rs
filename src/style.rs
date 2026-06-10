@@ -1,3 +1,4 @@
+use crate::config::{StyleConfig, variables::CssVariables};
 use futures::{StreamExt, channel::mpsc};
 use std::{
     cell::RefCell,
@@ -16,10 +17,21 @@ pub(crate) fn default_style_config() -> &'static str {
     DEFAULT_CSS
 }
 
+pub(crate) fn generated_style_config(style: &StyleConfig) -> String {
+    let mut css = String::new();
+
+    css.push_str(":root {\n");
+    style.write_css_variables(&mut css);
+    css.push_str("}\n");
+
+    css
+}
+
 #[derive(Clone)]
 pub(crate) struct StyleHandle {
     provider: CssProvider,
     current_css: Rc<RefCell<String>>,
+    generated_css: Rc<RefCell<String>>,
 }
 
 pub fn apply_initial_css() -> Option<StyleHandle> {
@@ -33,12 +45,13 @@ pub fn apply_initial_css() -> Option<StyleHandle> {
     Some(StyleHandle {
         provider,
         current_css: Rc::new(RefCell::new(css)),
+        generated_css: Rc::new(RefCell::new(String::new())),
     })
 }
 
 impl StyleHandle {
     fn reload(&self) -> bool {
-        let css = load_css();
+        let css = load_css_with_generated(&self.generated_css.borrow());
 
         if *self.current_css.borrow() == css {
             return false;
@@ -49,6 +62,11 @@ impl StyleHandle {
         tracing::info!("Reloaded style");
 
         true
+    }
+
+    pub(crate) fn set_generated_css(&self, css: String) -> bool {
+        *self.generated_css.borrow_mut() = css;
+        self.reload()
     }
 }
 
@@ -83,11 +101,20 @@ where
 }
 
 fn load_css() -> String {
+    load_css_with_generated("")
+}
+
+fn load_css_with_generated(generated_css: &str) -> String {
     let mut css = DEFAULT_CSS.to_string();
 
     if let Some(theme_css) = load_theme_css() {
         css.push('\n');
         css.push_str(&theme_css);
+    }
+
+    if !generated_css.is_empty() {
+        css.push('\n');
+        css.push_str(generated_css);
     }
 
     css
@@ -126,7 +153,9 @@ fn is_style_reload_path(path: &Path) -> bool {
 
 #[cfg(test)]
 mod tests {
-    use super::DEFAULT_CSS;
+    use super::{DEFAULT_CSS, generated_style_config};
+    use crate::config::StyleConfig;
+    use crate::config::style::StyleValue;
 
     #[test]
     fn default_css_has_one_bar_item_base_rule() {
@@ -159,5 +188,29 @@ mod tests {
         assert!(!state_rule.contains("min-width:"));
         assert!(!state_rule.contains("border-radius:"));
         assert!(!state_rule.contains("background:"));
+    }
+
+    #[test]
+    fn generated_style_config_includes_notification_body_font_weight() {
+        let mut style = StyleConfig::default();
+        style
+            .notifications
+            .insert("body-font-weight".to_string(), StyleValue::Integer(500));
+
+        let css = generated_style_config(&style);
+
+        assert!(css.contains("--notification-body-font-weight: 500;"));
+    }
+
+    #[test]
+    fn generated_style_config_includes_notification_border_width() {
+        let mut style = StyleConfig::default();
+        style
+            .notifications
+            .insert("normal-border-width".to_string(), StyleValue::Integer(2));
+
+        let css = generated_style_config(&style);
+
+        assert!(css.contains("--notification-normal-border-width: 2px;"));
     }
 }

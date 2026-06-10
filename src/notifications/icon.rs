@@ -1,15 +1,16 @@
 use std::path::Path;
 
 use relm4::gtk;
-use relm4::gtk::prelude::*;
 
 use super::model::NotificationToast;
 
 const FALLBACK_ICON_NAME: &str = "dialog-information-symbolic";
 
 pub(crate) fn set_notification_icon(image: &gtk::Image, notification: &NotificationToast) {
-    let app_icon = (notification.app_icon != FALLBACK_ICON_NAME)
-        .then_some(notification.app_icon.as_str());
+    image.clear();
+
+    let app_icon =
+        (notification.app_icon != FALLBACK_ICON_NAME).then_some(notification.app_icon.as_str());
 
     for candidate in [
         notification.image_path.as_deref(),
@@ -45,7 +46,7 @@ fn set_icon_candidate(image: &gtk::Image, candidate: &str) -> bool {
     }
 
     if Path::new(candidate).is_file() {
-        return set_file_icon(image,candidate);
+        return set_file_icon(image, candidate);
     }
 
     if set_theme_icon(image, candidate) {
@@ -59,7 +60,7 @@ fn set_icon_candidate(image: &gtk::Image, candidate: &str) -> bool {
 
 fn set_file_icon(image: &gtk::Image, path: &str) -> bool {
     let path = Path::new(path);
-    
+
     if !path.is_file() {
         tracing::debug!(
             path = %path.display(),
@@ -73,7 +74,11 @@ fn set_file_icon(image: &gtk::Image, path: &str) -> bool {
 }
 
 fn set_theme_icon(image: &gtk::Image, icon_name: &str) -> bool {
-    let theme = gtk::IconTheme::for_display(&image.display());
+    let Some(display) = gtk::gdk::Display::default() else {
+        return false;
+    };
+
+    let theme = gtk::IconTheme::for_display(&display);
 
     if !theme.has_icon(icon_name) {
         return false;
@@ -91,10 +96,7 @@ fn app_name_icon_candidate(app_name: &str) -> Vec<String> {
     }
 
     let lowercase = trimmed.to_lowercase();
-    let kebab = lowercase
-        .split_whitespace()
-        .collect::<Vec<_>>()
-        .join("-");
+    let kebab = lowercase.split_whitespace().collect::<Vec<_>>().join("-");
 
     if lowercase == kebab {
         vec![lowercase]

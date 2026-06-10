@@ -5,7 +5,10 @@ use relm4::prelude::*;
 use crate::bar::widget::{ActionMenuCommand, WidgetAction, WidgetEvent};
 use crate::bar::{BarMsg, dropdown, layout::BarEdge, widget::BarRegion};
 
-use super::config::{ActionMenuActionConfig, ActionMenuConfig, ActionMenuLayoutConfig, ActionMenuSectionConfig, ActionMenuSectionAlign};
+use super::config::{
+    ActionMenuActionConfig, ActionMenuActionKind, ActionMenuConfig, ActionMenuLayoutConfig,
+    ActionMenuSectionAlign, ActionMenuSectionConfig,
+};
 
 pub(super) struct ActionMenuDropdown {
     edge: BarEdge,
@@ -24,14 +27,10 @@ pub(super) struct ActionMenuDropdownInit {
 #[derive(Debug)]
 pub(super) enum ActionMenuDropdownInput {
     SetPlacement { edge: BarEdge, region: BarRegion },
-    Run(ActionMenuCommand),
+    Run(WidgetAction),
 }
 
-fn configure_panel(
-    scroller: &gtk::ScrolledWindow,
-    content: &gtk::Box,
-    config: &ActionMenuConfig,
-) {
+fn configure_panel(scroller: &gtk::ScrolledWindow, content: &gtk::Box, config: &ActionMenuConfig) {
     content.set_spacing(config.layout.row_spacing.max(0));
 
     if let Some(width) = config.panel.width {
@@ -104,6 +103,25 @@ fn build_section(
     section_box
 }
 
+fn widget_action(action: &ActionMenuActionConfig) -> Option<WidgetAction> {
+    match action.action {
+        ActionMenuActionKind::Command => {
+            let Some(program) = action.command.clone() else {
+                tracing::error!("Ignoring acdtion menu command without a program");
+                return None;
+            };
+
+            Some(WidgetAction::RunActionMenuAction {
+                command: ActionMenuCommand {
+                    program,
+                    args: action.args.clone(),
+                },
+            })
+        }
+        ActionMenuActionKind::OpenSettings => Some(WidgetAction::OpenSettings),
+    }
+}
+
 fn build_action_button(
     action: &ActionMenuActionConfig,
     layout: &ActionMenuLayoutConfig,
@@ -135,39 +153,45 @@ fn build_action_button(
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 4);
     content.add_css_class("action-menu-button-content");
+    content.set_halign(gtk::Align::Center);
+    content.set_valign(gtk::Align::Center);
 
     if let Some(icon) = &action.icon {
         let icon_label = gtk::Label::new(Some(icon));
         icon_label.add_css_class("action-menu-action-icon");
+        icon_label.set_halign(gtk::Align::Center);
+        icon_label.set_valign(gtk::Align::Center);
         content.append(&icon_label);
     }
 
     if action.show_label && !action.label.is_empty() {
         let label = gtk::Label::new(Some(&action.label));
         label.add_css_class("action-menu-action-label");
+        label.set_halign(gtk::Align::Center);
         content.append(&label);
     }
 
     button.set_child(Some(&content));
 
-    let command = ActionMenuCommand {
-        program: action.command.clone(),
-        args: action.args.clone(),
-    };
-    let input_sender = sender.input_sender().clone();
+    if let Some(action) = widget_action(action) {
+        let input_sender = sender.input_sender().clone();
 
-    button.connect_clicked(move |_| {
-        let _ = input_sender.send(ActionMenuDropdownInput::Run(command.clone()));
-    });
+        button.connect_clicked(move |_| {
+            let _ = input_sender.send(ActionMenuDropdownInput::Run(action.clone()));
+        });
+    } else {
+        button.set_sensitive(false);
+    }
 
     button
 }
 
 #[relm4::component(pub(super))]
-impl SimpleComponent for ActionMenuDropdown {
+impl Component for ActionMenuDropdown {
     type Init = ActionMenuDropdownInit;
     type Input = ActionMenuDropdownInput;
     type Output = ();
+    type CommandOutput = ();
 
     view! {
         #[root]
@@ -241,18 +265,28 @@ impl SimpleComponent for ActionMenuDropdown {
         ComponentParts { model, widgets }
     }
 
-    fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {
+    fn update_with_view(
+        &mut self,
+        widgets: &mut Self::Widgets,
+        msg: Self::Input,
+        sender: ComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
         match msg {
             ActionMenuDropdownInput::SetPlacement { edge, region } => {
                 self.edge = edge;
                 self.region = region;
             }
-            ActionMenuDropdownInput::Run(command) => {
+            ActionMenuDropdownInput::Run(action) => {
+                widgets.popover.popdown();
+
                 let _ = self.bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
                     widget_id: "action_menu",
-                    action: WidgetAction::RunActionMenuAction { command },
+                    action,
                 }));
             }
         }
+
+        self.update_view(widgets, sender);
     }
 }

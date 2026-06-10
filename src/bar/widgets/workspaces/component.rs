@@ -20,6 +20,7 @@ pub(super) struct WorkspacesComponent {
     rendered_workspaces: Vec<RenderedWorkspace>,
     config: WorkspacesConfig,
     monitor_connector: Option<String>,
+    edge: BarEdge,
 }
 
 pub(super) struct WorkspacesInit {
@@ -34,6 +35,10 @@ pub(super) struct WorkspacesInit {
 pub(super) enum WorkspacesInput {
     SetState {
         state: WorkspaceState,
+        monitor_connector: Option<String>,
+    },
+    SetPlacement {
+        edge: BarEdge,
         monitor_connector: Option<String>,
     },
 }
@@ -97,6 +102,7 @@ impl SimpleComponent for WorkspacesComponent {
             rendered_workspaces: Vec::new(),
             config: init.config,
             monitor_connector: init.monitor_connector,
+            edge: init.edge,
         };
 
         ComponentParts {
@@ -123,6 +129,21 @@ impl SimpleComponent for WorkspacesComponent {
                 );
 
                 self.update_indicator(active_workspace);
+            }
+            WorkspacesInput::SetPlacement {
+                edge,
+                monitor_connector,
+            } => {
+                self.edge = edge;
+                self.monitor_connector = monitor_connector;
+
+                let orientation = self.edge.orientation();
+                self.content.set_orientation(orientation);
+                self.indicator.set_orientation(orientation);
+
+                for rendered in &self.rendered_workspaces {
+                    rendered.root.set_orientation(orientation);
+                }
             }
         }
     }

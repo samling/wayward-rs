@@ -52,7 +52,9 @@ async fn run(sender: Sender<ShellMsg>, service: Arc<NotificationService>) {
 
     tracing::info!("Notification popup watcher stopped");
     let _ = sender.send(ShellMsg::PopupNotificationsChanged(Vec::new()));
-    let _ = sender.send(ShellMsg::ItemStateChanged(BarItemState::Notifications(NotificationState::Unavailable)));
+    let _ = sender.send(ShellMsg::ItemStateChanged(BarItemState::Notifications(
+        NotificationState::Unavailable,
+    )));
 }
 
 fn send_popup_snapshot(sender: &Sender<ShellMsg>, service: &NotificationService) {
@@ -65,7 +67,10 @@ fn send_popup_snapshot(sender: &Sender<ShellMsg>, service: &NotificationService)
 
     let toasts = newest_first(toasts);
 
-    if sender.send(ShellMsg::PopupNotificationsChanged(toasts)).is_err() {
+    if sender
+        .send(ShellMsg::PopupNotificationsChanged(toasts))
+        .is_err()
+    {
         tracing::error!("Failed to send notification popup snapshot");
     }
 }
@@ -81,7 +86,9 @@ fn send_active_snapshot(sender: &Sender<ShellMsg>, service: &NotificationService
     let notifications = newest_first(notifications);
 
     if sender
-        .send(ShellMsg::ItemStateChanged(BarItemState::Notifications(NotificationState::Ready(notifications))))
+        .send(ShellMsg::ItemStateChanged(BarItemState::Notifications(
+            NotificationState::Ready(notifications),
+        )))
         .is_err()
     {
         tracing::error!("Failed to send active notification snapshot");

@@ -1,12 +1,12 @@
-use crate::bar::widget::{WidgetAction, WidgetEvent};
+use super::row::{NotificationRow, NotificationRowOutput};
 use crate::bar::BarMsg;
+use crate::bar::widget::{WidgetAction, WidgetEvent};
 use crate::bar::{dropdown, layout::BarEdge, widget::BarRegion};
 use crate::notifications::model::NotificationToast;
 use relm4::factory::FactoryVecDeque;
 use relm4::gtk;
 use relm4::gtk::prelude::*;
 use relm4::prelude::*;
-use super::row::{NotificationRow, NotificationRowOutput};
 
 pub(super) struct NotificationsDropdown {
     edge: BarEdge,
@@ -50,7 +50,7 @@ impl SimpleComponent for NotificationsDropdown {
 
             #[watch]
             set_position: dropdown::position_for_edge(model.edge),
-            
+
             #[watch]
             set_offset: (
                 dropdown::x_offset_for_placement(model.edge, model.region),
@@ -109,7 +109,7 @@ impl SimpleComponent for NotificationsDropdown {
                     },
 
                     #[name = "empty_label"]
-                    gtk::Label { 
+                    gtk::Label {
                         add_css_class: "notifications-empty",
                         set_halign: gtk::Align::Start,
                         set_text: "No notifications",
@@ -150,15 +150,18 @@ impl SimpleComponent for NotificationsDropdown {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let list = gtk::ListBox::default();
-        let rows = FactoryVecDeque::builder()
-            .launch(list.clone())
-            .forward(sender.input_sender(), |output| match output {
+        let rows = FactoryVecDeque::builder().launch(list.clone()).forward(
+            sender.input_sender(),
+            |output| match output {
                 NotificationRowOutput::InvokeDefault(id) => {
                     NotificationsDropdownInput::InvokeDefault(id)
                 }
-                NotificationRowOutput::InvokeAction { id, action_id } => NotificationsDropdownInput::InvokeAction { id, action_id },
+                NotificationRowOutput::InvokeAction { id, action_id } => {
+                    NotificationsDropdownInput::InvokeAction { id, action_id }
+                }
                 NotificationRowOutput::Dismiss(id) => NotificationsDropdownInput::Dismiss(id),
-            });
+            },
+        );
 
         let model = Self {
             edge: init.edge,

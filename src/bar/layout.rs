@@ -62,7 +62,7 @@ impl BarEdge {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) struct BarLayout {
     pub(super) start: Vec<WidgetInstance>,
     pub(super) center: Vec<WidgetInstance>,
@@ -70,6 +70,10 @@ pub(crate) struct BarLayout {
 }
 
 impl BarLayout {
+    pub(crate) fn is_empty(&self) -> bool {
+        self.start.is_empty() && self.center.is_empty() && self.end.is_empty()
+    }
+
     pub(super) fn default_top_bar(app_config: &crate::config::AppConfig) -> Self {
         Self {
             start: vec![parse_item(app_config, "workspaces").unwrap()],
@@ -81,7 +85,7 @@ impl BarLayout {
         }
     }
 
-    pub(super) fn from_config(
+    pub(crate) fn from_config(
         app_config: &crate::config::AppConfig,
         config: Option<&BarConfig>,
     ) -> Self {
@@ -128,7 +132,12 @@ fn parse_item(app_config: &crate::config::AppConfig, reference: &str) -> Option<
         widget_type: widget_type.to_string(),
         instance: instance.map(str::to_string),
         widget,
-        config: resolved_config(app_config, widget_type, instance, widget.config_table_keys()),
+        config: resolved_config(
+            app_config,
+            widget_type,
+            instance,
+            widget.config_table_keys(),
+        ),
     })
 }
 

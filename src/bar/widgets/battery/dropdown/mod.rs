@@ -9,7 +9,9 @@ use std::sync::Arc;
 use wayle_power_profiles::PowerProfilesService;
 use wayle_power_profiles::types::profile::PowerProfile;
 
-use super::history::{CHARGE_HISTORY_WINDOW_SECONDS, graph_points, load_charge_history, recent_points};
+use super::history::{
+    CHARGE_HISTORY_WINDOW_SECONDS, graph_points, load_charge_history, recent_points,
+};
 use super::history_graph::BatteryHistoryGraph;
 use super::view_model::BatteryViewModel;
 
@@ -303,7 +305,9 @@ impl SimpleComponent for BatteryDropdown {
 
         if let Ok(history) = load_charge_history() {
             let recent_history = recent_points(&history, CHARGE_HISTORY_WINDOW_SECONDS);
-            model.history_graph.set_points(graph_points(&recent_history));
+            model
+                .history_graph
+                .set_points(graph_points(&recent_history));
         }
 
         let history_graph = model.history_graph.root();

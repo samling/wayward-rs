@@ -42,6 +42,15 @@ impl WidgetInstance {
     }
 }
 
+impl PartialEq for WidgetInstance {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+            && self.widget_type == other.widget_type
+            && self.instance == other.instance
+            && self.config == other.config
+    }
+}
+
 impl std::fmt::Debug for WidgetInstance {
     fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         formatter
@@ -79,7 +88,8 @@ pub(crate) enum WidgetAction {
     DismissAllNotifications,
     RunActionMenuAction {
         command: ActionMenuCommand,
-    }
+    },
+    OpenSettings,
 }
 
 #[derive(Clone, Debug)]
@@ -144,6 +154,8 @@ pub(crate) struct WidgetBuildContext<'a> {
 
 pub(crate) trait BarWidgetRuntime {
     fn root(&self) -> gtk::Widget;
+
+    fn set_context(&mut self, _context: &BarContext) {}
 
     fn update(&mut self, state: &BarItemState, context: &BarContext);
 }

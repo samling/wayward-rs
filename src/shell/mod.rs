@@ -8,7 +8,10 @@ use gtk::prelude::*;
 use relm4::gtk;
 use relm4::prelude::*;
 
-use crate::{bar, config::AppConfig};
+use crate::{
+    bar,
+    config::{AppConfig, ConfigChanges},
+};
 
 pub(crate) struct Shell {
     bars: Vec<bars::RunningBar>,
@@ -18,7 +21,9 @@ pub(crate) struct Shell {
     popup_notifications: Vec<crate::notifications::model::NotificationToast>,
     notification_windows: Vec<notification_overlays::RunningNotificationWindow>,
     osd_windows: Vec<osd_windows::RunningOsd>,
+    settings_window: Option<Controller<crate::settings::window::SettingsWindow>>,
     services: crate::services::ShellServices,
+    style: Option<crate::style::StyleHandle>,
 }
 
 pub(crate) struct ShellInit {
@@ -38,6 +43,7 @@ pub(crate) enum ShellMsg {
     InvokeNotificationAction { id: u32, action_id: String },
     InvokeNotificationDefaultAction(u32),
     DismissNotificationPopup(u32),
+    OpenSettings,
 }
 
 #[relm4::component(pub(crate))]
@@ -68,10 +74,13 @@ impl SimpleComponent for Shell {
             popup_notifications: Vec::new(),
             notification_windows: Vec::new(),
             osd_windows: Vec::new(),
+            settings_window: None,
             services,
+            style: style.clone(),
         };
 
-        model.reconcile_bars();
+        model.apply_generated_style();
+        model.reconcile_bars(sender.input_sender().clone());
         model.reconcile_osd_windows();
         model.reconcile_notification_windows(&sender);
 
@@ -95,8 +104,29 @@ impl SimpleComponent for Shell {
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>) {
         match message {
             ShellMsg::ConfigChanged(config) => {
+                let changes = ConfigChanges::between(&self.config, &config);
+
+                if !changes.has_changes() {
+                    return;
+                }
+
+                tracing::info!(?changes, "Config changed");
+
                 self.config = config;
-                self.reconcile_bars();
+
+                self.sync_settings_window();
+
+                if changes.bars_changed || changes.widgets_changed {
+                    self.reconcile_bars(_sender.input_sender().clone());
+                }
+
+                if changes.notifications_changed {
+                    self.show_notifications();
+                }
+
+                if changes.style_changed {
+                    self.apply_generated_style();
+                }
             }
             ShellMsg::StyleChanged => {
                 for running_bar in &self.bars {
@@ -116,7 +146,7 @@ impl SimpleComponent for Shell {
                 });
             }
             ShellMsg::ReconcileMonitors => {
-                self.reconcile_bars();
+                self.reconcile_bars(_sender.input_sender().clone());
                 self.reconcile_osd_windows();
                 self.reconcile_notification_windows(&_sender);
 
@@ -161,6 +191,71 @@ impl SimpleComponent for Shell {
             ShellMsg::InvokeNotificationDefaultAction(id) => {
                 self.invoke_notification_default_action(id);
             }
+            ShellMsg::OpenSettings => {
+                self.open_settings_window();
+            }
         }
+    }
+}
+
+impl Shell {
+    fn settings_config(&self) -> crate::settings::window::SettingsConfig {
+        crate::settings::window::SettingsConfig::new(&self.config, monitors::available_connectors())
+    }
+
+    fn apply_generated_style(&self) {
+        let Some(style) = &self.style else {
+            return;
+        };
+
+        let css = crate::style::generated_style_config(&self.config.style);
+
+        if style.set_generated_css(css) {
+            for running_bar in &self.bars {
+                let _ = running_bar
+                    .controller
+                    .sender()
+                    .send(bar::BarMsg::StyleChanged);
+            }
+        }
+    }
+
+    fn open_settings_window(&mut self) {
+        if let Some(settings_window) = &self.settings_window {
+            settings_window.widget().present();
+            return;
+        }
+
+        let settings_window = crate::settings::window::SettingsWindow::builder()
+            .launch(self.settings_config())
+            .detach();
+
+        if let Some(settings_window) = &self.settings_window {
+            settings_window
+                .sender()
+                .send(crate::settings::window::SettingsInput::SetConfig(
+                    self.settings_config(),
+                ))
+                .ok();
+
+            settings_window.widget().present();
+            return;
+        }
+
+        settings_window.widget().present();
+        self.settings_window = Some(settings_window);
+    }
+
+    fn sync_settings_window(&self) {
+        let Some(settings_window) = &self.settings_window else {
+            return;
+        };
+
+        settings_window
+            .sender()
+            .send(crate::settings::window::SettingsInput::SetConfig(
+                self.settings_config(),
+            ))
+            .ok();
     }
 }

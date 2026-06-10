@@ -16,17 +16,30 @@ impl Default for ActionMenuConfig {
             sections: vec![
                 ActionMenuSectionConfig {
                     title: None,
-                    columns: Some(1),
+                    columns: Some(2),
                     align: ActionMenuSectionAlign::End,
-                    actions: vec![ActionMenuActionConfig {
-                        label: "Power menu".to_string(),
-                        icon: Some("\u{f011}".to_string()),
-                        command: "wlogout".to_string(),
-                        args: Vec::new(),
-                        class: Some("action-menu-power".to_string()),
-                        tooltip: Some("Power menu".to_string()),
-                        show_label: false,
-                    }],
+                    actions: vec![
+                        ActionMenuActionConfig {
+                            label: "Settings".to_string(),
+                            icon: Some("\u{f013}".to_string()),
+                            action: ActionMenuActionKind::OpenSettings,
+                            command: None,
+                            args: Vec::new(),
+                            class: Some("action-menu-settings".to_string()),
+                            tooltip: Some("Settings".to_string()),
+                            show_label: false,
+                        },
+                        ActionMenuActionConfig {
+                            label: "Power menu".to_string(),
+                            icon: Some("\u{f011}".to_string()),
+                            action: ActionMenuActionKind::Command,
+                            command: Some("wlogout".to_string()),
+                            args: Vec::new(),
+                            class: Some("action-menu-power".to_string()),
+                            tooltip: Some("Power menu".to_string()),
+                            show_label: false,
+                        },
+                    ],
                 },
                 ActionMenuSectionConfig {
                     title: Some("Screenshot".to_string()),
@@ -56,6 +69,14 @@ impl Default for ActionMenuSectionAlign {
     fn default() -> Self {
         Self::Fill
     }
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub(super) enum ActionMenuActionKind {
+    #[default]
+    Command,
+    OpenSettings,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -111,7 +132,10 @@ pub(super) struct ActionMenuActionConfig {
     pub(super) label: String,
     #[serde(default)]
     pub(super) icon: Option<String>,
-    pub(super) command: String,
+    #[serde(default)]
+    pub(super) action: ActionMenuActionKind,
+    #[serde(default)]
+    pub(super) command: Option<String>,
     #[serde(default)]
     pub(super) args: Vec<String>,
     #[serde(default)]
@@ -131,7 +155,8 @@ impl ActionMenuActionConfig {
         Self {
             label: label.to_string(),
             icon: Some(icon.to_string()),
-            command: "screenshot".to_string(),
+            action: ActionMenuActionKind::Command,
+            command: Some("screenshot".to_string()),
             args: vec![mode.to_string()],
             class: Some("action-menu-screenshot-action".to_string()),
             tooltip: Some(format!("Screenshot {}", label.to_lowercase())),

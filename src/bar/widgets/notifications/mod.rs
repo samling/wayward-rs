@@ -10,7 +10,7 @@ use relm4::prelude::*;
 
 use crate::bar::state::{BarItemState, NotificationState};
 use crate::bar::widget::{
-    BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetInstance, WidgetEvent,
+    BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetEvent, WidgetInstance,
 };
 use crate::services::ShellServices;
 
@@ -28,7 +28,10 @@ impl BarWidgetRuntime for NotificationsRuntime {
     }
 
     fn update(&mut self, state: &BarItemState, context: &BarContext) {
-        self.controller.emit(NotificationsInput::SetPlacement { edge: context.edge, region: context.region });
+        self.controller.emit(NotificationsInput::SetPlacement {
+            edge: context.edge,
+            region: context.region,
+        });
         match state {
             BarItemState::Notifications(NotificationState::Ready(notifications)) => {
                 self.controller
@@ -52,11 +55,13 @@ impl BarWidget for NotificationsWidget {
         _instance: &WidgetInstance,
         context: &WidgetBuildContext<'_>,
     ) -> Box<dyn BarWidgetRuntime> {
-        let controller = NotificationsComponent::builder().launch(NotificationsInit {
-            edge: context.bar.edge,
-            region: context.bar.region,
-            bar_sender: context.sender.clone(),
-        }).detach();
+        let controller = NotificationsComponent::builder()
+            .launch(NotificationsInit {
+                edge: context.bar.edge,
+                region: context.bar.region,
+                bar_sender: context.sender.clone(),
+            })
+            .detach();
 
         Box::new(NotificationsRuntime { controller })
     }

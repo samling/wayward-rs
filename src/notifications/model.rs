@@ -50,26 +50,6 @@ impl NotificationToast {
         let summary = notification.summary.get();
         let body = notification.body.get();
 
-        tracing::debug!(
-            target: "wayward::notifications::debug",
-            id = notification.id,
-            app_name = ?app_name,
-            app_icon = ?app_icon,
-            image_path = ?image_path,
-            desktop_entry = ?desktop_entry,
-            summary_chars = summary.chars().count(),
-            summary_newlines = newline_count(&summary),
-            summary_max_line_chars = max_line_chars(&summary),
-            summary_has_code_block = has_code_block_marker(&summary),
-            summary_sample = %text_sample(&summary),
-            body_present = body.is_some(),
-            body_chars = ?body.as_deref().map(char_count),
-            body_newlines = ?body.as_deref().map(newline_count),
-            body_max_line_chars = ?body.as_deref().map(max_line_chars),
-            body_has_code_block = ?body.as_deref().map(has_code_block_marker),
-            body_sample = %body.as_deref().map(text_sample).unwrap_or_default(),
-            "notification received"
-        );
         Self::from_fields(NotificationToastFields {
             id: notification.id,
             app_name,
@@ -154,11 +134,7 @@ fn clean_body(body: Option<String>) -> Option<String> {
     body.and_then(|body| {
         let body = strip_leading_origin_link(&body).trim().to_string();
 
-        if body.is_empty() {
-            None
-        } else {
-            Some(body)
-        }
+        if body.is_empty() { None } else { Some(body) }
     })
 }
 
@@ -194,7 +170,9 @@ fn origin_label_matches_href(label: &str, href: &str) -> bool {
         return false;
     };
 
-    label == host || label.strip_prefix("www.") == Some(host) || host.strip_prefix("www.") == Some(label)
+    label == host
+        || label.strip_prefix("www.") == Some(host)
+        || host.strip_prefix("www.") == Some(label)
 }
 
 fn href_host(href: &str) -> Option<&str> {
@@ -213,32 +191,6 @@ pub(crate) fn newest_first(mut toasts: Vec<NotificationToast>) -> Vec<Notificati
             .then_with(|| right.id.cmp(&left.id))
     });
     toasts
-}
-
-// Debugging
-const DEBUG_SAMPLE_CHARS: usize = 240;
-fn char_count(value: &str) -> usize {
-    value.chars().count()
-}
-
-fn newline_count(value: &str) -> usize {
-    value.matches('\n').count()
-}
-
-fn max_line_chars(value: &str) -> usize {
-    value.lines().map(char_count).max().unwrap_or(0)
-}
-
-fn has_code_block_marker(value: &str) -> bool {
-    value.contains("```") || value.contains("<pre") || value.contains("<code")
-}
-
-fn text_sample(value: &str) -> String {
-    value
-        .chars()
-        .flat_map(char::escape_debug)
-        .take(DEBUG_SAMPLE_CHARS)
-        .collect()
 }
 
 #[cfg(test)]

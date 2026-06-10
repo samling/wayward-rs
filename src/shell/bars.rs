@@ -2,11 +2,13 @@ use gtk::gdk;
 use gtk::prelude::*;
 use relm4::prelude::*;
 
-use super::{Shell, monitors};
+use super::{Shell, ShellMsg, monitors};
 use crate::{bar, config::AppConfig};
 
 pub(super) struct RunningBar {
     pub(super) key: String,
+    pub(super) layout: bar::layout::BarLayout,
+    pub(super) edge: bar::layout::BarEdge,
     pub(super) controller: Controller<bar::Bar>,
 }
 
@@ -47,6 +49,13 @@ impl Shell {
 
                 let key = running_bar_key(&name, &connector);
 
+                let layout = bar::layout::BarLayout::from_config(&self.config, Some(bar_config));
+
+                if layout.is_empty() {
+                    tracing::debug!("skipping empty bar {key}");
+                    continue;
+                }
+
                 if desired.iter().any(|bar: &DesiredBar| bar.key == key) {
                     tracing::error!("Duplicate bar key {key}, skipping duplicate");
                     continue;
@@ -63,7 +72,7 @@ impl Shell {
         desired
     }
 
-    pub(super) fn reconcile_bars(&mut self) {
+    pub(super) fn reconcile_bars(&mut self, shell_sender: relm4::Sender<ShellMsg>) {
         let desired_bars = self.desired_bars();
 
         self.bars.retain(|running_bar| {
@@ -86,6 +95,7 @@ impl Shell {
                     &desired_bar.config,
                     desired_bar.monitor,
                     self.services.clone(),
+                    shell_sender.clone(),
                 ) {
                     self.send_item_states_to_bar(&running_bar);
                     self.bars.push(running_bar);
@@ -101,6 +111,18 @@ impl Shell {
                 self.services.clone(),
             );
 
+            if running_bar.layout == init.layout && running_bar.edge == init.edge {
+                continue;
+            }
+
+            let Some(running_bar) = self.bars.iter_mut().find(|bar| bar.key == desired_bar.key)
+            else {
+                continue;
+            };
+
+            running_bar.layout = init.layout.clone();
+            running_bar.edge = init.edge;
+
             if running_bar
                 .controller
                 .sender()
@@ -110,7 +132,7 @@ impl Shell {
                 })
                 .is_err()
             {
-                tracing::error!("Failed to send layout update to bar {}", desired_bar.key);
+                tracing::error!("Reconciled {} configured bar(s)", self.config.bars.len());
             }
         }
 
@@ -122,6 +144,7 @@ impl Shell {
         bar_config: &crate::config::BarConfig,
         monitor: gdk::Monitor,
         services: crate::services::ShellServices,
+        shell_sender: relm4::Sender<ShellMsg>,
     ) -> Option<RunningBar> {
         let Some(name) = bar_name(bar_config) else {
             tracing::error!("Skipping bar without a name");
@@ -138,9 +161,18 @@ impl Shell {
         tracing::info!("Launching bar {key}");
 
         let init = bar::BarInit::from_config(app_config, Some(bar_config), Some(monitor), services);
-        let controller = bar::Bar::builder().launch(init).detach();
+        let layout = init.layout.clone();
+        let edge = init.edge;
+        let controller = bar::Bar::builder()
+            .launch(init)
+            .forward(&shell_sender, |message| message);
 
-        Some(RunningBar { key, controller })
+        Some(RunningBar {
+            key,
+            layout,
+            edge,
+            controller,
+        })
     }
 
     pub(super) fn send_item_states_to_bar(&self, running_bar: &RunningBar) {

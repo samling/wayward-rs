@@ -60,7 +60,14 @@ fn draw_graph(
 
     draw_background(context, graph_x, graph_y, graph_width, graph_height);
     draw_y_markers(context, graph_x, graph_y, graph_width, graph_height);
-    draw_axis_labels(context, width, height, padding_left, padding_top, padding_bottom);
+    draw_axis_labels(
+        context,
+        width,
+        height,
+        padding_left,
+        padding_top,
+        padding_bottom,
+    );
 
     if points.len() < 2 {
         return;
@@ -116,7 +123,6 @@ fn draw_y_markers(
         context.move_to(6.0, y + 3.0);
         let _ = context.show_text(label);
     }
-
 }
 
 fn draw_axis_labels(
@@ -128,7 +134,11 @@ fn draw_axis_labels(
     padding_bottom: f64,
 ) {
     context.set_source_rgba(241.0 / 255.0, 243.0 / 255.0, 244.0 / 255.0, 0.62);
-    context.select_font_face("JetBrainsMono", gtk::cairo::FontSlant::Normal, gtk::cairo::FontWeight::Normal);
+    context.select_font_face(
+        "JetBrainsMono",
+        gtk::cairo::FontSlant::Normal,
+        gtk::cairo::FontWeight::Normal,
+    );
     context.set_font_size(9.0);
 
     context.move_to(2.0, padding_top + 7.0);

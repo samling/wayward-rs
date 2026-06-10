@@ -109,7 +109,11 @@ fn parse_charge_history_line(line: &str) -> Option<BatteryHistoryPoint> {
     let percentage = fields.next()?.parse().ok()?;
     let state = fields.next()?.to_string();
 
-    Some(BatteryHistoryPoint { timestamp, percentage, state })
+    Some(BatteryHistoryPoint {
+        timestamp,
+        percentage,
+        state,
+    })
 }
 
 #[cfg(test)]

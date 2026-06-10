@@ -130,20 +130,74 @@ impl FactoryComponent for NotificationRow {
     }
 
     fn pre_view() {
+        self.sync_row_widgets(
+            &widgets.root,
+            &widgets.icon,
+            &widgets.actions,
+            sender.clone(),
+        );
+    }
+
+    fn init_model(
+        notification: Self::Init,
+        _index: &DynamicIndex,
+        _sender: FactorySender<Self>,
+    ) -> Self {
+        Self { notification }
+    }
+
+    fn init_widgets(
+        &mut self,
+        _index: &DynamicIndex,
+        root: Self::Root,
+        _returned_widget: &<Self::ParentWidget as relm4::factory::FactoryView>::ReturnedWidget,
+        sender: FactorySender<Self>,
+    ) -> Self::Widgets {
+        let widgets = view_output!();
+        self.sync_row_widgets(&widgets.root, &widgets.icon, &widgets.actions, sender);
+        widgets
+    }
+
+    fn update(&mut self, msg: Self::Input, sender: FactorySender<Self>) {
+        match msg {
+            NotificationRowInput::InvokeDefault => {
+                let _ = sender.output(NotificationRowOutput::InvokeDefault(self.notification.id));
+            }
+            NotificationRowInput::InvokeAction(action_id) => {
+                let _ = sender.output(NotificationRowOutput::InvokeAction {
+                    id: self.notification.id,
+                    action_id,
+                });
+            }
+            NotificationRowInput::Dismiss => {
+                let _ = sender.output(NotificationRowOutput::Dismiss(self.notification.id));
+            }
+        }
+    }
+}
+
+impl NotificationRow {
+    fn sync_row_widgets(
+        &self,
+        root: &gtk::Box,
+        icon: &gtk::Image,
+        actions_box: &gtk::Box,
+        sender: FactorySender<Self>,
+    ) {
         for class_name in ["low", "normal", "critical"] {
-            widgets.root.remove_css_class(class_name);
+            root.remove_css_class(class_name);
         }
 
-        widgets.root.add_css_class(self.notification.urgency_class());
+        root.add_css_class(self.notification.urgency_class());
 
-        crate::notifications::icon::set_notification_icon(&widgets.icon, &self.notification);
+        crate::notifications::icon::set_notification_icon(icon, &self.notification);
 
-        while let Some(child) = widgets.actions.first_child() {
-            widgets.actions.remove(&child);
+        while let Some(child) = actions_box.first_child() {
+            actions_box.remove(&child);
         }
 
         let actions = self.notification.visible_actions();
-        widgets.actions.set_visible(!actions.is_empty());
+        actions_box.set_visible(!actions.is_empty());
 
         for action in actions {
             let button = gtk::Button::with_label(&action.label);
@@ -154,34 +208,10 @@ impl FactoryComponent for NotificationRow {
                 sender.input(NotificationRowInput::InvokeAction(action.id.clone()));
             });
 
-            widgets.actions.append(&button);
+            actions_box.append(&button);
         }
     }
 
-    fn init_model(
-        notification: Self::Init,
-        _index: &DynamicIndex,
-        _sender: FactorySender<Self>
-    ) -> Self {
-        Self { notification }
-    }
-
-    fn update(&mut self, msg: Self::Input, sender: FactorySender<Self>) {
-        match msg {
-            NotificationRowInput::InvokeDefault => {
-                let _ = sender.output(NotificationRowOutput::InvokeDefault(self.notification.id));
-            }
-            NotificationRowInput::InvokeAction(action_id) => {
-                let _ = sender.output(NotificationRowOutput::InvokeAction { id: self.notification.id, action_id });
-            }
-            NotificationRowInput::Dismiss => {
-                let _ = sender.output(NotificationRowOutput::Dismiss(self.notification.id));
-            }
-        }
-    }
-}
-
-impl NotificationRow {
     pub(super) fn set_notification(&mut self, notification: NotificationToast) {
         self.notification = notification;
     }
