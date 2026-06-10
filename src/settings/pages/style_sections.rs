@@ -8,10 +8,7 @@ use super::super::spec::{
     ColorSpec, NumberSpec, SettingSpec, SettingsSectionSpec, StringSpec, ToggleSpec,
 };
 
-pub(crate) fn section(
-    section_name: &'static str,
-    style: &StyleConfig,
-) -> SettingsSectionSpec {
+pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> SettingsSectionSpec {
     let settings = settings_for_section(section_name)
         .filter_map(|spec| {
             let group = style.group(spec.group);

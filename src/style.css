@@ -1,7 +1,7 @@
 /* Base */
 .bar {
     background-color: var(--bar-background-color, rgba(30, 30, 46, 0.7));
-    color: #f1f3f4;
+    color: var(--bar-color, #f1f3f4);
     font-family: var(--bar-font-family, "Adwaita Sans"), "Symbols Nerd Font", "Symbols Nerd Font Mono", "JetBrainsMono Nerd Font";
     font-size: var(--bar-font-size, 12px);
     font-weight: var(--bar-font-weight, 100);
@@ -10,7 +10,7 @@
 
 .bar-region {
     background: transparent;
-    border-radius: 6px;
+    border-radius: var(--bar-region-border-radius, 6px);
 }
 
 .bar-region-start.horizontal,
@@ -36,8 +36,8 @@
 
 .bar.vertical .bar-region {
     margin: 0;
-    min-width: 20px;
-    padding: 4px;
+    min-width: var(--bar-vertical-region-min-width, 20px);
+    padding: var(--bar-vertical-region-padding, 4px);
 }
 
 /* Bar items */
@@ -123,12 +123,12 @@ menubutton.action-menu > button.toggle {
 }
 
 .workspaces-content {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--workspaces-content-background-color, rgba(255, 255, 255, 0.1));
     border-spacing: 0.4em;
-    border-radius: 6px;
+    border-radius: var(--workspaces-content-border-radius, 6px);
     margin-bottom: 0;
     margin-top: 0;
-    padding: 4px;
+    padding: var(--workspaces-content-padding, 4px);
 }
 
 .bar.vertical .workspaces-content {
@@ -137,7 +137,7 @@ menubutton.action-menu > button.toggle {
 
 .workspace {
     background-color: transparent;
-    border-radius: 6px;
+    border-radius: var(--workspace-border-radius, 6px);
     color: inherit;
     padding: 0.12em 0.65em;
 }
@@ -153,59 +153,59 @@ menubutton.action-menu > button.toggle {
 }
 
 .workspace.active {
-    color: #f1f3f4;
+    color: var(--workspace-active-color, #f1f3f4);
 }
 
 .workspace.focused,
 .clock-calendar-day.today {
-    color: #89b4fa;
+    color: var(--workspace-focused-color, #89b4fa);
 }
 
 .workspace.active,
 .workspace.active.focused {
-    color: #f1f3f4;
+    color: var(--workspace-active-color, #f1f3f4);
 }
 
 .workspace.urgent {
-    color: #f28b82;
+    color: var(--workspace-urgent-color, #f28b82);
 }
 
 .workspace-indicator {
-    background-color: rgba(137, 180, 250, 0.5);
-    border-radius: 6px;
+    background-color: var(--workspace-indicator-background-color, rgba(137, 180, 250, 0.5));
+    border-radius: var(--workspace-indicator-border-radius, 6px);
     margin: -4px;
-    min-height: 8px;
-    min-width: 8px;
+    min-height: var(--workspace-indicator-size, 8px);
+    min-width: var(--workspace-indicator-size, 8px);
     padding: 0;
 }
 
 .status {
-    color: #fdd664;
+    color: var(--workspace-status-color, #fdd664);
 }
 
 /* Floating surfaces */
 popover.dropdown contents,
 .notification-toast,
 .osd {
-    background-color: rgba(30, 30, 46, 1);
-    border: 1px solid rgba(241, 243, 244, 0.14);
-    border-radius: 6px;
-    color: #f1f3f4;
+    background-color: var(--surface-background-color, rgba(30, 30, 46, 1));
+    border: 1px solid var(--surface-border-color, rgba(241, 243, 244, 0.14));
+    border-radius: var(--surface-border-radius, 6px);
+    color: var(--surface-color, #f1f3f4);
 }
 
 popover.dropdown contents,
 .notification-toast {
-    font-family: "Adwaita Sans";
-    font-size: 12px;
-    font-weight: 500;
-    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+    font-family: var(--dropdown-font-family, "Adwaita Sans");
+    font-size: var(--dropdown-font-size, 12px);
+    font-weight: var(--dropdown-font-weight, 500);
+    box-shadow: var(--surface-shadow, 0 8px 28px rgba(0, 0, 0, 0.28));
 }
 
 /* Dropdowns */
 popover.dropdown contents {
-    font-family: "Adwaita Sans";
-    font-size: 12px;
-    font-weight: 500;
+    font-family: var(--dropdown-font-family, "Adwaita Sans");
+    font-size: var(--dropdown-font-size, 12px);
+    font-weight: var(--dropdown-font-weight, 500);
     padding: 0;
 }
 
@@ -219,7 +219,7 @@ popover.dropdown arrow {
 
 .dropdown-content {
     border-spacing: 0.6em;
-    padding: 0.75em;
+    padding: var(--dropdown-content-padding, 0.75em);
 }
 
 .dropdown-title {
@@ -300,7 +300,7 @@ levelbar.battery-meter block {
 }
 
 levelbar.battery-meter block.filled {
-    background-color: rgba(137, 180, 250, 0.72);
+    background-color: var(--battery-meter-fill-color, rgba(137, 180, 250, 0.72));
 }
 
 .battery-dropdown-percentage {
@@ -313,8 +313,8 @@ levelbar.battery-meter block.filled {
 }
 
 .battery-detail {
-    background-color: rgba(241, 243, 244, 0.06);
-    border: 1px solid rgba(241, 243, 244, 0.08);
+    background-color: var(--battery-detail-background-color, rgba(241, 243, 244, 0.06));
+    border: 1px solid var(--battery-detail-border-color, rgba(241, 243, 244, 0.08));
     border-radius: 6px;
     border-spacing: 0.2em;
     padding: 0.55em 0.65em;
@@ -337,7 +337,7 @@ button.profile-button,
 button.profile-button.toggle {
     background: transparent;
     background-image: none;
-    border: 1px solid rgba(241, 243, 244, 0.16);
+    border: 1px solid var(--battery-profile-border-color, rgba(241, 243, 244, 0.16));
     border-radius: 0;
     box-shadow: none;
     color: inherit;
@@ -349,9 +349,9 @@ button.profile-button.toggle {
 .profile-button:hover,
 button.profile-button:hover,
 button.profile-button.toggle:hover {
-    background: rgba(241, 243, 244, 0.08);
+    background: var(--battery-profile-hover-background-color, rgba(241, 243, 244, 0.08));
     background-image: none;
-    border-color: rgba(137, 180, 250, 0.45);
+    border-color: var(--battery-profile-hover-border-color, rgba(137, 180, 250, 0.45));
     box-shadow: none;
     outline: none;
 }
@@ -364,7 +364,7 @@ button.profile-button.toggle:focus,
 button.profile-button.toggle:focus-visible {
     background: transparent;
     background-image: none;
-    border-color: rgba(241, 243, 244, 0.16);
+    border-color: var(--battery-profile-border-color, rgba(241, 243, 244, 0.16));
     box-shadow: none;
     outline: none;
 }
@@ -372,9 +372,9 @@ button.profile-button.toggle:focus-visible {
 .profile-button:checked,
 button.profile-button:checked,
 button.profile-button.toggle:checked {
-    background: rgba(137, 180, 250, 0.22);
+    background: var(--battery-profile-active-background-color, rgba(137, 180, 250, 0.22));
     background-image: none;
-    border-color: rgba(137, 180, 250, 0.75);
+    border-color: var(--battery-profile-active-border-color, rgba(137, 180, 250, 0.75));
     box-shadow: none;
 }
 
@@ -401,11 +401,11 @@ button.profile-button.performance:checked {
 
 /* Systray */
 .systray-content {
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
+    background-color: var(--systray-content-background-color, rgba(255, 255, 255, 0.1));
+    border-radius: var(--systray-content-border-radius, 12px);
     border-spacing: 0.25em;
-    padding-left: 8px;
-    padding-right: 8px;
+    padding-left: var(--systray-content-padding-x, 8px);
+    padding-right: var(--systray-content-padding-x, 8px);
 }
 
 .systray-item {
@@ -434,7 +434,7 @@ popover.systray-menu modelbutton.flat:focus-visible,
 popover.systray-menu button:hover,
 popover.systray-menu button:focus,
 popover.systray-menu button:focus-visible {
-    background: rgba(241, 243, 244, 0.08);
+    background: var(--systray-menu-hover-background-color, rgba(241, 243, 244, 0.08));
     background-image: none;
     border: none;
     box-shadow: none;
@@ -450,9 +450,9 @@ popover.systray-menu button:focus-visible {
 
 .osd {
     box-shadow: none;
-    font-family: "Adwaita Sans";
-    font-size: 14px;
-    font-weight: 500;
+    font-family: var(--osd-font-family, "Adwaita Sans");
+    font-size: var(--osd-font-size, 14px);
+    font-weight: var(--osd-font-weight, 500);
     padding: 0.8em 1em;
 }
 
@@ -471,7 +471,7 @@ popover.systray-menu button:focus-visible {
 }
 
 levelbar.osd-level trough {
-    background-color: rgba(241, 243, 244, 0.16);
+    background-color: var(--osd-level-track-color, rgba(241, 243, 244, 0.16));
     border-radius: 999px;
     min-height: 2px;
     padding: 0;
@@ -483,15 +483,15 @@ levelbar.osd-level block {
 }
 
 levelbar.osd-level block.filled {
-    background-color: rgba(255, 255, 255, 0.92);
+    background-color: var(--osd-level-fill-color, rgba(255, 255, 255, 0.92));
 }
 
 /* Notifications */
 .notification-window {
     background: transparent;
-    font-family: "Adwaita Sans";
-    font-size: 12px;
-    font-weight: 100;
+    font-family: var(--notification-font-family, "Adwaita Sans");
+    font-size: var(--notification-window-font-size, 12px);
+    font-weight: var(--notification-window-font-weight, 100);
 }
 
 .notification-stack {
@@ -551,8 +551,8 @@ levelbar.osd-level block.filled {
 }
 
 .notification-list-row {
-    background-color: rgba(241, 243, 244, 0.055);
-    border: 1px solid rgba(241, 243, 244, 0.12);
+    background-color: var(--notification-row-background-color, rgba(241, 243, 244, 0.055));
+    border: 1px solid var(--notification-row-border-color, rgba(241, 243, 244, 0.12));
     border-left-width: 3px;
     border-radius: 6px;
     color: inherit;
@@ -566,23 +566,23 @@ levelbar.osd-level block.filled {
 }
 
 .notification-list-row:hover {
-    background-color: rgba(241, 243, 244, 0.085);
-    border-top-color: rgba(241, 243, 244, 0.18);
-    border-right-color: rgba(241, 243, 244, 0.18);
-    border-bottom-color: rgba(241, 243, 244, 0.18);
+    background-color: var(--notification-row-hover-background-color, rgba(241, 243, 244, 0.085));
+    border-top-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
+    border-right-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
+    border-bottom-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
     transform: scale(1.015);
 }
 
 .notification-list-row.low {
-    border-left-color: rgba(241, 243, 244, 0.28);
+    border-left-color: var(--notification-row-low-border-color, rgba(241, 243, 244, 0.28));
 }
 
 .notification-list-row.normal {
-    border-left-color: rgba(137, 180, 250, 0.8);
+    border-left-color: var(--notification-row-normal-border-color, rgba(137, 180, 250, 0.8));
 }
 
 .notification-list-row.critical {
-    border-left-color: rgba(242, 139, 130, 0.9);
+    border-left-color: var(--notification-row-critical-border-color, rgba(242, 139, 130, 0.9));
 }
 
 .notification-list-icon {
@@ -622,7 +622,7 @@ levelbar.osd-level block.filled {
 .notification-list-action {
     background: transparent;
     background-image: none;
-    border: 1px solid rgba(241, 243, 244, 0.16);
+    border: 1px solid var(--notification-list-action-border-color, rgba(241, 243, 244, 0.16));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -631,8 +631,8 @@ levelbar.osd-level block.filled {
 }
 
 .notification-list-action:hover {
-    background: rgba(241, 243, 244, 0.08);
-    border-color: rgba(137, 180, 250, 0.65);
+    background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
+    border-color: var(--notification-list-action-hover-border-color, rgba(137, 180, 250, 0.65));
 }
 
 .notification-list-dismiss,
@@ -651,7 +651,7 @@ levelbar.osd-level block.filled {
 
 .notification-list-dismiss:hover,
 .notification-list-dismiss.flat:hover {
-    background: rgba(241, 243, 244, 0.08);
+    background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
     opacity: 1;
 }
 
@@ -659,7 +659,7 @@ levelbar.osd-level block.filled {
 .notification-clear-all.flat {
     background: transparent;
     background-image: none;
-    border: 1px solid rgba(241, 243, 244, 0.14);
+    border: 1px solid var(--notification-clear-all-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -669,23 +669,23 @@ levelbar.osd-level block.filled {
 
 .notification-clear-all:hover,
 .notification-clear-all.flat:hover {
-    background: rgba(241, 243, 244, 0.08);
-    border-color: rgba(242, 139, 130, 0.55);
+    background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
+    border-color: var(--notification-clear-all-hover-border-color, rgba(242, 139, 130, 0.55));
 }
 
 .notification-toast {
     border-width: var(--notification-normal-border-width, 1px);
-    border-color: rgba(241, 243, 244, 0.28);
+    border-color: var(--notification-toast-border-color, rgba(241, 243, 244, 0.28));
     min-width: 18em;
     padding: 0;
 }
 
 .notification-toast.critical {
-    border-color: rgba(242, 139, 130, 0.85);
+    border-color: var(--notification-toast-critical-border-color, rgba(242, 139, 130, 0.85));
 }
 
 .notification-header {
-    border-bottom: 1px solid rgba(241, 243, 244, 0.28);
+    border-bottom: 1px solid var(--notification-toast-border-color, rgba(241, 243, 244, 0.28));
     padding: 0.55em 0.65em;
 }
 
@@ -731,14 +731,14 @@ levelbar.osd-level block.filled {
 }
 
 .notification-actions {
-    border-top: 1px solid rgba(241, 243, 244, 0.18);
+    border-top: 1px solid var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
     padding: 0.5em 0.65em 0.65em;
 }
 
 .notification-action {
     background: transparent;
     background-image: none;
-    border: 1px solid rgba(241, 243, 244, 0.18);
+    border: 1px solid var(--notification-action-border-color, rgba(241, 243, 244, 0.18));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -747,8 +747,8 @@ levelbar.osd-level block.filled {
 }
 
 .notification-action:hover {
-    background: rgba(241, 243, 244, 0.08);
-    border-color: rgba(137, 180, 250, 0.65);
+    background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
+    border-color: var(--notification-list-action-hover-border-color, rgba(137, 180, 250, 0.65));
 }
 
 .action-menu-dropdown-content {
@@ -767,7 +767,7 @@ levelbar.osd-level block.filled {
 .action-menu-screenshot-action.flat {
     background: transparent;
     background-image: none;
-    border: 1px solid rgba(241, 243, 244, 0.14);
+    border: 1px solid var(--action-menu-button-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -803,20 +803,20 @@ levelbar.osd-level block.filled {
 .action-menu-action.flat:hover,
 .action-menu-screenshot-action:hover,
 .action-menu-screenshot-action.flat:hover {
-    background: rgba(241, 243, 244, 0.08);
-    border-color: rgba(137, 180, 250, 0.65);
+    background: var(--action-menu-button-hover-background-color, rgba(241, 243, 244, 0.08));
+    border-color: var(--action-menu-button-hover-border-color, rgba(137, 180, 250, 0.65));
 }
 
 .action-menu-action-icon {
-    font-family: "Symbols Nerd Font", "Symbols Nerd Font Mono", "Adwaita Sans";
-    font-size: 1.65em;
+    font-family: var(--action-menu-icon-font-family, "Symbols Nerd Font"), "Symbols Nerd Font Mono", "Adwaita Sans";
+    font-size: var(--action-menu-icon-font-size, 1.65em);
     font-weight: 400;
     line-height: 1;
 }
 
 .action-menu-power .action-menu-action-icon,
 .action-menu-action-icon.power {
-    font-size: 1.65em;
+    font-size: var(--action-menu-icon-font-size, 1.65em);
 }
 
 .action-menu-power,
@@ -831,14 +831,14 @@ levelbar.osd-level block.filled {
 
 /* Settings */
 .settings-window {
-  background-color: rgba(20, 20, 24, 0.96);
-  color: rgba(245, 245, 245, 0.95);
-  font-family: "Adwaita Sans";
-  font-size: 14px;
+  background-color: var(--settings-background-color, rgba(20, 20, 24, 0.96));
+  color: var(--settings-color, rgba(245, 245, 245, 0.95));
+  font-family: var(--settings-font-family, "Adwaita Sans");
+  font-size: var(--settings-font-size, 14px);
 }
 
 .settings-sidebar {
-  background-color: rgba(255, 255, 255, 0.06);
+  background-color: var(--settings-sidebar-background-color, rgba(255, 255, 255, 0.06));
   padding: 16px 12px;
 }
 
@@ -855,7 +855,7 @@ levelbar.osd-level block.filled {
 }
 
 .settings-sidebar-item.active {
-  background-color: rgba(255, 255, 255, 0.12);
+  background-color: var(--settings-sidebar-active-background-color, rgba(255, 255, 255, 0.12));
 }
 
 .settings-page-title {
@@ -876,7 +876,7 @@ levelbar.osd-level block.filled {
 .settings-group {
   padding: 12px;
   border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.07);
+  background-color: var(--settings-group-background-color, rgba(255, 255, 255, 0.07));
 }
 
 .settings-row {
@@ -884,12 +884,12 @@ levelbar.osd-level block.filled {
 }
 
 .settings-row-label {
-  color: rgba(255, 255, 255, 0.78);
+  color: var(--settings-row-label-color, rgba(255, 255, 255, 0.78));
   font-weight: 600;
 }
 
 .settings-row-value {
-  color: rgba(255, 255, 255, 0.58);
+  color: var(--settings-row-value-color, rgba(255, 255, 255, 0.58));
 }
 
 .settings-color-value {
@@ -898,7 +898,7 @@ levelbar.osd-level block.filled {
 }
 
 .settings-color-value.error {
-    color: #f28b82;
+    color: var(--settings-color-error, #f28b82);
 }
 
 .add-bar-row {
@@ -910,7 +910,7 @@ levelbar.osd-level block.filled {
   padding: 4px 6px;
   border: 1px solid transparent;
   border-radius: 6px;
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: var(--settings-token-background-color, rgba(255, 255, 255, 0.1));
 }
 
 .bar-widget-token-label {
@@ -925,8 +925,8 @@ levelbar.osd-level block.filled {
 }
 
 .bar-widget-token.invalid {
-  border-color: rgba(255, 99, 71, 0.9);
-  color: rgba(255, 180, 170, 1);
+  border-color: var(--settings-token-invalid-border-color, rgba(255, 99, 71, 0.9));
+  color: var(--settings-token-invalid-color, rgba(255, 180, 170, 1));
 }
 
 .bar-widget-token.invalid .bar-widget-token-label {
@@ -939,6 +939,6 @@ levelbar.osd-level block.filled {
 }
 
 .bar-widget-token.drop-target {
-  border-color: rgba(125, 200, 255, 0.95);
-  background-color: rgba(125, 200, 255, 0.18);
+  border-color: var(--settings-token-drop-border-color, rgba(125, 200, 255, 0.95));
+  background-color: var(--settings-token-drop-background-color, rgba(125, 200, 255, 0.18));
 }

@@ -7,7 +7,11 @@ use relm4::{
     gtk::{self, prelude::*},
     prelude::*,
 };
-use std::{cell::{Cell, RefCell}, rc::Rc, time::Duration};
+use std::{
+    cell::{Cell, RefCell},
+    rc::Rc,
+    time::Duration,
+};
 
 const SETTING_WRITE_DEBOUNCE: Duration = Duration::from_millis(300);
 
