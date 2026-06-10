@@ -60,7 +60,7 @@ impl SettingWriter {
 }
 
 fn append_reset_button(row: &gtk::Box, is_configured: bool, writer: SettingWriter) -> gtk::Button {
-    let button = gtk::Button::from_icon_name("edit-undo-symbolic");
+    let button = gtk::Button::with_label("Reset");
     button.add_css_class("settings-reset-button");
     button.set_tooltip_text(Some("Reset to default"));
     button.set_sensitive(is_configured);
@@ -118,7 +118,8 @@ pub(crate) fn toggle_row(
     label.add_css_class("settings-row-label");
     row.append(&label);
 
-    let toggle = gtk::Switch::new();
+    let toggle = gtk::ToggleButton::with_label(toggle_label(setting.display_value()));
+    toggle.add_css_class("settings-toggle-button");
     toggle.set_active(setting.display_value());
     toggle.set_valign(gtk::Align::Center);
 
@@ -130,9 +131,11 @@ pub(crate) fn toggle_row(
     row.append(&toggle);
     let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
 
-    toggle.connect_active_notify(move |toggle| {
+    toggle.connect_toggled(move |toggle| {
+        let active = toggle.is_active();
+        toggle.set_label(toggle_label(active));
         reset_button.set_sensitive(true);
-        change_writer.send_now(Some(saved_setting.value_for_config(toggle.is_active())));
+        change_writer.send_now(Some(saved_setting.value_for_config(active)));
     });
     row
 }
@@ -188,13 +191,12 @@ pub(crate) fn color_row(
         .modal(true)
         .with_alpha(true)
         .build();
-    let button = gtk::ColorDialogButton::new(Some(dialog));
-    button.set_rgba(&color);
+    let (button, swatch, swatch_color) = color_swatch_button(color);
     button.set_valign(gtk::Align::Center);
 
     let entry = gtk::Entry::new();
     entry.add_css_class("settings-color-value");
-    entry.set_text(&button.rgba().to_string());
+    entry.set_text(&css_color_value(color));
     entry.set_width_chars(24);
 
     let path = setting.path;
@@ -207,7 +209,8 @@ pub(crate) fn color_row(
     row.append(&entry);
     let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
 
-    let entry_button = button.clone();
+    let entry_swatch = swatch.clone();
+    let entry_swatch_color = swatch_color.clone();
     let entry_reset_button = reset_button.clone();
     let entry_saved_setting = saved_setting.clone();
     let entry_writer = change_writer.clone();
@@ -229,7 +232,7 @@ pub(crate) fn color_row(
         entry_reset_button.set_sensitive(true);
 
         entry_updating.set(true);
-        entry_button.set_rgba(&color);
+        set_swatch_color(&entry_swatch, &entry_swatch_color, color);
         entry_updating.set(false);
 
         entry_writer.send_debounced(entry_saved_setting.value_for_config(css_color_value(color)));
@@ -238,23 +241,87 @@ pub(crate) fn color_row(
     let button_entry = entry.clone();
     let button_reset_button = reset_button.clone();
     let button_updating = updating.clone();
+    let button_swatch = swatch.clone();
+    let button_swatch_color = swatch_color.clone();
 
-    button.connect_rgba_notify(move |button| {
-        if button_updating.get() {
-            return;
-        }
+    button.connect_clicked(move |button| {
+        let initial_color = swatch_color.borrow().to_owned();
+        let parent = button
+            .root()
+            .and_then(|root| root.downcast::<gtk::Window>().ok());
 
-        let value = css_color_value(button.rgba());
+        let button_entry = button_entry.clone();
+        let button_reset_button = button_reset_button.clone();
+        let button_updating = button_updating.clone();
+        let button_swatch = button_swatch.clone();
+        let button_swatch_color = button_swatch_color.clone();
+        let change_writer = change_writer.clone();
+        let saved_setting = saved_setting.clone();
 
-        button_updating.set(true);
-        button_entry.set_text(&value);
-        button_updating.set(false);
+        dialog.choose_rgba(
+            parent.as_ref(),
+            Some(&initial_color),
+            None::<&gtk::gio::Cancellable>,
+            move |result| {
+                let Ok(color) = result else {
+                    return;
+                };
 
-        button_reset_button.set_sensitive(true);
-        change_writer.send_now(Some(saved_setting.value_for_config(value)));
+                let value = css_color_value(color);
+
+                button_updating.set(true);
+                set_swatch_color(&button_swatch, &button_swatch_color, color);
+                button_entry.set_text(&value);
+                button_updating.set(false);
+
+                button_reset_button.set_sensitive(true);
+                change_writer.send_now(Some(saved_setting.value_for_config(value)));
+            },
+        );
     });
 
     row
+}
+
+fn color_swatch_button(
+    color: gtk::gdk::RGBA,
+) -> (gtk::Button, gtk::DrawingArea, Rc<RefCell<gtk::gdk::RGBA>>) {
+    let button = gtk::Button::new();
+    button.add_css_class("settings-color-swatch-button");
+    button.set_tooltip_text(Some("Pick color"));
+
+    let swatch = gtk::DrawingArea::new();
+    swatch.add_css_class("settings-color-swatch");
+    swatch.set_content_width(28);
+    swatch.set_content_height(18);
+
+    let swatch_color = Rc::new(RefCell::new(color));
+    let draw_color = swatch_color.clone();
+
+    swatch.set_draw_func(move |_, context, width, height| {
+        let color = draw_color.borrow();
+        context.set_source_rgba(
+            color.red().into(),
+            color.green().into(),
+            color.blue().into(),
+            color.alpha().into(),
+        );
+        context.rectangle(0.0, 0.0, width as f64, height as f64);
+        let _ = context.fill();
+    });
+
+    button.set_child(Some(&swatch));
+
+    (button, swatch, swatch_color)
+}
+
+fn set_swatch_color(
+    swatch: &gtk::DrawingArea,
+    swatch_color: &Rc<RefCell<gtk::gdk::RGBA>>,
+    color: gtk::gdk::RGBA,
+) {
+    swatch_color.replace(color);
+    swatch.queue_draw();
 }
 
 fn parse_color(value: &str) -> gtk::gdk::RGBA {
@@ -272,4 +339,8 @@ fn css_color_value(color: gtk::gdk::RGBA) -> String {
     } else {
         format!("rgba({red}, {green}, {blue}, {alpha:.3})")
     }
+}
+
+fn toggle_label(active: bool) -> &'static str {
+    if active { "On" } else { "Off" }
 }

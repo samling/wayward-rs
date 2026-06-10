@@ -2,7 +2,10 @@ use crate::config::BarRegionKey;
 use relm4::{
     gtk::{
         self,
-        prelude::{BoxExt, ButtonExt, GtkWindowExt, OrientableExt, WidgetExt},
+        prelude::{
+            AdjustmentExt, BoxExt, ButtonExt, Cast, EventControllerExt, GestureSingleExt,
+            GtkWindowExt, NativeExt, OrientableExt, ToplevelExt, WidgetExt,
+        },
     },
     prelude::*,
 };
@@ -14,10 +17,13 @@ pub(crate) use super::page::SettingsConfig;
 pub(crate) struct SettingsWindow {
     config: SettingsConfig,
     active_page: SettingsPage,
+    appearance_scroll: f64,
+    bar_layout_scroll: f64,
 }
 
 #[derive(Debug)]
 pub(crate) enum SettingsInput {
+    Close,
     SetPage(SettingsPage),
     SetConfig(SettingsConfig),
     SetValue {
@@ -64,70 +70,114 @@ impl Component for SettingsWindow {
             add_css_class: "settings-window",
 
             gtk::Box {
-                set_orientation: gtk::Orientation::Horizontal,
+                set_orientation: gtk::Orientation::Vertical,
 
                 gtk::Box {
-                    set_orientation: gtk::Orientation::Vertical,
-                    set_width_request: 220,
-                    add_css_class: "settings-sidebar",
+                    set_orientation: gtk::Orientation::Horizontal,
+                    add_css_class: "settings-titlebar",
 
-                    gtk::Label {
-                        set_label: "Settings",
-                        set_halign: gtk::Align::Start,
-                        add_css_class: "settings-sidebar-title",
-                    },
-
-                    #[name = "appearance_button"]
-                    gtk::Button {
-                        add_css_class: "settings-sidebar-item",
-
-                        #[watch]
-                        set_css_classes: &sidebar_button_classes(model.active_page, SettingsPage::Appearance),
-
-                        connect_clicked[sender] => move |_| {
-                            sender.input(SettingsInput::SetPage(SettingsPage::Appearance));
-                        },
+                    #[name = "titlebar_drag_area"]
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Horizontal,
+                        set_hexpand: true,
+                        add_css_class: "settings-titlebar-drag-area",
 
                         gtk::Label {
-                            set_label: SettingsPage::Appearance.title(),
+                            set_label: "Wayward Settings",
                             set_halign: gtk::Align::Start,
+                            set_valign: gtk::Align::Center,
+                            add_css_class: "settings-titlebar-title",
                         },
                     },
 
-                    #[name = "bar_layout_button"]
                     gtk::Button {
-                        add_css_class: "settings-sidebar-item",
-
-                        #[watch]
-                        set_css_classes: &sidebar_button_classes(model.active_page, SettingsPage::BarLayout),
+                        set_label: "Close",
+                        set_valign: gtk::Align::Center,
+                        add_css_class: "settings-titlebar-close",
 
                         connect_clicked[sender] => move |_| {
-                            sender.input(SettingsInput::SetPage(SettingsPage::BarLayout));
-                        },
-
-                        gtk::Label {
-                            set_label: SettingsPage::BarLayout.title(),
-                            set_halign: gtk::Align::Start,
+                            sender.input(SettingsInput::Close);
                         },
                     },
                 },
 
                 gtk::Box {
-                    set_orientation: gtk::Orientation::Vertical,
-                    set_spacing: 18,
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_vexpand: true,
 
-                    #[name = "page_title"]
-                    gtk::Label {
-                        set_label: "",
-                        set_halign: gtk::Align::Start,
-                        add_css_class: "settings-page-title",
+                    gtk::Box {
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_width_request: 220,
+                        add_css_class: "settings-sidebar",
+
+                        gtk::Label {
+                            set_label: "Settings",
+                            set_halign: gtk::Align::Start,
+                            add_css_class: "settings-sidebar-title",
+                        },
+
+                        #[name = "appearance_button"]
+                        gtk::Button {
+                            add_css_class: "settings-sidebar-item",
+
+                            #[watch]
+                            set_css_classes: &sidebar_button_classes(model.active_page, SettingsPage::Appearance),
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(SettingsInput::SetPage(SettingsPage::Appearance));
+                            },
+
+                            gtk::Label {
+                                set_label: SettingsPage::Appearance.title(),
+                                set_halign: gtk::Align::Start,
+                            },
+                        },
+
+                        #[name = "bar_layout_button"]
+                        gtk::Button {
+                            add_css_class: "settings-sidebar-item",
+
+                            #[watch]
+                            set_css_classes: &sidebar_button_classes(model.active_page, SettingsPage::BarLayout),
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(SettingsInput::SetPage(SettingsPage::BarLayout));
+                            },
+
+                            gtk::Label {
+                                set_label: SettingsPage::BarLayout.title(),
+                                set_halign: gtk::Align::Start,
+                            },
+                        },
                     },
 
-                    #[name = "page_content"]
                     gtk::Box {
                         set_orientation: gtk::Orientation::Vertical,
                         set_spacing: 18,
-                    }
+                        set_hexpand: true,
+                        set_vexpand: true,
+
+                        #[name = "page_title"]
+                        gtk::Label {
+                            set_label: "",
+                            set_halign: gtk::Align::Start,
+                            add_css_class: "settings-page-title",
+                        },
+
+                        #[name = "page_scroll"]
+                        gtk::ScrolledWindow {
+                            set_hexpand: true,
+                            set_vexpand: true,
+                            set_policy: (gtk::PolicyType::Never, gtk::PolicyType::Automatic),
+                            add_css_class: "settings-page-scroll",
+
+                            #[name = "page_content"]
+                            gtk::Box {
+                                set_orientation: gtk::Orientation::Vertical,
+                                set_spacing: 18,
+                            }
+                        }
+                    },
                 },
             },
         }
@@ -135,14 +185,18 @@ impl Component for SettingsWindow {
 
     fn init(
         config: Self::Init,
-        _root: Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = Self {
             config,
             active_page: SettingsPage::Appearance,
+            appearance_scroll: 0.0,
+            bar_layout_scroll: 0.0,
         };
         let widgets = view_output!();
+
+        install_titlebar_drag(&widgets.titlebar_drag_area, &root);
 
         render_current_page(
             &widgets.page_content,
@@ -160,11 +214,15 @@ impl Component for SettingsWindow {
         widgets: &mut Self::Widgets,
         msg: Self::Input,
         sender: ComponentSender<Self>,
-        _root: &Self::Root,
+        root: &Self::Root,
     ) {
         match msg {
+            SettingsInput::Close => {
+                root.set_visible(false);
+            }
             SettingsInput::SetPage(page) => {
                 if self.active_page != page {
+                    self.save_scroll(widgets);
                     self.active_page = page;
                     render_current_page(
                         &widgets.page_content,
@@ -173,10 +231,12 @@ impl Component for SettingsWindow {
                         &self.config,
                         &sender,
                     );
+                    self.restore_scroll(widgets);
                 }
             }
             SettingsInput::SetConfig(config) => {
                 if self.config != config {
+                    self.save_scroll(widgets);
                     self.config = config;
                     render_current_page(
                         &widgets.page_content,
@@ -185,6 +245,7 @@ impl Component for SettingsWindow {
                         &self.config,
                         &sender,
                     );
+                    self.restore_scroll(widgets);
                 }
             }
             SettingsInput::SetValue { path, value } => {
@@ -198,6 +259,7 @@ impl Component for SettingsWindow {
                     .apply_config_value(path, value_for_model.as_ref())
                     && value_for_model.is_none()
                 {
+                    self.save_scroll(widgets);
                     render_current_page(
                         &widgets.page_content,
                         &widgets.page_title,
@@ -205,6 +267,7 @@ impl Component for SettingsWindow {
                         &self.config,
                         &sender,
                     );
+                    self.restore_scroll(widgets);
                 }
             }
             SettingsInput::SetBarRegion {
@@ -248,4 +311,72 @@ impl Component for SettingsWindow {
 
         self.update_view(widgets, sender);
     }
+}
+
+impl SettingsWindow {
+    fn scroll_position_mut(&mut self) -> &mut f64 {
+        match self.active_page {
+            SettingsPage::Appearance => &mut self.appearance_scroll,
+            SettingsPage::BarLayout => &mut self.bar_layout_scroll,
+        }
+    }
+
+    fn scroll_position(&self) -> f64 {
+        match self.active_page {
+            SettingsPage::Appearance => self.appearance_scroll,
+            SettingsPage::BarLayout => self.bar_layout_scroll,
+        }
+    }
+
+    fn save_scroll(&mut self, widgets: &SettingsWindowWidgets) {
+        *self.scroll_position_mut() = scroll_page_value(&widgets.page_scroll);
+    }
+
+    fn restore_scroll(&self, widgets: &SettingsWindowWidgets) {
+        restore_page_scroll(&widgets.page_scroll, self.scroll_position());
+    }
+}
+
+fn scroll_page_value(scroller: &gtk::ScrolledWindow) -> f64 {
+    let adjustment = scroller.vadjustment();
+    adjustment.value()
+}
+
+fn restore_page_scroll(scroller: &gtk::ScrolledWindow, value: f64) {
+    let adjustment = scroller.vadjustment();
+
+    gtk::glib::idle_add_local_once(move || {
+        let lower = adjustment.lower();
+        let max = (adjustment.upper() - adjustment.page_size()).max(lower);
+        adjustment.set_value(value.clamp(lower, max));
+    });
+}
+
+fn install_titlebar_drag(drag_area: &gtk::Box, window: &gtk::Window) {
+    let click = gtk::GestureClick::builder().button(1).build();
+    let window = window.clone();
+
+    click.connect_pressed(move |gesture, _click_count, x, y| {
+        let Some(device) = gesture.current_event_device() else {
+            return;
+        };
+
+        let Some(surface) = window.surface() else {
+            return;
+        };
+
+        let Ok(toplevel) = surface.downcast::<gtk::gdk::Toplevel>() else {
+            return;
+        };
+
+        toplevel.begin_move(
+            &device,
+            gesture.current_button() as i32,
+            x,
+            y,
+            gesture.current_event_time(),
+        );
+    });
+
+    drag_area.add_controller(click);
 }

@@ -759,6 +759,8 @@ levelbar.osd-level block.filled {
     margin-bottom: 0.2em;
 }
 
+.action-menu-settings,
+.action-menu-settings.flat,
 .action-menu-power,
 .action-menu-power.flat,
 .action-menu-action,
@@ -775,12 +777,8 @@ levelbar.osd-level block.filled {
     min-width: 0;
 }
 
-.action-menu-power {
-    min-height: 2.4em;
-    min-width: 2.4em;
-    padding: 0;
-}
-
+.action-menu-settings,
+.action-menu-power,
 .action-menu-action,
 .action-menu-screenshot-action {
     min-width: 4.8em;
@@ -797,6 +795,8 @@ levelbar.osd-level block.filled {
     opacity: 0.78;
 }
 
+.action-menu-settings:hover,
+.action-menu-settings.flat:hover,
 .action-menu-power:hover,
 .action-menu-power.flat:hover,
 .action-menu-action:hover,
@@ -814,16 +814,13 @@ levelbar.osd-level block.filled {
     line-height: 1;
 }
 
+.action-menu-settings .action-menu-action-icon,
 .action-menu-power .action-menu-action-icon,
 .action-menu-action-icon.power {
     font-size: var(--action-menu-icon-font-size, 1.65em);
 }
 
-.action-menu-power,
-.action-menu-power.flat {
-    padding: 0;
-}
-
+.action-menu-settings label,
 .action-menu-power label {
     margin: 0;
     padding: 0;
@@ -835,6 +832,26 @@ levelbar.osd-level block.filled {
   color: var(--settings-color, rgba(245, 245, 245, 0.95));
   font-family: var(--settings-font-family, "Adwaita Sans");
   font-size: var(--settings-font-size, 14px);
+}
+
+.settings-titlebar {
+  background-color: var(--settings-titlebar-background-color, rgba(255, 255, 255, 0.08));
+  border-bottom: 1px solid var(--settings-titlebar-border-color, rgba(255, 255, 255, 0.08));
+  min-height: 30px;
+  padding: 0 6px 0 12px;
+}
+
+.settings-titlebar-drag-area {
+  min-height: 30px;
+}
+
+.settings-titlebar-title {
+  font-weight: 700;
+}
+
+.settings-titlebar-close {
+  min-height: 24px;
+  padding: 2px 8px;
 }
 
 .settings-sidebar {
@@ -892,6 +909,15 @@ levelbar.osd-level block.filled {
   color: var(--settings-row-value-color, rgba(255, 255, 255, 0.58));
 }
 
+.settings-toggle-button {
+  min-width: 54px;
+  padding: 4px 10px;
+}
+
+.settings-toggle-button:checked {
+  background-color: var(--settings-sidebar-active-background-color, rgba(255, 255, 255, 0.12));
+}
+
 .settings-color-value {
     font-family: monospace;
     opacity: 0.75;
@@ -899,6 +925,16 @@ levelbar.osd-level block.filled {
 
 .settings-color-value.error {
     color: var(--settings-color-error, #f28b82);
+}
+
+.settings-color-swatch-button {
+  min-height: 28px;
+  min-width: 38px;
+  padding: 4px;
+}
+
+.settings-color-swatch {
+  border-radius: 4px;
 }
 
 .add-bar-row {

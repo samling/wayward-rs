@@ -153,16 +153,21 @@ fn build_action_button(
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, 4);
     content.add_css_class("action-menu-button-content");
+    content.set_halign(gtk::Align::Center);
+    content.set_valign(gtk::Align::Center);
 
     if let Some(icon) = &action.icon {
         let icon_label = gtk::Label::new(Some(icon));
         icon_label.add_css_class("action-menu-action-icon");
+        icon_label.set_halign(gtk::Align::Center);
+        icon_label.set_valign(gtk::Align::Center);
         content.append(&icon_label);
     }
 
     if action.show_label && !action.label.is_empty() {
         let label = gtk::Label::new(Some(&action.label));
         label.add_css_class("action-menu-action-label");
+        label.set_halign(gtk::Align::Center);
         content.append(&label);
     }
 

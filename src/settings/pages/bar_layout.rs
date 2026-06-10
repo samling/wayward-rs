@@ -121,7 +121,7 @@ fn render_bar_layout_section(
     header.append(&title);
 
     if let Some(bar_name) = bar.name.clone() {
-        let remove = gtk::Button::from_icon_name("user-trash-symbolic");
+        let remove = gtk::Button::with_label("Remove");
         remove.add_css_class("flat");
         remove.set_tooltip_markup(Some("Remove bar"));
         remove.set_sensitive(can_remove);
