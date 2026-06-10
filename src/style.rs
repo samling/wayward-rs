@@ -203,14 +203,14 @@ mod tests {
     }
 
     #[test]
-    fn generated_style_config_includes_notification_border_width() {
+    fn generated_style_config_includes_notification_indicator_border_width() {
         let mut style = StyleConfig::default();
         style
             .notifications
-            .insert("normal-border-width".to_string(), StyleValue::Integer(2));
+            .insert("indicator-border-width".to_string(), StyleValue::Integer(2));
 
         let css = generated_style_config(&style);
 
-        assert!(css.contains("--notification-normal-border-width: 2px;"));
+        assert!(css.contains("--notification-indicator-border-width: 2px;"));
     }
 }

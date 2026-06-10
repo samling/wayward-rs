@@ -737,7 +737,7 @@ end = []
             r#"
     [style.notifications]
     body-font-weight = 500
-    normal-border-width = 2
+    indicator-border-width = 2
 
     [[bars]]
     name = "bar"
@@ -755,7 +755,7 @@ end = []
             Some(500)
         );
         assert_eq!(
-            config.style.notifications.integer("normal-border-width"),
+            config.style.notifications.integer("indicator-border-width"),
             Some(2)
         );
     }
