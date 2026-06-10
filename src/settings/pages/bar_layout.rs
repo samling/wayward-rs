@@ -136,6 +136,7 @@ fn render_bar_layout_section(
     let group = gtk::Box::new(gtk::Orientation::Vertical, 12);
     group.add_css_class("settings-group");
 
+    group.append(&bar_name_row(bar.name.as_deref(), sender));
     group.append(&bar_edge_row(bar.name.as_deref(), bar.edge.as_deref(), sender));
 
     group.append(&bar_monitors_row(
@@ -161,6 +162,66 @@ fn render_bar_layout_section(
 
     section_box.append(&group);
     container.append(&section_box);
+}
+
+fn bar_name_row(
+    bar_name: Option<&str>,
+    sender: &ComponentSender<SettingsWindow>,
+) -> gtk::Box {
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    row.add_css_class("settings-row");
+    row.add_css_class("bar-name-settings-row");
+
+    let label = gtk::Label::new(Some("Name"));
+    label.set_halign(gtk::Align::Start);
+    label.set_width_chars(8);
+    label.add_css_class("settings-row-label");
+    row.append(&label);
+
+    let entry = gtk::Entry::new();
+    entry.set_hexpand(true);
+    entry.set_text(bar_name.unwrap_or(""));
+    entry.set_sensitive(bar_name.is_some());
+    row.append(&entry);
+
+    let rename = gtk::Button::with_label("Rename");
+    rename.set_sensitive(false);
+    row.append(&rename);
+
+    let current_name_for_change = bar_name.map(str::to_string);
+    let rename_for_change = rename.clone();
+
+    entry.connect_changed(move |entry| {
+        let Some(current_name) = &current_name_for_change else {
+            rename_for_change.set_sensitive(false);
+            return;
+        };
+
+        let next_name = entry.text().trim().to_string();
+        rename_for_change.set_sensitive(!next_name.is_empty() && next_name != *current_name);
+    });
+
+    let current_name = bar_name.map(str::to_string);
+    let sender_rename = sender.input_sender().clone();
+
+    rename.connect_clicked(move |_| {
+        let Some(current_name) = &current_name else {
+            return;
+        };
+
+        let next_name = entry.text().trim().to_string();
+
+        if next_name.is_empty() || next_name == *current_name {
+            return;
+        }
+
+        let _ = sender_rename.send(SettingsInput::RenameBar {
+            current_name: current_name.clone(),
+            next_name,
+        });
+    });
+
+    row
 }
 
 fn bar_edge_row(

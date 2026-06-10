@@ -384,6 +384,71 @@ fn set_bar_edge_in_document(
     Ok(())
 }
 
+pub(crate) fn rename_bar(current_name: &str, next_name: &str) -> io::Result<()> {
+    let current_name = current_name.trim();
+    let next_name = next_name.trim();
+
+    if current_name.is_empty() || next_name.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "bar name cannot be empty",
+        ));
+    }
+
+    let Some(config_path) = config_path() else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "could not determine config path",
+        ));
+    };
+
+    let contents = fs::read_to_string(&config_path).unwrap_or_default();
+    let mut document = contents
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+
+    rename_bar_in_document(&mut document, current_name, next_name)?;
+
+    fs::write(config_path, document.to_string())
+}
+
+fn rename_bar_in_document(
+    document: &mut toml_edit::DocumentMut,
+    current_name: &str,
+    next_name: &str,
+) -> io::Result<()> {
+    let Some(bars) = document["bars"].as_array_of_tables_mut() else {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "config does not contain [[bars]]",
+        ));
+    };
+
+    if bars
+        .iter()
+        .any(|bar| bar.get("name").and_then(|item| item.as_str()) == Some(next_name))
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!("bar {next_name} already exists"),
+        ));
+    }
+
+    let Some(bar) = bars
+        .iter_mut()
+        .find(|bar| bar.get("name").and_then(|item| item.as_str()) == Some(current_name))
+    else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("bar {current_name} was not found"),
+        ));
+    };
+
+    bar["name"] = toml_edit::value(next_name);
+
+    Ok(())
+}
+
 pub(crate) fn set_config_value(path: &[&str], value: Option<ConfigValue>) -> io::Result<()> {
     if path.is_empty() {
         return Err(io::Error::new(
@@ -561,6 +626,24 @@ impl Default for BarConfig {
 mod tests {
     use super::*;
 
+    fn parse_document(contents: &str) -> toml_edit::DocumentMut {
+    contents.parse::<toml_edit::DocumentMut>().unwrap()
+}
+
+    fn bar_names(document: &toml_edit::DocumentMut) -> Vec<String> {
+        document["bars"]
+            .as_array_of_tables()
+            .unwrap()
+            .iter()
+            .map(|bar| {
+                bar.get("name")
+                    .and_then(|item| item.as_str())
+                    .unwrap()
+                    .to_string()
+            })
+            .collect()
+    }
+
     #[test]
     fn config_accepts_notification_monitor() {
         let config: AppConfig = toml::from_str(
@@ -675,5 +758,272 @@ end = []
             config.style.notifications.integer("normal-border-width"),
             Some(2)
         );
+    }
+
+#[test]
+fn set_bar_region_updates_only_named_bar_region() {
+    let mut document = parse_document(
+        r#"
+[[bars]]
+name = "top-bar"
+edge = "top"
+start = ["workspaces"]
+center = ["clock"]
+end = ["systray"]
+
+[[bars]]
+name = "other-bar"
+edge = "bottom"
+start = ["clock"]
+center = []
+end = []
+"#,
+    );
+
+    set_bar_region_in_document(
+        &mut document,
+        "top-bar",
+        BarRegionKey::Start,
+        &["action_menu".to_string(), "workspaces".to_string()],
+    )
+    .unwrap();
+
+    let bars = document["bars"].as_array_of_tables().unwrap();
+    let top_bar = bars.get(0).unwrap();
+    let other_bar = bars.get(1).unwrap();
+
+    assert_eq!(
+        top_bar["start"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|value| value.as_str())
+            .collect::<Vec<_>>(),
+        vec!["action_menu", "workspaces"]
+    );
+    assert_eq!(
+        top_bar["center"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|value| value.as_str())
+            .collect::<Vec<_>>(),
+        vec!["clock"]
+    );
+    assert_eq!(
+        other_bar["start"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|value| value.as_str())
+            .collect::<Vec<_>>(),
+        vec!["clock"]
+    );
+}
+
+#[test]
+fn add_bar_appends_empty_named_bar() {
+    let mut document = parse_document(
+        r#"
+[[bars]]
+name = "top-bar"
+edge = "top"
+start = ["workspaces"]
+center = []
+end = []
+"#,
+    );
+
+    add_bar_to_document(&mut document, "side-bar").unwrap();
+
+    assert_eq!(bar_names(&document), vec!["top-bar", "side-bar"]);
+
+    let bars = document["bars"].as_array_of_tables().unwrap();
+    let side_bar = bars.get(1).unwrap();
+
+    assert_eq!(side_bar["edge"].as_str(), Some("top"));
+    assert!(side_bar["start"].as_array().unwrap().is_empty());
+    assert!(side_bar["center"].as_array().unwrap().is_empty());
+    assert!(side_bar["end"].as_array().unwrap().is_empty());
+}
+
+#[test]
+fn add_bar_rejects_duplicate_names() {
+    let mut document = parse_document(
+        r#"
+[[bars]]
+name = "top-bar"
+edge = "top"
+start = []
+center = []
+end = []
+"#,
+    );
+
+    let error = add_bar_to_document(&mut document, "top-bar").unwrap_err();
+
+    assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
+}
+
+#[test]
+fn remove_bar_removes_named_bar_only() {
+    let mut document = parse_document(
+        r#"
+[[bars]]
+name = "top-bar"
+edge = "top"
+start = ["workspaces"]
+center = []
+end = []
+
+[[bars]]
+name = "side-bar"
+edge = "left"
+start = ["clock"]
+center = []
+end = []
+"#,
+    );
+
+    remove_bar_from_document(&mut document, "top-bar").unwrap();
+
+    assert_eq!(bar_names(&document), vec!["side-bar"]);
+}
+
+#[test]
+fn remove_bar_rejects_removing_last_bar() {
+    let mut document = parse_document(
+        r#"
+[[bars]]
+name = "top-bar"
+edge = "top"
+start = []
+center = []
+end = []
+"#,
+    );
+
+    let error = remove_bar_from_document(&mut document, "top-bar").unwrap_err();
+
+    assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
+}
+
+#[test]
+fn set_bar_monitors_sets_and_removes_monitor_list() {
+    let mut document = parse_document(
+        r#"
+[[bars]]
+name = "top-bar"
+edge = "top"
+start = []
+center = []
+end = []
+"#,
+    );
+
+    set_bar_monitors_in_document(
+        &mut document,
+        "top-bar",
+        &["DP-1".to_string(), "DP-2".to_string()],
+    )
+    .unwrap();
+
+    let bars = document["bars"].as_array_of_tables().unwrap();
+    let top_bar = bars.get(0).unwrap();
+
+    assert_eq!(
+        top_bar["monitors"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter_map(|value| value.as_str())
+            .collect::<Vec<_>>(),
+        vec!["DP-1", "DP-2"]
+    );
+
+    set_bar_monitors_in_document(&mut document, "top-bar", &[]).unwrap();
+
+    let bars = document["bars"].as_array_of_tables().unwrap();
+    let top_bar = bars.get(0).unwrap();
+
+    assert!(top_bar.get("monitors").is_none());
+}
+
+    #[test]
+    fn set_bar_edge_updates_named_bar_edge() {
+        let mut document = parse_document(
+            r#"
+    [[bars]]
+    name = "top-bar"
+    edge = "top"
+    start = []
+    center = []
+    end = []
+
+    [[bars]]
+    name = "side-bar"
+    edge = "left"
+    start = []
+    center = []
+    end = []
+    "#,
+        );
+
+        set_bar_edge_in_document(&mut document, "side-bar", "right").unwrap();
+
+        let bars = document["bars"].as_array_of_tables().unwrap();
+
+        assert_eq!(bars.get(0).unwrap()["edge"].as_str(), Some("top"));
+        assert_eq!(bars.get(1).unwrap()["edge"].as_str(), Some("right"));
+    }
+
+    #[test]
+    fn rename_bar_updates_named_bar_only() {
+        let mut document = parse_document(
+            r#"
+    [[bars]]
+    name = "top-bar"
+    edge = "top"
+    start = []
+    center = []
+    end = []
+
+    [[bars]]
+    name = "side-bar"
+    edge = "left"
+    start = []
+    center = []
+    end = []
+    "#,
+        );
+
+        rename_bar_in_document(&mut document, "side-bar", "left-bar").unwrap();
+
+        assert_eq!(bar_names(&document), vec!["top-bar", "left-bar"]);
+    }
+
+    #[test]
+    fn rename_bar_rejects_duplicate_names() {
+        let mut document = parse_document(
+            r#"
+    [[bars]]
+    name = "top-bar"
+    edge = "top"
+    start = []
+    center = []
+    end = []
+
+    [[bars]]
+    name = "side-bar"
+    edge = "left"
+    start = []
+    center = []
+    end = []
+    "#,
+        );
+
+        let error = rename_bar_in_document(&mut document, "side-bar", "top-bar").unwrap_err();
+
+        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
     }
 }

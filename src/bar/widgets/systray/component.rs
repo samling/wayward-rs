@@ -34,6 +34,7 @@ pub(super) struct SystrayInit {
 #[derive(Debug)]
 pub(super) enum SystrayInput {
     SetItems(Vec<SystrayItemSummary>),
+    SetOrientation(gtk::Orientation),
 }
 
 pub(super) struct SystrayWidgets;
@@ -84,6 +85,14 @@ impl SimpleComponent for SystrayComponent {
         match msg {
             SystrayInput::SetItems(items) => {
                 self.reconcile_items(&items);
+            }
+            SystrayInput::SetOrientation(orientation) => {
+                self.orientation = orientation;
+                self.content.set_orientation(orientation);
+
+                for runtime in self.items.values() {
+                    runtime.root.set_orientation(orientation);
+                }
             }
         }
     }

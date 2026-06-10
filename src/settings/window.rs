@@ -42,6 +42,10 @@ pub(crate) enum SettingsInput {
     SetBarEdge {
         bar_name: String,
         edge: String,
+    },
+    RenameBar {
+        current_name: String,
+        next_name: String,
     }
 }
 
@@ -230,6 +234,14 @@ impl Component for SettingsWindow {
             SettingsInput::SetBarEdge { bar_name, edge } => {
                 if let Err(error) = crate::config::set_bar_edge(&bar_name, &edge) {
                     tracing::error!(bar_name, edge, "Failed to save bar edge: {error}");
+                }
+            }
+            SettingsInput::RenameBar {
+                current_name,
+                next_name,
+            } => {
+                if let Err(error) = crate::config::rename_bar(&current_name, &next_name) {
+                    tracing::error!(current_name, next_name, "Failed to rename bar: {error}");
                 }
             }
         }

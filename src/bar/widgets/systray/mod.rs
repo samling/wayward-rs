@@ -28,6 +28,12 @@ impl BarWidgetRuntime for SystrayRuntime {
         self.controller.widget().clone().upcast()
     }
 
+    fn set_context(&mut self, context: &BarContext) {
+        self.controller.emit(SystrayInput::SetOrientation(
+            context.edge.orientation(),
+        ));
+    }
+
     fn update(&mut self, state: &BarItemState, _context: &BarContext) {
         let BarItemState::Systray(SystrayState::Ready(items)) = state else {
             return;
