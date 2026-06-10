@@ -1,13 +1,13 @@
-use crate::config::StyleConfig;
+use crate::config::{StyleConfig, variables::style_setting_sections};
 
 use super::super::spec::SettingsPageSpec;
 
 pub(crate) fn page(style: &StyleConfig) -> SettingsPageSpec {
     SettingsPageSpec {
         title: "Appearance".to_string(),
-        sections: vec![
-            super::bar::section(style),
-            super::style_sections::section("Notification cards", "notifications", style),
-        ],
+        sections: style_setting_sections()
+            .into_iter()
+            .map(|section| super::style_sections::section(section, style))
+            .collect(),
     }
 }

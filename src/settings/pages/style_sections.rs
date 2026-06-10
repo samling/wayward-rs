@@ -1,7 +1,7 @@
 use crate::config::{
     StyleConfig,
     style::StyleGroupExt,
-    variables::{SettingUiSpec, settings_for_group},
+    variables::{SettingUiSpec, settings_for_section},
 };
 
 use super::super::spec::{
@@ -9,14 +9,12 @@ use super::super::spec::{
 };
 
 pub(crate) fn section(
-    title: &'static str,
-    group_name: &'static str,
+    section_name: &'static str,
     style: &StyleConfig,
 ) -> SettingsSectionSpec {
-    let group = style.group(group_name);
-
-    let settings = settings_for_group(group_name)
+    let settings = settings_for_section(section_name)
         .filter_map(|spec| {
+            let group = style.group(spec.group);
             let setting = spec.setting?;
 
             match setting {
@@ -58,7 +56,7 @@ pub(crate) fn section(
         .collect();
 
     SettingsSectionSpec {
-        title: title.to_string(),
+        title: section_name.to_string(),
         settings,
     }
 }

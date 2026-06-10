@@ -2,6 +2,7 @@ use super::{CssValueKind, SettingUiSpec, StyleSettingSpec};
 
 pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
     StyleSettingSpec {
+        section: "Bar",
         group: "bar",
         key: "font-family",
         path: &["style", "bar", "font-family"],
@@ -13,6 +14,7 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         css_kind: CssValueKind::String { quoted: true },
     },
     StyleSettingSpec {
+        section: "Bar",
         group: "bar",
         key: "font-size",
         path: &["style", "bar", "font-size"],
@@ -27,6 +29,7 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         css_kind: CssValueKind::Integer { unit: "px" },
     },
     StyleSettingSpec {
+        section: "Bar",
         group: "bar",
         key: "font-weight",
         path: &["style", "bar", "font-weight"],
@@ -41,6 +44,7 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         css_kind: CssValueKind::Integer { unit: "" },
     },
     StyleSettingSpec {
+        section: "Bar",
         group: "bar",
         key: "item-padding-x",
         path: &["style", "bar", "item-padding-x"],
@@ -55,6 +59,7 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         css_kind: CssValueKind::Integer { unit: "px" },
     },
     StyleSettingSpec {
+        section: "Bar",
         group: "bar",
         key: "item-content-margin-y",
         path: &["style", "bar", "item-content-margin-y"],
@@ -69,6 +74,7 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         css_kind: CssValueKind::Integer { unit: "px" },
     },
     StyleSettingSpec {
+        section: "Notification cards",
         group: "notifications",
         key: "body-font-weight",
         path: &["style", "notifications", "body-font-weight"],
@@ -83,6 +89,7 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         css_kind: CssValueKind::Integer { unit: "" },
     },
     StyleSettingSpec {
+        section: "Notification cards",
         group: "notifications",
         key: "normal-border-width",
         path: &["style", "notifications", "normal-border-width"],
@@ -97,6 +104,7 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         css_kind: CssValueKind::Integer { unit: "px" },
     },
     StyleSettingSpec {
+        section: "Notification cards",
         group: "notifications",
         key: "list-icon-size",
         path: &["style", "notifications", "list-icon-size"],
@@ -111,6 +119,7 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         css_kind: CssValueKind::Integer { unit: "px" },
     },
     StyleSettingSpec {
+        section: "Notification cards",
         group: "notifications",
         key: "hide-scrollbar",
         path: &["style", "notifications", "hide-scrollbar"],
@@ -125,6 +134,7 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         },
     },
     StyleSettingSpec {
+        section: "Notification cards",
         group: "notifications",
         key: "font-family",
         path: &["style", "notifications", "font-family"],
@@ -136,6 +146,7 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         css_kind: CssValueKind::String { quoted: true },
     },
     StyleSettingSpec {
+        section: "Bar",
         group: "bar",
         key: "background-color",
         path: &["style", "bar", "background-color"],
