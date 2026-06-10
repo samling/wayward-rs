@@ -111,6 +111,21 @@ impl Bar {
             .chain(self.mounted_layout.end.iter_mut())
     }
 
+    fn apply_context_to_mounted_widgets(&mut self) {
+        let edge = self.edge;
+        let monitor_connector = self.monitor_connector.clone();
+
+        for mounted in self.mounted_widgets_mut() {
+            let context = BarContext {
+                monitor_connector: monitor_connector.clone(),
+                edge,
+                region: mounted.region,
+            };
+
+            mounted.runtime.set_context(&context);
+        }
+    }
+
     fn apply_state_to_mounted_widgets(&mut self, state: &BarItemState) {
         let widget_id = state.widget_id();
         let edge = self.edge;
@@ -423,6 +438,7 @@ impl Component for Bar {
                     &widgets.end_items,
                 );
 
+                self.apply_context_to_mounted_widgets();
                 self.apply_all_states_to_mounted_widgets();
             }
             BarMsg::StyleChanged => {

@@ -322,6 +322,68 @@ fn remove_bar_from_document(document: &mut toml_edit::DocumentMut, name: &str) -
     Ok(())
 }
 
+pub(crate) fn set_bar_edge(bar_name: &str, edge: &str) -> io::Result<()> {
+    let bar_name = bar_name.trim();
+    let edge = edge.trim();
+
+    if bar_name.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "bar name cannot be empty",
+        ));
+    }
+
+    if !is_valid_bar_edge(edge) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            format!("invalid bar edge: {edge}"),
+        ));
+    }
+
+    let Some(config_path) = config_path() else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "could not determine config path",
+        ));
+    };
+
+    let contents = fs::read_to_string(&config_path).unwrap_or_default();
+    let mut document = contents
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+
+    set_bar_edge_in_document(&mut document, bar_name, edge)?;
+
+    fs::write(config_path, document.to_string())
+}
+
+fn set_bar_edge_in_document(
+    document: &mut toml_edit::DocumentMut,
+    bar_name: &str,
+    edge: &str,
+) -> io::Result<()> {
+    let Some(bars) = document["bars"].as_array_of_tables_mut() else {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "config does not contain [[bars]]",
+        ));
+    };
+
+    let Some(bar) = bars
+        .iter_mut()
+        .find(|bar| bar.get("name").and_then(|item| item.as_str()) == Some(bar_name))
+    else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("bar {bar_name} was not found"),
+        ));
+    };
+
+    bar["edge"] = toml_edit::value(edge);
+
+    Ok(())
+}
+
 pub(crate) fn set_config_value(path: &[&str], value: Option<ConfigValue>) -> io::Result<()> {
     if path.is_empty() {
         return Err(io::Error::new(
@@ -366,6 +428,10 @@ fn set_document_value(
     } else if let Some(table) = item.as_table_like_mut() {
         table.remove(key);
     }
+}
+
+fn is_valid_bar_edge(edge: &str) -> bool {
+    matches!(edge, "top" | "bottom" | "left" | "right")
 }
 
 fn string_array(values: &[String]) -> toml_edit::Array {

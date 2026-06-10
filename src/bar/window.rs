@@ -20,7 +20,10 @@ pub(super) fn configure_window(
     name: Option<&str>,
     monitor: Option<&gtk::gdk::Monitor>,
 ) {
-    root.init_layer_shell();
+    if !root.is_layer_window() {
+        root.init_layer_shell();
+    }
+
     root.set_monitor(monitor);
     root.set_layer(Layer::Top);
 

@@ -38,6 +38,10 @@ pub(crate) enum SettingsInput {
     SetBarMonitors {
         bar_name: String,
         monitors: Vec<String>,
+    },
+    SetBarEdge {
+        bar_name: String,
+        edge: String,
     }
 }
 
@@ -221,6 +225,11 @@ impl Component for SettingsWindow {
             SettingsInput::SetBarMonitors { bar_name, monitors } => {
                 if let Err(error) = crate::config::set_bar_monitors(&bar_name, &monitors) {
                     tracing::error!(bar_name, ?monitors, "Failed to save bar monitors: {error}");
+                }
+            }
+            SettingsInput::SetBarEdge { bar_name, edge } => {
+                if let Err(error) = crate::config::set_bar_edge(&bar_name, &edge) {
+                    tracing::error!(bar_name, edge, "Failed to save bar edge: {error}");
                 }
             }
         }

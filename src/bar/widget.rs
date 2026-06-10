@@ -155,5 +155,7 @@ pub(crate) struct WidgetBuildContext<'a> {
 pub(crate) trait BarWidgetRuntime {
     fn root(&self) -> gtk::Widget;
 
+    fn set_context(&mut self, _context: &BarContext) {}
+
     fn update(&mut self, state: &BarItemState, context: &BarContext);
 }

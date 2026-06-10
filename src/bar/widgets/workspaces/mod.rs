@@ -29,6 +29,13 @@ impl BarWidgetRuntime for WorkspacesRuntime {
         self.controller.widget().clone().upcast()
     }
 
+    fn set_context(&mut self, context: &BarContext) {
+        self.controller.emit(WorkspacesInput::SetPlacement {
+            edge: context.edge,
+            monitor_connector: context.monitor_connector.clone(),
+        });
+    }
+
     fn update(&mut self, state: &BarItemState, context: &BarContext) {
         let BarItemState::Workspaces(state) = state else {
             return;

@@ -6,6 +6,8 @@ use relm4::{
 
 use super::super::window::{SettingsInput, SettingsWindow};
 
+const BAR_EDGES: &[&str] = &["top", "bottom", "left", "right"];
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum BarRegionView {
     Start,
@@ -134,6 +136,8 @@ fn render_bar_layout_section(
     let group = gtk::Box::new(gtk::Orientation::Vertical, 12);
     group.add_css_class("settings-group");
 
+    group.append(&bar_edge_row(bar.name.as_deref(), bar.edge.as_deref(), sender));
+
     group.append(&bar_monitors_row(
         bar.name.as_deref(),
         bar.monitors.as_deref(),
@@ -157,6 +161,59 @@ fn render_bar_layout_section(
 
     section_box.append(&group);
     container.append(&section_box);
+}
+
+fn bar_edge_row(
+    bar_name: Option<&str>,
+    edge: Option<&str>,
+    sender: &ComponentSender<SettingsWindow>,
+) -> gtk::Box {
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    row.add_css_class("settings-row");
+    row.add_css_class("bar-edge-settings-row");
+
+    let label = gtk::Label::new(Some("Edge"));
+    label.set_halign(gtk::Align::Start);
+    label.set_width_chars(8);
+    label.add_css_class("settings-row-label");
+    row.append(&label);
+
+    let string_list = gtk::StringList::new(BAR_EDGES);
+    let dropdown = gtk::DropDown::new(Some(string_list), None::<gtk::Expression>);
+    dropdown.set_sensitive(bar_name.is_some());
+
+    let selected = edge
+        .and_then(|edge| BAR_EDGES.iter().position(|candidate| *candidate == edge))
+        .unwrap_or(0);
+
+    dropdown.set_selected(selected as u32);
+    row.append(&dropdown);
+
+    let bar_name_edge = bar_name.map(str::to_string);
+    let sender_edge = sender.input_sender().clone();
+
+    dropdown.connect_selected_notify(move |dropdown| {
+        let Some(bar_name) = &bar_name_edge else {
+            return;
+        };
+
+        let selected = dropdown.selected();
+
+        if selected == gtk::INVALID_LIST_POSITION {
+            return;
+        }
+
+        let Some(edge) = BAR_EDGES.get(selected as usize) else {
+            return;
+        };
+
+        let _ = sender_edge.send(SettingsInput::SetBarEdge {
+            bar_name: bar_name.clone(),
+            edge: (*edge).to_string(),
+        });
+    });
+
+    row
 }
 
 fn bar_monitors_row(

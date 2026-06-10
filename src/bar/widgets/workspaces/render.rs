@@ -8,7 +8,7 @@ use crate::bar::widget::{WidgetAction, WidgetEvent};
 
 pub(super) struct RenderedWorkspace {
     id: u64,
-    root: gtk::Box,
+    pub(super) root: gtk::Box,
     label: gtk::Label,
 }
 
