@@ -66,6 +66,7 @@ pub(crate) fn render(
 fn add_bar_row(sender: &ComponentSender<SettingsWindow>) -> gtk::Box {
     let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     row.add_css_class("settings-row");
+    row.add_css_class("add-bar-row");
 
     let entry = gtk::Entry::new();
     entry.set_placeholder_text(Some("New bar name"));
@@ -174,6 +175,7 @@ fn bar_name_row(
 
     let label = gtk::Label::new(Some("Name"));
     label.set_halign(gtk::Align::Start);
+    label.set_xalign(0.0);
     label.set_width_chars(8);
     label.add_css_class("settings-row-label");
     row.append(&label);
@@ -235,6 +237,7 @@ fn bar_edge_row(
 
     let label = gtk::Label::new(Some("Edge"));
     label.set_halign(gtk::Align::Start);
+    label.set_xalign(0.0);
     label.set_width_chars(8);
     label.add_css_class("settings-row-label");
     row.append(&label);
@@ -291,6 +294,7 @@ fn bar_monitors_row(
 
     let label = gtk::Label::new(Some("Monitors"));
     label.set_halign(gtk::Align::Start);
+    label.set_xalign(0.0);
     label.set_width_chars(8);
     label.add_css_class("settings-row-label");
     row.append(&label);
@@ -363,6 +367,7 @@ fn monitor_token(
 ) -> gtk::Box {
     let token = gtk::Box::new(gtk::Orientation::Horizontal, 4);
     token.add_css_class("bar-widget-token");
+    token.set_cursor_from_name(Some("grab"));
 
     let label = gtk::Label::new(Some(&monitors[index]));
     label.add_css_class("bar-widget-token-label");
@@ -457,8 +462,15 @@ fn bar_region_row(
             return;
         };
 
+        let widget_id = (*widget_id).to_string();
         let mut widgets = widgets_add.clone();
-        widgets.push((*widget_id).to_string());
+
+        if widgets.contains(&widget_id) {
+            dropdown.set_selected(0);
+            return;
+        }
+
+        widgets.push(widget_id);
 
         let _ = sender_add.send(SettingsInput::SetBarRegion {
             bar_name: bar_name.clone(),
@@ -472,6 +484,22 @@ fn bar_region_row(
     row
 }
 
+fn bar_widget_drag_icon(widget_id: &str, is_known: bool) -> gtk::Box {
+    let icon = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    icon.add_css_class("bar-widget-token");
+    icon.add_css_class("drag-icon");
+
+    if !is_known {
+        icon.add_css_class("invalid");
+    }
+
+    let label = gtk::Label::new(Some(widget_id));
+    label.add_css_class("bar-widget-token-label");
+    icon.append(&label);
+
+    icon
+}
+
 fn bar_widget_token(
     bar_name: Option<&str>,
     region: BarRegionView,
@@ -480,9 +508,20 @@ fn bar_widget_token(
     sender: &ComponentSender<SettingsWindow>,
 ) -> gtk::Box {
     let token = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    if bar_name.is_some() {
+        token.set_cursor_from_name(Some("grab"));
+    }
     token.add_css_class("bar-widget-token");
 
+    if !is_known_widget_id(&widgets[index]) {
+        token.add_css_class("invalid");
+        token.set_tooltip_text(Some("Unknown widget"));
+    }
+
     let label = gtk::Label::new(Some(&widgets[index]));
+    if bar_name.is_some() {
+        label.set_cursor_from_name(Some("grab"));
+    }
     label.add_css_class("bar-widget-token-label");
     token.append(&label);
 
@@ -515,6 +554,14 @@ fn bar_widget_token(
         let drag = gtk::DragSource::new();
         drag.set_actions(gtk::gdk::DragAction::MOVE);
 
+        let widget_id_drag = widgets[index].clone();
+        let is_known_drag = is_known_widget_id(&widget_id_drag);
+
+        drag.connect_drag_begin(move |_, drag| {
+            let icon = bar_widget_drag_icon(&widget_id_drag, is_known_drag);
+            gtk::DragIcon::for_drag(drag).set_child(Some(&icon));
+        });
+
         drag.connect_prepare(move |_, _, _| {
             Some(gtk::gdk::ContentProvider::for_value(&(index as u32).to_value()))
         });
@@ -527,7 +574,22 @@ fn bar_widget_token(
         let widgets_drop = widgets.to_vec();
         let sender_drop = sender.input_sender().clone();
 
+        let token_motion = token.clone();
+        drop.connect_enter(move |_, _, _| {
+            token_motion.add_css_class("drop-target");
+            gtk::gdk::DragAction::MOVE
+        });
+
+        let token_leave = token.clone();
+        drop.connect_leave(move |_| {
+            token_leave.remove_css_class("drop-target");
+        });
+
+        let token_drop = token.clone();
+
         drop.connect_drop(move |_, value, _, _| {
+            token_drop.remove_css_class("drop-target");
+
             let Ok(from) = value.get::<u32>() else {
                 return false;
             };
@@ -560,6 +622,10 @@ fn available_widget_ids() -> Vec<&'static str> {
         .iter()
         .map(|widget| widget.id())
         .collect()
+}
+
+fn is_known_widget_id(widget_id: &str) -> bool {
+    available_widget_ids().contains(&widget_id)
 }
 
 fn move_widget(widgets: &[String], from: usize, to: usize) -> Vec<String> {

@@ -831,43 +831,104 @@ levelbar.osd-level block.filled {
 
 /* Settings */
 .settings-window {
+  background-color: rgba(20, 20, 24, 0.96);
+  color: rgba(245, 245, 245, 0.95);
   font-family: "Adwaita Sans";
-  background-color: rgba(18, 20, 24, 0.96);
-  color: rgba(255, 255, 255, 0.92);
+  font-size: 14px;
 }
 
 .settings-sidebar {
   background-color: rgba(255, 255, 255, 0.06);
   padding: 16px 12px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .settings-sidebar-title {
   font-size: 1.2em;
   font-weight: 700;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .settings-sidebar-item {
   padding: 8px 10px;
   border-radius: 6px;
+  background-color: transparent;
 }
 
 .settings-sidebar-item.active {
-    background: rgba(137, 180, 250, 0.18);
-    color: #f1f3f4;
-}
-
-.settings-page {
-  padding: 24px;
+  background-color: rgba(255, 255, 255, 0.12);
 }
 
 .settings-page-title {
-  font-size: 1.8em;
+  font-size: 1.4em;
   font-weight: 700;
-  margin-bottom: 8px;
+  margin: 18px 24px 4px;
 }
 
-.settings-page-description {
-  color: rgba(255, 255, 255, 0.68);
+.settings-section {
+  margin: 0 24px 18px;
+}
+
+.settings-section-title {
+  font-size: 1.05em;
+  font-weight: 700;
+}
+
+.settings-group {
+  padding: 12px;
+  border-radius: 8px;
+  background-color: rgba(255, 255, 255, 0.07);
+}
+
+.settings-row {
+  min-height: 34px;
+}
+
+.settings-row-label {
+  color: rgba(255, 255, 255, 0.78);
+  font-weight: 600;
+}
+
+.settings-row-value {
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.add-bar-row {
+  margin-left: 24px;
+  margin-right: 24px;
+}
+
+.bar-widget-token {
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.bar-widget-token-label {
+  font-weight: 600;
+}
+
+.bar-widget-token-button {
+  min-width: 18px;
+  min-height: 18px;
+  padding: 0;
+}
+
+.bar-widget-token.invalid {
+  border-color: rgba(255, 99, 71, 0.9);
+  color: rgba(255, 180, 170, 1);
+}
+
+.bar-widget-token.invalid .bar-widget-token-label {
+  text-decoration-line: line-through;
+}
+
+.bar-widget-add,
+.bar-monitor-add {
+  min-width: 140px;
+}
+
+.bar-widget-token.drop-target {
+  border-color: rgba(125, 200, 255, 0.95);
+  background-color: rgba(125, 200, 255, 0.18);
 }
