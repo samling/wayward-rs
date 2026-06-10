@@ -373,10 +373,7 @@ fn monitor_token(
     label.add_css_class("bar-widget-token-label");
     token.append(&label);
 
-    let remove = gtk::Button::from_icon_name("window-close-symbolic");
-    remove.add_css_class("flat");
-    remove.add_css_class("bar-widget-token-button");
-    remove.set_sensitive(bar_name.is_some());
+    let remove = token_remove_button(bar_name.is_some());
     token.append(&remove);
 
     let bar_name_remove = bar_name.map(str::to_string);
@@ -398,6 +395,14 @@ fn monitor_token(
     });
 
     token
+}
+
+fn token_remove_button(is_sensitive: bool) -> gtk::Button {
+    let remove = gtk::Button::with_label("x");
+    remove.add_css_class("flat");
+    remove.add_css_class("bar-widget-token-button");
+    remove.set_sensitive(is_sensitive);
+    remove
 }
 
 fn bar_region_row(
@@ -525,10 +530,7 @@ fn bar_widget_token(
     label.add_css_class("bar-widget-token-label");
     token.append(&label);
 
-    let remove = gtk::Button::from_icon_name("window-close-symbolic");
-    remove.add_css_class("flat");
-    remove.add_css_class("bar-widget-token-button");
-    remove.set_sensitive(bar_name.is_some());
+    let remove = token_remove_button(bar_name.is_some());
     token.append(&remove);
 
     let bar_name_remove = bar_name.map(str::to_string);

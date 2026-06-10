@@ -912,6 +912,7 @@ levelbar.osd-level block.filled {
   min-width: 18px;
   min-height: 18px;
   padding: 0;
+  font-weight: 700;
 }
 
 .bar-widget-token.invalid {
