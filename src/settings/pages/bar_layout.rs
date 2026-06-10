@@ -1,6 +1,10 @@
 use crate::config::{BarConfig, BarRegionKey};
 use relm4::{
-    gtk::{self, glib::prelude::{StaticType, ToValue}, prelude::*},
+    gtk::{
+        self,
+        glib::prelude::{StaticType, ToValue},
+        prelude::*,
+    },
     prelude::ComponentSender,
 };
 
@@ -58,7 +62,7 @@ pub(crate) fn render(
             bar,
             available_monitors,
             can_remove,
-            sender
+            sender,
         );
     }
 }
@@ -138,7 +142,11 @@ fn render_bar_layout_section(
     group.add_css_class("settings-group");
 
     group.append(&bar_name_row(bar.name.as_deref(), sender));
-    group.append(&bar_edge_row(bar.name.as_deref(), bar.edge.as_deref(), sender));
+    group.append(&bar_edge_row(
+        bar.name.as_deref(),
+        bar.edge.as_deref(),
+        sender,
+    ));
 
     group.append(&bar_monitors_row(
         bar.name.as_deref(),
@@ -165,10 +173,7 @@ fn render_bar_layout_section(
     container.append(&section_box);
 }
 
-fn bar_name_row(
-    bar_name: Option<&str>,
-    sender: &ComponentSender<SettingsWindow>,
-) -> gtk::Box {
+fn bar_name_row(bar_name: Option<&str>, sender: &ComponentSender<SettingsWindow>) -> gtk::Box {
     let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     row.add_css_class("settings-row");
     row.add_css_class("bar-name-settings-row");
@@ -351,7 +356,10 @@ fn bar_monitors_row(
             monitors.push(monitor.clone());
         }
 
-        let _ = sender_add.send(SettingsInput::SetBarMonitors { bar_name: bar_name.clone(), monitors });
+        let _ = sender_add.send(SettingsInput::SetBarMonitors {
+            bar_name: bar_name.clone(),
+            monitors,
+        });
 
         dropdown.set_selected(0);
     });
@@ -565,7 +573,9 @@ fn bar_widget_token(
         });
 
         drag.connect_prepare(move |_, _, _| {
-            Some(gtk::gdk::ContentProvider::for_value(&(index as u32).to_value()))
+            Some(gtk::gdk::ContentProvider::for_value(
+                &(index as u32).to_value(),
+            ))
         });
 
         token.add_controller(drag);

@@ -33,7 +33,7 @@ pub(crate) enum SettingsInput {
         name: String,
     },
     RemoveBar {
-        name: String
+        name: String,
     },
     SetBarMonitors {
         bar_name: String,
@@ -46,7 +46,7 @@ pub(crate) enum SettingsInput {
     RenameBar {
         current_name: String,
         next_name: String,
-    }
+    },
 }
 
 #[relm4::component(pub(crate))]

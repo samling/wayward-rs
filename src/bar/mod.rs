@@ -231,12 +231,8 @@ impl Bar {
     ) {
         let start_widgets = self.layout.start.clone();
         let start_mounted = std::mem::take(&mut self.mounted_layout.start);
-        let start = self.reconcile_region(
-            BarRegion::Start,
-            &start_widgets,
-            start_mounted,
-            start_items,
-        );
+        let start =
+            self.reconcile_region(BarRegion::Start, &start_widgets, start_mounted, start_items);
         self.mounted_layout.start = start;
 
         let center_widgets = self.layout.center.clone();
@@ -251,12 +247,7 @@ impl Bar {
 
         let end_widgets = self.layout.end.clone();
         let end_mounted = std::mem::take(&mut self.mounted_layout.end);
-        let end = self.reconcile_region(
-            BarRegion::End,
-            &end_widgets,
-            end_mounted,
-            end_items,
-        );
+        let end = self.reconcile_region(BarRegion::End, &end_widgets, end_mounted, end_items);
         self.mounted_layout.end = end;
     }
 

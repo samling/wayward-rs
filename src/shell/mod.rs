@@ -200,10 +200,7 @@ impl SimpleComponent for Shell {
 
 impl Shell {
     fn settings_config(&self) -> crate::settings::window::SettingsConfig {
-        crate::settings::window::SettingsConfig::new(
-            &self.config,
-            monitors::available_connectors(),
-        )
+        crate::settings::window::SettingsConfig::new(&self.config, monitors::available_connectors())
     }
 
     fn apply_generated_style(&self) {

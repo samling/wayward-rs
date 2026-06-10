@@ -40,7 +40,7 @@ pub(super) enum WorkspacesInput {
     SetPlacement {
         edge: BarEdge,
         monitor_connector: Option<String>,
-    }
+    },
 }
 
 pub(super) struct WorkspacesWidgets;
@@ -130,7 +130,10 @@ impl SimpleComponent for WorkspacesComponent {
 
                 self.update_indicator(active_workspace);
             }
-            WorkspacesInput::SetPlacement { edge, monitor_connector } => {
+            WorkspacesInput::SetPlacement {
+                edge,
+                monitor_connector,
+            } => {
                 self.edge = edge;
                 self.monitor_connector = monitor_connector;
 

@@ -21,10 +21,7 @@ pub(crate) struct SettingsConfig {
 }
 
 impl SettingsConfig {
-    pub(crate) fn new(
-        config: &crate::config::AppConfig,
-        available_monitors: Vec<String>,
-    ) -> Self {
+    pub(crate) fn new(config: &crate::config::AppConfig, available_monitors: Vec<String>) -> Self {
         Self {
             style: config.style.clone(),
             bars: config.bars.clone(),
@@ -65,7 +62,12 @@ pub(crate) fn render_current_page(
         }
         SettingsPage::BarLayout => {
             title.set_label(SettingsPage::BarLayout.title());
-            super::pages::bar_layout::render(container, &config.bars, &config.available_monitors, sender);
+            super::pages::bar_layout::render(
+                container,
+                &config.bars,
+                &config.available_monitors,
+                sender,
+            );
         }
     };
 }

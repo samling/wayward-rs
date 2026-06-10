@@ -627,8 +627,8 @@ mod tests {
     use super::*;
 
     fn parse_document(contents: &str) -> toml_edit::DocumentMut {
-    contents.parse::<toml_edit::DocumentMut>().unwrap()
-}
+        contents.parse::<toml_edit::DocumentMut>().unwrap()
+    }
 
     fn bar_names(document: &toml_edit::DocumentMut) -> Vec<String> {
         document["bars"]
@@ -760,10 +760,10 @@ end = []
         );
     }
 
-#[test]
-fn set_bar_region_updates_only_named_bar_region() {
-    let mut document = parse_document(
-        r#"
+    #[test]
+    fn set_bar_region_updates_only_named_bar_region() {
+        let mut document = parse_document(
+            r#"
 [[bars]]
 name = "top-bar"
 edge = "top"
@@ -778,53 +778,53 @@ start = ["clock"]
 center = []
 end = []
 "#,
-    );
+        );
 
-    set_bar_region_in_document(
-        &mut document,
-        "top-bar",
-        BarRegionKey::Start,
-        &["action_menu".to_string(), "workspaces".to_string()],
-    )
-    .unwrap();
+        set_bar_region_in_document(
+            &mut document,
+            "top-bar",
+            BarRegionKey::Start,
+            &["action_menu".to_string(), "workspaces".to_string()],
+        )
+        .unwrap();
 
-    let bars = document["bars"].as_array_of_tables().unwrap();
-    let top_bar = bars.get(0).unwrap();
-    let other_bar = bars.get(1).unwrap();
+        let bars = document["bars"].as_array_of_tables().unwrap();
+        let top_bar = bars.get(0).unwrap();
+        let other_bar = bars.get(1).unwrap();
 
-    assert_eq!(
-        top_bar["start"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter_map(|value| value.as_str())
-            .collect::<Vec<_>>(),
-        vec!["action_menu", "workspaces"]
-    );
-    assert_eq!(
-        top_bar["center"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter_map(|value| value.as_str())
-            .collect::<Vec<_>>(),
-        vec!["clock"]
-    );
-    assert_eq!(
-        other_bar["start"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter_map(|value| value.as_str())
-            .collect::<Vec<_>>(),
-        vec!["clock"]
-    );
-}
+        assert_eq!(
+            top_bar["start"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|value| value.as_str())
+                .collect::<Vec<_>>(),
+            vec!["action_menu", "workspaces"]
+        );
+        assert_eq!(
+            top_bar["center"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|value| value.as_str())
+                .collect::<Vec<_>>(),
+            vec!["clock"]
+        );
+        assert_eq!(
+            other_bar["start"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|value| value.as_str())
+                .collect::<Vec<_>>(),
+            vec!["clock"]
+        );
+    }
 
-#[test]
-fn add_bar_appends_empty_named_bar() {
-    let mut document = parse_document(
-        r#"
+    #[test]
+    fn add_bar_appends_empty_named_bar() {
+        let mut document = parse_document(
+            r#"
 [[bars]]
 name = "top-bar"
 edge = "top"
@@ -832,25 +832,25 @@ start = ["workspaces"]
 center = []
 end = []
 "#,
-    );
+        );
 
-    add_bar_to_document(&mut document, "side-bar").unwrap();
+        add_bar_to_document(&mut document, "side-bar").unwrap();
 
-    assert_eq!(bar_names(&document), vec!["top-bar", "side-bar"]);
+        assert_eq!(bar_names(&document), vec!["top-bar", "side-bar"]);
 
-    let bars = document["bars"].as_array_of_tables().unwrap();
-    let side_bar = bars.get(1).unwrap();
+        let bars = document["bars"].as_array_of_tables().unwrap();
+        let side_bar = bars.get(1).unwrap();
 
-    assert_eq!(side_bar["edge"].as_str(), Some("top"));
-    assert!(side_bar["start"].as_array().unwrap().is_empty());
-    assert!(side_bar["center"].as_array().unwrap().is_empty());
-    assert!(side_bar["end"].as_array().unwrap().is_empty());
-}
+        assert_eq!(side_bar["edge"].as_str(), Some("top"));
+        assert!(side_bar["start"].as_array().unwrap().is_empty());
+        assert!(side_bar["center"].as_array().unwrap().is_empty());
+        assert!(side_bar["end"].as_array().unwrap().is_empty());
+    }
 
-#[test]
-fn add_bar_rejects_duplicate_names() {
-    let mut document = parse_document(
-        r#"
+    #[test]
+    fn add_bar_rejects_duplicate_names() {
+        let mut document = parse_document(
+            r#"
 [[bars]]
 name = "top-bar"
 edge = "top"
@@ -858,17 +858,17 @@ start = []
 center = []
 end = []
 "#,
-    );
+        );
 
-    let error = add_bar_to_document(&mut document, "top-bar").unwrap_err();
+        let error = add_bar_to_document(&mut document, "top-bar").unwrap_err();
 
-    assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
-}
+        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
+    }
 
-#[test]
-fn remove_bar_removes_named_bar_only() {
-    let mut document = parse_document(
-        r#"
+    #[test]
+    fn remove_bar_removes_named_bar_only() {
+        let mut document = parse_document(
+            r#"
 [[bars]]
 name = "top-bar"
 edge = "top"
@@ -883,17 +883,17 @@ start = ["clock"]
 center = []
 end = []
 "#,
-    );
+        );
 
-    remove_bar_from_document(&mut document, "top-bar").unwrap();
+        remove_bar_from_document(&mut document, "top-bar").unwrap();
 
-    assert_eq!(bar_names(&document), vec!["side-bar"]);
-}
+        assert_eq!(bar_names(&document), vec!["side-bar"]);
+    }
 
-#[test]
-fn remove_bar_rejects_removing_last_bar() {
-    let mut document = parse_document(
-        r#"
+    #[test]
+    fn remove_bar_rejects_removing_last_bar() {
+        let mut document = parse_document(
+            r#"
 [[bars]]
 name = "top-bar"
 edge = "top"
@@ -901,17 +901,17 @@ start = []
 center = []
 end = []
 "#,
-    );
+        );
 
-    let error = remove_bar_from_document(&mut document, "top-bar").unwrap_err();
+        let error = remove_bar_from_document(&mut document, "top-bar").unwrap_err();
 
-    assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
-}
+        assert_eq!(error.kind(), io::ErrorKind::InvalidInput);
+    }
 
-#[test]
-fn set_bar_monitors_sets_and_removes_monitor_list() {
-    let mut document = parse_document(
-        r#"
+    #[test]
+    fn set_bar_monitors_sets_and_removes_monitor_list() {
+        let mut document = parse_document(
+            r#"
 [[bars]]
 name = "top-bar"
 edge = "top"
@@ -919,35 +919,35 @@ start = []
 center = []
 end = []
 "#,
-    );
+        );
 
-    set_bar_monitors_in_document(
-        &mut document,
-        "top-bar",
-        &["DP-1".to_string(), "DP-2".to_string()],
-    )
-    .unwrap();
+        set_bar_monitors_in_document(
+            &mut document,
+            "top-bar",
+            &["DP-1".to_string(), "DP-2".to_string()],
+        )
+        .unwrap();
 
-    let bars = document["bars"].as_array_of_tables().unwrap();
-    let top_bar = bars.get(0).unwrap();
+        let bars = document["bars"].as_array_of_tables().unwrap();
+        let top_bar = bars.get(0).unwrap();
 
-    assert_eq!(
-        top_bar["monitors"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .filter_map(|value| value.as_str())
-            .collect::<Vec<_>>(),
-        vec!["DP-1", "DP-2"]
-    );
+        assert_eq!(
+            top_bar["monitors"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter_map(|value| value.as_str())
+                .collect::<Vec<_>>(),
+            vec!["DP-1", "DP-2"]
+        );
 
-    set_bar_monitors_in_document(&mut document, "top-bar", &[]).unwrap();
+        set_bar_monitors_in_document(&mut document, "top-bar", &[]).unwrap();
 
-    let bars = document["bars"].as_array_of_tables().unwrap();
-    let top_bar = bars.get(0).unwrap();
+        let bars = document["bars"].as_array_of_tables().unwrap();
+        let top_bar = bars.get(0).unwrap();
 
-    assert!(top_bar.get("monitors").is_none());
-}
+        assert!(top_bar.get("monitors").is_none());
+    }
 
     #[test]
     fn set_bar_edge_updates_named_bar_edge() {

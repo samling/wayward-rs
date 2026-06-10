@@ -1,13 +1,14 @@
 use std::path::Path;
 
 use relm4::gtk;
-use relm4::gtk::prelude::*;
 
 use super::model::NotificationToast;
 
 const FALLBACK_ICON_NAME: &str = "dialog-information-symbolic";
 
 pub(crate) fn set_notification_icon(image: &gtk::Image, notification: &NotificationToast) {
+    image.clear();
+
     let app_icon =
         (notification.app_icon != FALLBACK_ICON_NAME).then_some(notification.app_icon.as_str());
 
@@ -73,7 +74,11 @@ fn set_file_icon(image: &gtk::Image, path: &str) -> bool {
 }
 
 fn set_theme_icon(image: &gtk::Image, icon_name: &str) -> bool {
-    let theme = gtk::IconTheme::for_display(&image.display());
+    let Some(display) = gtk::gdk::Display::default() else {
+        return false;
+    };
+
+    let theme = gtk::IconTheme::for_display(&display);
 
     if !theme.has_icon(icon_name) {
         return false;
