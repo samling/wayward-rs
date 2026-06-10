@@ -130,7 +130,7 @@ impl FactoryComponent for NotificationRow {
     }
 
     fn pre_view() {
-        self.sync_imperative_view(
+        self.sync_row_widgets(
             &widgets.root,
             &widgets.icon,
             &widgets.actions,
@@ -154,7 +154,7 @@ impl FactoryComponent for NotificationRow {
         sender: FactorySender<Self>,
     ) -> Self::Widgets {
         let widgets = view_output!();
-        self.sync_imperative_view(&widgets.root, &widgets.icon, &widgets.actions, sender);
+        self.sync_row_widgets(&widgets.root, &widgets.icon, &widgets.actions, sender);
         widgets
     }
 
@@ -177,7 +177,7 @@ impl FactoryComponent for NotificationRow {
 }
 
 impl NotificationRow {
-    fn sync_imperative_view(
+    fn sync_row_widgets(
         &self,
         root: &gtk::Box,
         icon: &gtk::Image,
