@@ -566,6 +566,7 @@ levelbar.osd-level block.filled {
     transform-origin: center;
     transition:
         transform 140ms ease-out,
+        opacity 140ms ease-out,
         background-color 140ms ease-out,
         border-color 140ms ease-out,
         box-shadow 140ms ease-out;
@@ -577,6 +578,12 @@ levelbar.osd-level block.filled {
     border-right-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
     border-bottom-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
     transform: scale(1.015);
+}
+
+.notification-card.dismissing,
+.notification-card.dismissing:hover {
+    opacity: 0;
+    transform: translateX(48px) scale(0.98);
 }
 
 .notification-card.low {
