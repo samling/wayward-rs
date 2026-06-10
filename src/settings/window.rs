@@ -1,4 +1,4 @@
-use crate::config::{BarConfig, StyleConfig};
+use crate::config::{BarConfig, BarRegionKey, StyleConfig};
 use relm4::{
     gtk::{
         self,
@@ -55,6 +55,44 @@ pub(crate) enum SettingsInput {
         path: &'static [&'static str],
         value: Option<crate::config::ConfigValue>,
     },
+    SetBarRegion {
+        bar_name: String,
+        region: BarRegionKey,
+        widgets: Vec<String>,
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum BarRegionView {
+    Start,
+    Center,
+    End,
+}
+
+impl BarRegionView {
+    fn label(self) -> &'static str {
+        match self {
+            Self::Start => "Start",
+            Self::Center => "Center",
+            Self::End => "End",
+        }
+    }
+
+    fn key(self) -> BarRegionKey {
+        match self {
+            Self::Start => BarRegionKey::Start,
+            Self::Center => BarRegionKey::Center,
+            Self::End => BarRegionKey::End,
+        }
+    }
+
+    fn widgets<'a>(self, bar: &'a BarConfig) -> Option<&'a [String]> {
+        match self {
+            Self::Start => bar.start.as_deref(),
+            Self::Center => bar.center.as_deref(),
+            Self::End => bar.end.as_deref(),
+        }
+    }
 }
 
 fn clear_container(container: &gtk::Box) {
@@ -73,52 +111,161 @@ fn render_current_page(
     clear_container(container);
 
     let page = match active_page {
-        SettingsPage::Appearance => super::pages::notifications::page(&config.style),
-        SettingsPage::BarLayout => bar_layout_page(&config.bars),
+        SettingsPage::Appearance => {
+            let page = super::pages::notifications::page(&config.style);
+            title.set_label(&page.title);
+            render_page(container, page, sender);
+        }
+        SettingsPage::BarLayout => {
+            title.set_label(SettingsPage::BarLayout.title());
+            render_bar_layout_page(container, &config.bars, sender);
+        }
     };
-
-    title.set_label(&page.title);
-    render_page(container, page, sender);
 }
 
-fn bar_layout_page(bars: &[BarConfig]) -> SettingsPageSpec {
-    SettingsPageSpec {
-        title: "Bar Layout".to_string(),
-        sections: bars
-            .iter()
-            .enumerate()
-            .map(|(index, bar)| bar_layout_section(index,bar))
-            .collect(),
+fn bar_region_row(
+    bar_name: Option<&str>,
+    region: BarRegionView,
+    widgets: &[String],
+    sender: &ComponentSender<SettingsWindow>,
+) -> gtk::Box {
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    row.add_css_class("settings-row");
+    row.add_css_class("bar-region-settings-row");
+
+    let label = gtk::Label::new(Some(region.label()));
+    label.set_halign(gtk::Align::Start);
+    label.set_width_chars(8);
+    label.add_css_class("settings-row-label");
+    row.append(&label);
+
+    let values = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    values.set_hexpand(true);
+    values.add_css_class("bar-region-widget-list");
+
+    for index in 0..widgets.len() {
+        values.append(&bar_widget_token(bar_name, region, widgets, index, sender));
+    }
+
+    if widgets.is_empty() {
+        let empty = gtk::Label::new(Some("Empty"));
+        empty.add_css_class("settings-row-value");
+        values.append(&empty);
+    }
+
+    row.append(&values);
+    row
+}
+
+fn bar_widget_token(
+    bar_name: Option<&str>,
+    region: BarRegionView,
+    widgets: &[String],
+    index: usize,
+    sender: &ComponentSender<SettingsWindow>,
+) -> gtk::Box {
+    let token = gtk::Box::new(gtk::Orientation::Horizontal, 4);
+    token.add_css_class("bar-widget-token");
+
+    let label = gtk::Label::new(Some(&widgets[index]));
+    label.add_css_class("bar-widget-token-label");
+    token.append(&label);
+
+    let move_left = gtk::Button::from_icon_name("go-previous-symbolic");
+    move_left.add_css_class("flat");
+    move_left.add_css_class("bar-widget-token-button");
+    move_left.set_sensitive(bar_name.is_some() && index > 0);
+    token.append(&move_left);
+
+    let move_right = gtk::Button::from_icon_name("go-next-symbolic");
+    move_right.add_css_class("flat");
+    move_right.add_css_class("bar-widget-token-button");
+    move_right.set_sensitive(bar_name.is_some() && index + 1 < widgets.len());
+    token.append(&move_right);
+
+    let bar_name_left = bar_name.map(str::to_string);
+    let widgets_left = widgets.to_vec();
+    let sender_left = sender.input_sender().clone();
+
+    move_left.connect_clicked(move |_| {
+        let Some(bar_name) = &bar_name_left else {
+            return;
+        };
+        let mut widgets = widgets_left.clone();
+        widgets.swap(index - 1, index);
+
+        let _ = sender_left.send(SettingsInput::SetBarRegion {
+            bar_name: bar_name.clone(),
+            region: region.key(),
+            widgets,
+        });
+    });
+
+    let bar_name_right = bar_name.map(str::to_string);
+    let widgets_right = widgets.to_vec();
+    let sender_right = sender.input_sender().clone();
+
+    move_right.connect_clicked(move |_| {
+        let Some(bar_name) = &bar_name_right else {
+            return;
+        };
+
+        let mut widgets = widgets_right.clone();
+        widgets.swap(index, index + 1);
+
+        let _ = sender_right.send(SettingsInput::SetBarRegion {
+            bar_name: bar_name.clone(),
+            region: region.key(),
+            widgets,
+        });
+    });
+
+    token
+}
+
+fn render_bar_layout_page(
+    container: &gtk::Box,
+    bars: &[BarConfig],
+    sender: &ComponentSender<SettingsWindow>,
+) {
+    for (index, bar) in bars.iter().enumerate() {
+        render_bar_layout_section(container, index, bar, sender);
     }
 }
 
-fn bar_layout_section(index: usize, bar: &BarConfig) -> SettingsSectionSpec {
-    SettingsSectionSpec {
-        title: bar
-            .name
-            .clone()
-            .unwrap_or_else(|| format!("Bar {}", index +1)),
-        settings: vec![
-            bar_region_summary("Start", bar.start.as_deref()),
-            bar_region_summary("Center", bar.center.as_deref()),
-            bar_region_summary("End", bar.end.as_deref()),
-        ]
+fn render_bar_layout_section(
+    container: &gtk::Box,
+    index: usize,
+    bar: &BarConfig,
+    sender: &ComponentSender<SettingsWindow>,
+) {
+    let section_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
+    section_box.add_css_class("settings-section");
+
+    let title_text = bar
+        .name
+        .clone()
+        .unwrap_or_else(|| format!("Bar {}", index + 1));
+
+    let title = gtk::Label::new(Some(&title_text));
+    title.set_halign(gtk::Align::Start);
+    title.add_css_class("settings-section-title");
+    section_box.append(&title);
+
+    let group = gtk::Box::new(gtk::Orientation::Vertical, 12);
+    group.add_css_class("settings-group");
+
+    for region in [
+        BarRegionView::Start,
+        BarRegionView::Center,
+        BarRegionView::End,
+    ] {
+        let widgets = region.widgets(bar).unwrap_or(&[]);
+        group.append(&bar_region_row(bar.name.as_deref(), region, widgets, sender));
     }
-}
 
-fn bar_region_summary(
-    label: &'static str,
-    widgets: Option<&[String]>,
-) -> SettingSpec {
-    let value = widgets
-        .filter(|widgets| !widgets.is_empty())
-        .map(|widgets| widgets.join(", "))
-        .unwrap_or_else(|| "Empty".to_string());
-
-    SettingSpec::Display(crate::settings::spec::DisplaySpec {
-        label,
-        value,
-    })
+    section_box.append(&group);
+    container.append(&section_box);
 }
 
 fn render_page(
@@ -334,6 +481,15 @@ impl Component for SettingsWindow {
                         &self.config,
                         &sender,
                     );
+                }
+            }
+            SettingsInput::SetBarRegion {
+                bar_name,
+                region,
+                widgets,
+            } => {
+                if let Err(error) = crate::config::set_bar_region(&bar_name, region, &widgets) {
+                    tracing::error!(bar_name, ?region, "Failed to save bar region: {error}")
                 }
             }
         }

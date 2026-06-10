@@ -80,6 +80,79 @@ impl ConfigValue {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum BarRegionKey {
+    Start,
+    Center,
+    End,
+}
+
+impl BarRegionKey {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Start => "start",
+            Self::Center => "center",
+            Self::End => "end",
+        }
+    }
+}
+
+pub(crate) fn set_bar_region(
+    bar_name: &str,
+    region: BarRegionKey,
+    widgets: &[String],
+) -> io::Result<()> {
+    let Some(config_path) = config_path() else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "could not determine config path",
+        ));
+    };
+
+    let contents = fs::read_to_string(&config_path).unwrap_or_default();
+    let mut document = contents
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+
+    set_bar_region_in_document(&mut document, bar_name, region, widgets)?;
+
+    fs::write(config_path, document.to_string())
+}
+
+fn set_bar_region_in_document(
+    document: &mut toml_edit::DocumentMut,
+    bar_name: &str,
+    region: BarRegionKey,
+    widgets: &[String],
+) -> io::Result<()> {
+    let Some(bars) = document["bars"].as_array_of_tables_mut() else {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "config does not contain [[bars]]"
+        ));
+    };
+
+    let Some(bar) = bars.iter_mut().find(|bar| {
+        bar.get("name")
+            .and_then(|item| item.as_str())
+            == Some(bar_name)
+    }) else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            format!("bar {bar_name} was not found"),
+        ));
+    };
+
+    let mut values = toml_edit::Array::new();
+    for widget in widgets {
+        values.push(widget.as_str());
+    }
+
+    bar[region.as_str()] = toml_edit::value(values);
+
+    Ok(())
+}
+
 pub(crate) fn set_config_value(path: &[&str], value: Option<ConfigValue>) -> io::Result<()> {
     if path.is_empty() {
         return Err(io::Error::new(
