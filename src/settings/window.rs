@@ -8,7 +8,7 @@ use relm4::{
 };
 
 use super::{
-    controls::{display_row, number_row, string_row, toggle_row},
+    controls::{number_row, string_row, toggle_row},
     spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec},
 };
 
@@ -110,7 +110,7 @@ fn render_current_page(
 ) {
     clear_container(container);
 
-    let page = match active_page {
+    match active_page {
         SettingsPage::Appearance => {
             let page = super::pages::notifications::page(&config.style);
             title.set_label(&page.title);
@@ -154,6 +154,49 @@ fn bar_region_row(
     }
 
     row.append(&values);
+
+    let mut options = vec!["Add widget".to_string()];
+    options.extend(available_widget_ids().into_iter().map(str::to_string));
+
+    let string_list = gtk::StringList::new(&options.iter().map(String::as_str).collect::<Vec<_>>());
+    let add = gtk::DropDown::new(Some(string_list), None::<gtk::Expression>);
+    add.add_css_class("bar-widget-add");
+    add.set_sensitive(bar_name.is_some());
+    add.set_selected(0);
+    row.append(&add);
+
+    let bar_name_add = bar_name.map(str::to_string);
+    let widgets_add = widgets.to_vec();
+    let sender_add = sender.input_sender().clone();
+
+    add.connect_selected_notify(move |dropdown| {
+        let Some(bar_name) = &bar_name_add else {
+            return;
+        };
+
+        let selected = dropdown.selected();
+
+        if selected == 0 || selected == gtk::INVALID_LIST_POSITION {
+            return;
+        }
+
+        let widget_ids = available_widget_ids();
+        let Some(widget_id) = widget_ids.get((selected - 1) as usize) else {
+            return;
+        };
+
+        let mut widgets = widgets_add.clone();
+        widgets.push((*widget_id).to_string());
+
+        let _ = sender_add.send(SettingsInput::SetBarRegion {
+            bar_name: bar_name.clone(),
+            region: region.key(),
+            widgets,
+        });
+
+        dropdown.set_selected(0);
+    });
+
     row
 }
 
@@ -171,49 +214,25 @@ fn bar_widget_token(
     label.add_css_class("bar-widget-token-label");
     token.append(&label);
 
-    let move_left = gtk::Button::from_icon_name("go-previous-symbolic");
-    move_left.add_css_class("flat");
-    move_left.add_css_class("bar-widget-token-button");
-    move_left.set_sensitive(bar_name.is_some() && index > 0);
-    token.append(&move_left);
+    let remove = gtk::Button::from_icon_name("window-close-symbolic");
+    remove.add_css_class("flat");
+    remove.add_css_class("bar-widget-token-button");
+    remove.set_sensitive(bar_name.is_some());
+    token.append(&remove);
 
-    let move_right = gtk::Button::from_icon_name("go-next-symbolic");
-    move_right.add_css_class("flat");
-    move_right.add_css_class("bar-widget-token-button");
-    move_right.set_sensitive(bar_name.is_some() && index + 1 < widgets.len());
-    token.append(&move_right);
+    let bar_name_remove = bar_name.map(str::to_string);
+    let widgets_remove = widgets.to_vec();
+    let sender_remove = sender.input_sender().clone();
 
-    let bar_name_left = bar_name.map(str::to_string);
-    let widgets_left = widgets.to_vec();
-    let sender_left = sender.input_sender().clone();
-
-    move_left.connect_clicked(move |_| {
-        let Some(bar_name) = &bar_name_left else {
-            return;
-        };
-        let mut widgets = widgets_left.clone();
-        widgets.swap(index - 1, index);
-
-        let _ = sender_left.send(SettingsInput::SetBarRegion {
-            bar_name: bar_name.clone(),
-            region: region.key(),
-            widgets,
-        });
-    });
-
-    let bar_name_right = bar_name.map(str::to_string);
-    let widgets_right = widgets.to_vec();
-    let sender_right = sender.input_sender().clone();
-
-    move_right.connect_clicked(move |_| {
-        let Some(bar_name) = &bar_name_right else {
+    remove.connect_clicked(move |_| {
+        let Some(bar_name) = &bar_name_remove else {
             return;
         };
 
-        let mut widgets = widgets_right.clone();
-        widgets.swap(index, index + 1);
+        let mut widgets = widgets_remove.clone();
+        widgets.remove(index);
 
-        let _ = sender_right.send(SettingsInput::SetBarRegion {
+        let _ = sender_remove.send(SettingsInput::SetBarRegion {
             bar_name: bar_name.clone(),
             region: region.key(),
             widgets,
@@ -221,6 +240,13 @@ fn bar_widget_token(
     });
 
     token
+}
+
+fn available_widget_ids() -> Vec<&'static str> {
+    crate::bar::registry::WIDGETS
+        .iter()
+        .map(|widget| widget.id())
+        .collect()
 }
 
 fn render_bar_layout_page(
@@ -296,9 +322,6 @@ fn render_section(
 
     for setting in section.settings {
         match setting {
-            SettingSpec::Display(setting) => {
-                group.append(&display_row(setting));
-            }
             SettingSpec::Number(setting) => {
                 group.append(&number_row(setting, sender));
             }

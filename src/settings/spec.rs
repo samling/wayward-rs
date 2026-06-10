@@ -17,7 +17,6 @@ pub(crate) enum SettingSpec {
     Number(NumberSpec),
     Toggle(ToggleSpec),
     String(StringSpec),
-    Display(DisplaySpec),
 }
 
 #[derive(Clone, Debug)]
@@ -77,10 +76,4 @@ impl StringSpec {
     pub(crate) fn value_for_config(&self, value: String) -> ConfigValue {
         ConfigValue::String(value)
     }
-}
-
-#[derive(Clone, Debug)]
-pub(crate) struct DisplaySpec {
-    pub(crate) label: &'static str,
-    pub(crate) value: String,
 }

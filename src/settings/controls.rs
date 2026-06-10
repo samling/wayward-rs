@@ -1,5 +1,5 @@
 use super::{
-    spec::{DisplaySpec, NumberSpec, StringSpec, ToggleSpec},
+    spec::{NumberSpec, StringSpec, ToggleSpec},
     window::SettingsInput,
 };
 use crate::config::ConfigValue;
@@ -162,23 +162,5 @@ pub(crate) fn string_row(
         reset_button.set_sensitive(true);
         change_writer.send_debounced(saved_setting.value_for_config(entry.text().to_string()));
     });
-    row
-}
-
-pub(crate) fn display_row(setting: DisplaySpec) -> gtk::Box {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    row.add_css_class("settings-row");
-
-    let label = gtk::Label::new(Some(setting.label));
-    label.set_hexpand(true);
-    label.set_halign(gtk::Align::Start);
-    label.add_css_class("settings-row-label");
-    row.append(&label);
-
-    let value = gtk::Label::new(Some(&setting.value));
-    value.set_halign(gtk::Align::End);
-    value.add_css_class("settings-row-value");
-    row.append(&value);
-
     row
 }
