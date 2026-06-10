@@ -128,15 +128,14 @@ fn set_bar_region_in_document(
     let Some(bars) = document["bars"].as_array_of_tables_mut() else {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            "config does not contain [[bars]]"
+            "config does not contain [[bars]]",
         ));
     };
 
-    let Some(bar) = bars.iter_mut().find(|bar| {
-        bar.get("name")
-            .and_then(|item| item.as_str())
-            == Some(bar_name)
-    }) else {
+    let Some(bar) = bars
+        .iter_mut()
+        .find(|bar| bar.get("name").and_then(|item| item.as_str()) == Some(bar_name))
+    else {
         return Err(io::Error::new(
             io::ErrorKind::NotFound,
             format!("bar {bar_name} was not found"),

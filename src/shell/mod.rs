@@ -250,7 +250,7 @@ impl Shell {
         settings_window
             .sender()
             .send(crate::settings::window::SettingsInput::SetConfig(
-                crate::settings::window::SettingsConfig::from(&self.config)
+                crate::settings::window::SettingsConfig::from(&self.config),
             ))
             .ok();
     }

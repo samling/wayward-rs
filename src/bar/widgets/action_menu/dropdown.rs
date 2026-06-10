@@ -260,7 +260,13 @@ impl Component for ActionMenuDropdown {
         ComponentParts { model, widgets }
     }
 
-    fn update_with_view(&mut self, widgets: &mut Self::Widgets, msg: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
+    fn update_with_view(
+        &mut self,
+        widgets: &mut Self::Widgets,
+        msg: Self::Input,
+        sender: ComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
         match msg {
             ActionMenuDropdownInput::SetPlacement { edge, region } => {
                 self.edge = edge;
