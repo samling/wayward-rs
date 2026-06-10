@@ -8,7 +8,7 @@ use relm4::{
 };
 
 use super::{
-    controls::{number_row, string_row, toggle_row},
+    controls::{color_row, number_row, string_row, toggle_row},
     spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec},
     window::SettingsWindow,
 };
@@ -125,6 +125,9 @@ fn render_section(
             }
             SettingSpec::String(setting) => {
                 group.append(&string_row(setting, sender));
+            }
+            SettingSpec::Color(setting) => {
+                group.append(&color_row(setting, sender));
             }
         }
     }

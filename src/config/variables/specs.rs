@@ -135,4 +135,15 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         variable: "--notification-font-family",
         css_kind: CssValueKind::String { quoted: true },
     },
+    StyleSettingSpec {
+        group: "bar",
+        key: "background-color",
+        path: &["style", "bar", "background-color"],
+        setting: Some(SettingUiSpec::Color {
+            label: "Background color",
+            default: "rgba(30, 30, 46, 0.7)",
+        }),
+        variable: "--bar-background-color",
+        css_kind: CssValueKind::String { quoted: false },
+    },
 ];

@@ -37,6 +37,10 @@ pub(crate) enum SettingUiSpec {
         label: &'static str,
         default: &'static str,
     },
+    Color {
+        label: &'static str,
+        default: &'static str,
+    },
 }
 
 impl SettingUiSpec {
@@ -56,7 +60,7 @@ impl SettingUiSpec {
 
     fn string_default(self) -> Option<&'static str> {
         match self {
-            Self::String { default, .. } => Some(default),
+            Self::String { default, .. } | Self::Color { default, .. } => Some(default),
             _ => None,
         }
     }

@@ -17,6 +17,7 @@ pub(crate) enum SettingSpec {
     Number(NumberSpec),
     Toggle(ToggleSpec),
     String(StringSpec),
+    Color(ColorSpec),
 }
 
 #[derive(Clone, Debug)]
@@ -67,6 +68,26 @@ pub(crate) struct StringSpec {
 }
 
 impl StringSpec {
+    pub(crate) fn display_value(&self) -> String {
+        self.value
+            .clone()
+            .unwrap_or_else(|| self.default.to_string())
+    }
+
+    pub(crate) fn value_for_config(&self, value: String) -> ConfigValue {
+        ConfigValue::String(value)
+    }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct ColorSpec {
+    pub(crate) label: &'static str,
+    pub(crate) path: &'static [&'static str],
+    pub(crate) value: Option<String>,
+    pub(crate) default: &'static str,
+}
+
+impl ColorSpec {
     pub(crate) fn display_value(&self) -> String {
         self.value
             .clone()

@@ -4,7 +4,9 @@ use crate::config::{
     variables::{SettingUiSpec, settings_for_group},
 };
 
-use super::super::spec::{NumberSpec, SettingSpec, SettingsSectionSpec, StringSpec, ToggleSpec};
+use super::super::spec::{
+    ColorSpec, NumberSpec, SettingSpec, SettingsSectionSpec, StringSpec, ToggleSpec,
+};
 
 pub(crate) fn section(
     title: &'static str,
@@ -40,6 +42,12 @@ pub(crate) fn section(
                     default,
                 })),
                 SettingUiSpec::String { label, default } => Some(SettingSpec::String(StringSpec {
+                    label,
+                    path: spec.path,
+                    value: group.and_then(|group| group.string(spec.key)),
+                    default,
+                })),
+                SettingUiSpec::Color { label, default } => Some(SettingSpec::Color(ColorSpec {
                     label,
                     path: spec.path,
                     value: group.and_then(|group| group.string(spec.key)),

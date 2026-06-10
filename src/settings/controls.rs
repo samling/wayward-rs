@@ -1,5 +1,5 @@
 use super::{
-    spec::{NumberSpec, StringSpec, ToggleSpec},
+    spec::{ColorSpec, NumberSpec, StringSpec, ToggleSpec},
     window::SettingsInput,
 };
 use crate::config::ConfigValue;
@@ -7,7 +7,7 @@ use relm4::{
     gtk::{self, prelude::*},
     prelude::*,
 };
-use std::{cell::RefCell, rc::Rc, time::Duration};
+use std::{cell::{Cell, RefCell}, rc::Rc, time::Duration};
 
 const SETTING_WRITE_DEBOUNCE: Duration = Duration::from_millis(300);
 
@@ -163,4 +163,109 @@ pub(crate) fn string_row(
         change_writer.send_debounced(saved_setting.value_for_config(entry.text().to_string()));
     });
     row
+}
+
+pub(crate) fn color_row(
+    setting: ColorSpec,
+    sender: &ComponentSender<super::window::SettingsWindow>,
+) -> gtk::Box {
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    row.add_css_class("settings-row");
+
+    let label = gtk::Label::new(Some(setting.label));
+    label.set_hexpand(true);
+    label.set_halign(gtk::Align::Start);
+    label.add_css_class("settings-row-label");
+    row.append(&label);
+
+    let color = parse_color(&setting.display_value());
+    let dialog = gtk::ColorDialog::builder()
+        .title(setting.label)
+        .modal(true)
+        .with_alpha(true)
+        .build();
+    let button = gtk::ColorDialogButton::new(Some(dialog));
+    button.set_rgba(&color);
+    button.set_valign(gtk::Align::Center);
+
+    let entry = gtk::Entry::new();
+    entry.add_css_class("settings-color-value");
+    entry.set_text(&button.rgba().to_string());
+    entry.set_width_chars(24);
+
+    let path = setting.path;
+    let saved_setting = setting.clone();
+    let writer = SettingWriter::new(path, sender.input_sender().clone());
+    let change_writer = writer.clone();
+    let updating = Rc::new(Cell::new(false));
+
+    row.append(&button);
+    row.append(&entry);
+    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
+
+    let entry_button = button.clone();
+    let entry_reset_button = reset_button.clone();
+    let entry_saved_setting = saved_setting.clone();
+    let entry_writer = change_writer.clone();
+    let entry_updating = updating.clone();
+
+    entry.connect_changed(move |entry| {
+        if entry_updating.get() {
+            return;
+        }
+
+        let value = entry.text().to_string();
+        let Ok(color) = gtk::gdk::RGBA::parse(&value) else {
+            entry.add_css_class("error");
+            entry_reset_button.set_sensitive(true);
+            return;
+        };
+
+        entry.remove_css_class("error");
+        entry_reset_button.set_sensitive(true);
+
+        entry_updating.set(true);
+        entry_button.set_rgba(&color);
+        entry_updating.set(false);
+
+        entry_writer.send_debounced(entry_saved_setting.value_for_config(css_color_value(color)));
+    });
+
+    let button_entry = entry.clone();
+    let button_reset_button = reset_button.clone();
+    let button_updating = updating.clone();
+
+    button.connect_rgba_notify(move |button| {
+        if button_updating.get() {
+            return;
+        }
+
+        let value = css_color_value(button.rgba());
+
+        button_updating.set(true);
+        button_entry.set_text(&value);
+        button_updating.set(false);
+
+        button_reset_button.set_sensitive(true);
+        change_writer.send_now(Some(saved_setting.value_for_config(value)));
+    });
+
+    row
+}
+
+fn parse_color(value: &str) -> gtk::gdk::RGBA {
+    gtk::gdk::RGBA::parse(value).unwrap_or(gtk::gdk::RGBA::BLACK)
+}
+
+fn css_color_value(color: gtk::gdk::RGBA) -> String {
+    let red = (color.red() * 255.0).round() as u8;
+    let green = (color.green() * 255.0).round() as u8;
+    let blue = (color.blue() * 255.0).round() as u8;
+    let alpha = color.alpha();
+
+    if alpha >= 1.0 {
+        format!("#{red:02x}{green:02x}{blue:02x}")
+    } else {
+        format!("rgba({red}, {green}, {blue}, {alpha:.3})")
+    }
 }
