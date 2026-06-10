@@ -49,5 +49,5 @@ pub(crate) fn section(
         })
         .collect();
 
-    SettingsSectionSpec { title, settings }
+    SettingsSectionSpec { title: title.to_string(), settings }
 }

@@ -2,13 +2,13 @@ use crate::config::ConfigValue;
 
 #[derive(Clone, Debug)]
 pub(crate) struct SettingsPageSpec {
-    pub(crate) title: &'static str,
+    pub(crate) title: String,
     pub(crate) sections: Vec<SettingsSectionSpec>,
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct SettingsSectionSpec {
-    pub(crate) title: &'static str,
+    pub(crate) title: String,
     pub(crate) settings: Vec<SettingSpec>,
 }
 
@@ -17,6 +17,7 @@ pub(crate) enum SettingSpec {
     Number(NumberSpec),
     Toggle(ToggleSpec),
     String(StringSpec),
+    Display(DisplaySpec),
 }
 
 #[derive(Clone, Debug)]
@@ -76,4 +77,10 @@ impl StringSpec {
     pub(crate) fn value_for_config(&self, value: String) -> ConfigValue {
         ConfigValue::String(value)
     }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct DisplaySpec {
+    pub(crate) label: &'static str,
+    pub(crate) value: String,
 }

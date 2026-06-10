@@ -1,4 +1,4 @@
-use crate::config::StyleConfig;
+use crate::config::{BarConfig, StyleConfig};
 use relm4::{
     gtk::{
         self,
@@ -8,12 +8,27 @@ use relm4::{
 };
 
 use super::{
-    controls::{number_row, string_row, toggle_row},
+    controls::{display_row, number_row, string_row, toggle_row},
     spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec},
 };
 
+#[derive(Clone, Debug, PartialEq)]
+pub(crate) struct SettingsConfig {
+    pub(crate) style: StyleConfig,
+    pub(crate) bars: Vec<BarConfig>,
+}
+
+impl From<&crate::config::AppConfig> for SettingsConfig {
+    fn from(config: &crate::config::AppConfig) -> Self {
+        Self {
+            style: config.style.clone(),
+            bars: config.bars.clone(),
+        }
+    }
+}
+
 pub(crate) struct SettingsWindow {
-    style: StyleConfig,
+    config: SettingsConfig,
     active_page: SettingsPage,
 }
 
@@ -35,7 +50,7 @@ impl SettingsPage {
 #[derive(Debug)]
 pub(crate) enum SettingsInput {
     SetPage(SettingsPage),
-    SetStyle(StyleConfig),
+    SetConfig(SettingsConfig),
     SetValue {
         path: &'static [&'static str],
         value: Option<crate::config::ConfigValue>,
@@ -52,28 +67,58 @@ fn render_current_page(
     container: &gtk::Box,
     title: &gtk::Label,
     active_page: SettingsPage,
-    style: &StyleConfig,
+    config: &SettingsConfig,
     sender: &ComponentSender<SettingsWindow>,
 ) {
     clear_container(container);
 
     let page = match active_page {
-        SettingsPage::Appearance => super::pages::notifications::page(style),
-        SettingsPage::BarLayout => bar_layout_page(),
+        SettingsPage::Appearance => super::pages::notifications::page(&config.style),
+        SettingsPage::BarLayout => bar_layout_page(&config.bars),
     };
 
-    title.set_label(page.title);
+    title.set_label(&page.title);
     render_page(container, page, sender);
 }
 
-fn bar_layout_page() -> SettingsPageSpec {
+fn bar_layout_page(bars: &[BarConfig]) -> SettingsPageSpec {
     SettingsPageSpec {
-        title: "Bar Layout",
-        sections: vec![SettingsSectionSpec {
-            title: "Widgets",
-            settings: Vec::new(),
-        }],
+        title: "Bar Layout".to_string(),
+        sections: bars
+            .iter()
+            .enumerate()
+            .map(|(index, bar)| bar_layout_section(index,bar))
+            .collect(),
     }
+}
+
+fn bar_layout_section(index: usize, bar: &BarConfig) -> SettingsSectionSpec {
+    SettingsSectionSpec {
+        title: bar
+            .name
+            .clone()
+            .unwrap_or_else(|| format!("Bar {}", index +1)),
+        settings: vec![
+            bar_region_summary("Start", bar.start.as_deref()),
+            bar_region_summary("Center", bar.center.as_deref()),
+            bar_region_summary("End", bar.end.as_deref()),
+        ]
+    }
+}
+
+fn bar_region_summary(
+    label: &'static str,
+    widgets: Option<&[String]>,
+) -> SettingSpec {
+    let value = widgets
+        .filter(|widgets| !widgets.is_empty())
+        .map(|widgets| widgets.join(", "))
+        .unwrap_or_else(|| "Empty".to_string());
+
+    SettingSpec::Display(crate::settings::spec::DisplaySpec {
+        label,
+        value,
+    })
 }
 
 fn render_page(
@@ -94,7 +139,7 @@ fn render_section(
     let section_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
     section_box.add_css_class("settings-section");
 
-    let title = gtk::Label::new(Some(section.title));
+    let title = gtk::Label::new(Some(&section.title));
     title.set_halign(gtk::Align::Start);
     title.add_css_class("settings-section-title");
     section_box.append(&title);
@@ -104,6 +149,9 @@ fn render_section(
 
     for setting in section.settings {
         match setting {
+            SettingSpec::Display(setting) => {
+                group.append(&display_row(setting));
+            }
             SettingSpec::Number(setting) => {
                 group.append(&number_row(setting, sender));
             }
@@ -130,7 +178,7 @@ fn sidebar_button_classes(active_page: SettingsPage, page: SettingsPage) -> Vec<
 
 #[relm4::component(pub(crate))]
 impl Component for SettingsWindow {
-    type Init = StyleConfig;
+    type Init = SettingsConfig;
     type Input = SettingsInput;
     type Output = ();
     type CommandOutput = ();
@@ -213,23 +261,23 @@ impl Component for SettingsWindow {
     }
 
     fn init(
-        style: Self::Init,
+        config: Self::Init,
         _root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = Self {
-            style,
+            config,
             active_page: SettingsPage::Appearance,
         };
         let widgets = view_output!();
 
-        let page = super::pages::notifications::page(&model.style);
-        widgets.page_title.set_label(page.title);
+        let page = super::pages::notifications::page(&model.config.style);
+        widgets.page_title.set_label(&page.title);
         render_current_page(
             &widgets.page_content,
             &widgets.page_title,
             model.active_page,
-            &model.style,
+            &model.config,
             &sender,
         );
 
@@ -251,19 +299,19 @@ impl Component for SettingsWindow {
                         &widgets.page_content,
                         &widgets.page_title,
                         self.active_page,
-                        &self.style,
+                        &self.config,
                         &sender,
                     );
                 }
             }
-            SettingsInput::SetStyle(style) => {
-                if self.style != style {
-                    self.style = style;
+            SettingsInput::SetConfig(config) => {
+                if self.config != config {
+                    self.config = config;
                     render_current_page(
                         &widgets.page_content,
                         &widgets.page_title,
                         self.active_page,
-                        &self.style,
+                        &self.config,
                         &sender,
                     );
                 }
@@ -274,6 +322,7 @@ impl Component for SettingsWindow {
                 if let Err(error) = crate::config::set_config_value(path, value) {
                     tracing::error!(?path, "Failed to save setting: {error}")
                 } else if self
+                    .config
                     .style
                     .apply_config_value(path, value_for_model.as_ref())
                     && value_for_model.is_none()
@@ -282,7 +331,7 @@ impl Component for SettingsWindow {
                         &widgets.page_content,
                         &widgets.page_title,
                         self.active_page,
-                        &self.style,
+                        &self.config,
                         &sender,
                     );
                 }

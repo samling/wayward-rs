@@ -223,14 +223,14 @@ impl Shell {
         }
 
         let settings_window = crate::settings::window::SettingsWindow::builder()
-            .launch(self.config.style.clone())
+            .launch(crate::settings::window::SettingsConfig::from(&self.config))
             .detach();
 
         if let Some(settings_window) = &self.settings_window {
             settings_window
                 .sender()
-                .send(crate::settings::window::SettingsInput::SetStyle(
-                    self.config.style.clone(),
+                .send(crate::settings::window::SettingsInput::SetConfig(
+                    crate::settings::window::SettingsConfig::from(&self.config),
                 ))
                 .ok();
 
@@ -249,8 +249,8 @@ impl Shell {
 
         settings_window
             .sender()
-            .send(crate::settings::window::SettingsInput::SetStyle(
-                self.config.style.clone(),
+            .send(crate::settings::window::SettingsInput::SetConfig(
+                crate::settings::window::SettingsConfig::from(&self.config)
             ))
             .ok();
     }
