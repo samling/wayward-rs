@@ -1,35 +1,32 @@
 use gtk::prelude::*;
 use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
-use relm4::gtk;
-use std::cell::RefCell;
+use relm4::gtk::{self, glib};
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
+use std::time::Duration;
 
+use super::card::{
+    NOTIFICATION_EXIT_ANIMATION_MS, NotificationCard, NotificationCardCallbacks, toast_card_options,
+};
 use super::model::NotificationToast;
 use crate::shell::ShellMsg;
 
 const TOP_MARGIN: i32 = 8;
 const RIGHT_MARGIN: i32 = 12;
 const STACK_SPACING: i32 = 8;
-const TEXT_WIDTH_CHARS: i32 = 42;
-const SUMMARY_MAX_LINES: i32 = 2;
-const BODY_MAX_LINES: i32 = 4;
-
-fn configure_wrapping_label(label: &gtk::Label, max_lines: i32) {
-    label.set_hexpand(true);
-    label.set_halign(gtk::Align::Fill);
-    label.set_wrap(true);
-    label.set_wrap_mode(gtk::pango::WrapMode::WordChar);
-    label.set_width_chars(TEXT_WIDTH_CHARS);
-    label.set_max_width_chars(TEXT_WIDTH_CHARS);
-    label.set_lines(max_lines);
-    label.set_ellipsize(gtk::pango::EllipsizeMode::End);
-    label.set_xalign(0.0);
-}
 
 pub(crate) struct NotificationWindow {
     window: gtk::Window,
     stack: gtk::Box,
     sender: relm4::Sender<ShellMsg>,
-    toasts: RefCell<Vec<NotificationToast>>,
+    rows: Rc<RefCell<Vec<NotificationToastRow>>>,
+}
+
+struct NotificationToastRow {
+    id: u32,
+    revealer: gtk::Revealer,
+    card: NotificationCard,
+    dismissing: Cell<bool>,
 }
 
 impl NotificationWindow {
@@ -58,138 +55,147 @@ impl NotificationWindow {
             window,
             stack,
             sender,
-            toasts: RefCell::new(Vec::new()),
+            rows: Rc::new(RefCell::new(Vec::new())),
         }
-    }
-
-    fn actions(&self, toast_id: u32, actions: &[super::model::NotificationAction]) -> gtk::Widget {
-        let row = gtk::FlowBox::new();
-        row.add_css_class("notification-actions");
-        row.set_selection_mode(gtk::SelectionMode::None);
-        row.set_max_children_per_line(3);
-
-        for action in actions {
-            let button = gtk::Button::with_label(&action.label);
-            button.add_css_class("notification-action");
-            button.add_css_class("flat");
-
-            let sender = self.sender.clone();
-            let action_id = action.id.clone();
-
-            button.connect_clicked(move |_| {
-                let _ = sender.send(ShellMsg::InvokeNotificationAction {
-                    id: toast_id,
-                    action_id: action_id.clone(),
-                });
-            });
-
-            row.insert(&button, -1);
-        }
-
-        row.upcast()
     }
 
     pub(crate) fn set_toasts(&self, toasts: &[NotificationToast]) {
-        let unchanged = { self.toasts.borrow().as_slice() == toasts };
+        let mut missing_ids = Vec::new();
 
-        if unchanged {
-            return;
-        }
+        {
+            let rows = self.rows.borrow();
 
-        self.toasts.replace(toasts.to_vec());
-
-        while let Some(child) = self.stack.first_child() {
-            self.stack.remove(&child);
+            for row in rows.iter() {
+                if let Some(toast) = toasts.iter().find(|toast| toast.id == row.id) {
+                    row.dismissing.set(false);
+                    row.card.set_dismissing(false);
+                    row.card.update(toast);
+                    row.revealer.set_reveal_child(true);
+                } else {
+                    missing_ids.push(row.id);
+                }
+            }
         }
 
         for toast in toasts {
-            self.stack.append(&self.toast_widget(toast));
+            let exists = self.rows.borrow().iter().any(|row| row.id == toast.id);
+
+            if !exists {
+                let row = self.toast_row(toast);
+                self.stack.append(&row.revealer);
+                self.rows.borrow_mut().push(row);
+            }
         }
 
-        self.window.set_visible(!toasts.is_empty());
+        if missing_ids.is_empty() {
+            self.reorder_toasts(toasts);
+        }
+
+        for id in missing_ids {
+            self.start_toast_exit(id);
+        }
+
+        self.window
+            .set_visible(!toasts.is_empty() || !self.rows.borrow().is_empty());
     }
 
-    fn toast_widget(&self, toast: &NotificationToast) -> gtk::Widget {
-        let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        root.add_css_class("notification-toast");
-        root.add_css_class(toast.urgency_class());
+    fn toast_row(&self, toast: &NotificationToast) -> NotificationToastRow {
+        let default_sender = self.sender.clone();
+        let action_sender = self.sender.clone();
+        let dismiss_sender = self.sender.clone();
 
-        root.append(&self.header(toast));
-        root.append(&self.body(toast));
+        let revealer = gtk::Revealer::new();
+        revealer.add_css_class("notification-toast-revealer");
+        revealer.set_transition_duration(NOTIFICATION_EXIT_ANIMATION_MS as u32);
+        revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
+        revealer.set_reveal_child(true);
 
-        let actions = toast.visible_actions();
-        if !actions.is_empty() {
-            root.append(&self.actions(toast.id, &actions));
+        let card = NotificationCard::new(
+            toast,
+            toast_card_options(),
+            NotificationCardCallbacks {
+                on_default: Some(Rc::new(move |id| {
+                    let _ = default_sender.send(ShellMsg::InvokeNotificationDefaultAction(id));
+                })),
+                on_action: Some(Rc::new(move |id, action_id| {
+                    let _ =
+                        action_sender.send(ShellMsg::InvokeNotificationAction { id, action_id });
+                })),
+                on_dismiss: Some(Rc::new(move |id| {
+                    let _ = dismiss_sender.send(ShellMsg::DismissNotificationPopup(id));
+                })),
+            },
+        );
+
+        revealer.set_child(Some(card.root()));
+
+        NotificationToastRow {
+            id: toast.id,
+            revealer,
+            card,
+            dismissing: Cell::new(false),
         }
-
-        root.upcast()
     }
 
-    fn header(&self, toast: &NotificationToast) -> gtk::Widget {
-        let header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-        header.add_css_class("notification-header");
+    fn reorder_toasts(&self, toasts: &[NotificationToast]) {
+        let mut previous: Option<gtk::Widget> = None;
 
-        let icon = gtk::Image::new();
-        icon.add_css_class("notification-app-icon");
-        crate::notifications::icon::set_notification_icon(&icon, toast);
-        header.append(&icon);
+        for toast in toasts {
+            let revealer = self
+                .rows
+                .borrow()
+                .iter()
+                .find(|row| row.id == toast.id && !row.dismissing.get())
+                .map(|row| row.revealer.clone().upcast::<gtk::Widget>());
 
-        let app_name = gtk::Label::new(Some(&toast.app_name));
-        app_name.set_hexpand(true);
-        app_name.set_halign(gtk::Align::Fill);
-        app_name.set_xalign(0.0);
-        app_name.add_css_class("notification-app-name");
-        app_name.set_ellipsize(gtk::pango::EllipsizeMode::End);
-        header.append(&app_name);
-
-        let close = gtk::Button::new();
-        close.add_css_class("notification-close");
-        close.add_css_class("flat");
-        close.set_child(Some(&gtk::Image::from_icon_name("window-close-symbolic")));
-
-        let sender = self.sender.clone();
-        let id = toast.id;
-        close.connect_clicked(move |_| {
-            let _ = sender.send(ShellMsg::DismissNotificationPopup(id));
-        });
-
-        header.append(&close);
-        header.upcast()
+            if let Some(revealer) = revealer {
+                self.stack.reorder_child_after(&revealer, previous.as_ref());
+                previous = Some(revealer);
+            }
+        }
     }
 
-    fn body(&self, toast: &NotificationToast) -> gtk::Widget {
-        let body = gtk::Box::new(gtk::Orientation::Vertical, 4);
-        body.add_css_class("notification-content");
+    fn start_toast_exit(&self, id: u32) {
+        let Some(revealer) = self.mark_toast_exiting(id) else {
+            return;
+        };
 
-        let summary = gtk::Label::new(Some(&toast.summary));
-        summary.add_css_class("notification-summary");
-        summary.set_halign(gtk::Align::Start);
-        configure_wrapping_label(&summary, SUMMARY_MAX_LINES);
-        body.append(&summary);
+        let rows = self.rows.clone();
+        let stack = self.stack.clone();
+        let window = self.window.clone();
 
-        if let Some(text) = &toast.body {
-            let label = gtk::Label::new(Some(text));
-            label.add_css_class("notification-body");
-            label.set_halign(gtk::Align::Start);
-            configure_wrapping_label(&label, BODY_MAX_LINES);
-            body.append(&label);
+        glib::timeout_add_local_once(
+            Duration::from_millis(NOTIFICATION_EXIT_ANIMATION_MS),
+            move || {
+                let removed = {
+                    let mut rows = rows.borrow_mut();
+                    rows.iter()
+                        .position(|row| row.id == id && row.dismissing.get())
+                        .map(|index| rows.remove(index))
+                };
+
+                if removed.is_some() {
+                    stack.remove(&revealer);
+                }
+
+                if rows.borrow().is_empty() {
+                    window.set_visible(false);
+                }
+            },
+        );
+    }
+
+    fn mark_toast_exiting(&self, id: u32) -> Option<gtk::Revealer> {
+        let rows = self.rows.borrow();
+        let row = rows.iter().find(|row| row.id == id)?;
+
+        if row.dismissing.replace(true) {
+            return None;
         }
 
-        if !toast.has_default_action() {
-            return body.upcast();
-        }
+        row.card.set_dismissing(true);
+        row.revealer.set_reveal_child(false);
 
-        let button = gtk::Button::new();
-        button.add_css_class("notification-content-button");
-        button.add_css_class("flat");
-        button.set_child(Some(&body));
-
-        let sender = self.sender.clone();
-        let id = toast.id;
-        button.connect_clicked(move |_| {
-            let _ = sender.send(ShellMsg::InvokeNotificationDefaultAction(id));
-        });
-
-        button.upcast()
+        Some(row.revealer.clone())
     }
 }

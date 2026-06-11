@@ -1,14 +1,20 @@
 use relm4::factory::FactoryComponent;
-use relm4::gtk;
 use relm4::gtk::prelude::*;
+use relm4::gtk::{self, glib};
 use relm4::prelude::*;
+use std::time::Duration;
 
+use crate::notifications::card::{
+    NOTIFICATION_EXIT_ANIMATION_MS, NotificationCard, NotificationCardCallbacks,
+    dropdown_card_options,
+};
 use crate::notifications::model::NotificationToast;
-
-const BODY_PREVIEW_LINES: usize = 4;
 
 pub(super) struct NotificationRow {
     notification: NotificationToast,
+    card: Option<NotificationCard>,
+    revealer: Option<gtk::Revealer>,
+    dismissing: bool,
 }
 
 #[derive(Debug)]
@@ -16,6 +22,7 @@ pub(super) enum NotificationRowInput {
     InvokeDefault,
     InvokeAction(String),
     Dismiss,
+    DismissFinished(u32),
 }
 
 #[derive(Debug)]
@@ -36,106 +43,9 @@ impl FactoryComponent for NotificationRow {
     view! {
         #[name = "root"]
         gtk::Box {
-            add_css_class: "notification-list-row",
-            set_orientation: gtk::Orientation::Horizontal,
-            set_spacing: 8,
-            set_width_request: 320,
-
-            #[name = "icon"]
-            gtk::Image {
-                add_css_class: "notification-list-icon",
-                set_valign: gtk::Align::Start,
-            },
-
-            gtk::Box {
-                add_css_class: "notification-list-text",
-                set_orientation: gtk::Orientation::Vertical,
-                set_spacing: 2,
-                set_hexpand: true,
-
-                add_controller = gtk::GestureClick {
-                    set_button: 1,
-
-                    connect_released[sender] => move|_, _, _, _,| {
-                        sender.input(NotificationRowInput::InvokeDefault);
-                    }
-                },
-
-                gtk::Label {
-                    add_css_class: "notification-list-app-name",
-                    set_halign: gtk::Align::Start,
-                    set_xalign: 0.0,
-                    set_max_width_chars: 34,
-                    set_ellipsize: gtk::pango::EllipsizeMode::End,
-
-                    #[watch]
-                    set_text: &self.notification.app_name,
-                },
-
-                gtk::Label {
-                    add_css_class: "notification-list-summary",
-                    set_halign: gtk::Align::Start,
-                    set_xalign: 0.0,
-                    set_wrap: true,
-                    set_wrap_mode: gtk::pango::WrapMode::WordChar,
-                    set_natural_wrap_mode: gtk::NaturalWrapMode::Word,
-                    set_lines: 2,
-                    set_width_chars: 34,
-                    set_max_width_chars: 34,
-                    set_ellipsize: gtk::pango::EllipsizeMode::End,
-
-                    #[watch]
-                    set_text: &self.notification.summary,
-                },
-
-                gtk::Label {
-                    add_css_class: "notification-list-body",
-                    set_halign: gtk::Align::Start,
-                    set_xalign: 0.0,
-                    set_wrap: true,
-                    set_wrap_mode: gtk::pango::WrapMode::WordChar,
-                    set_natural_wrap_mode: gtk::NaturalWrapMode::Word,
-                    set_lines: 3,
-                    set_width_chars: 34,
-                    set_max_width_chars: 34,
-                    set_ellipsize: gtk::pango::EllipsizeMode::End,
-
-                    #[watch]
-                    set_visible: self.has_body(),
-
-                    #[watch]
-                    set_text: &self.body_preview_text(),
-                },
-
-                #[name = "actions"]
-                gtk::Box {
-                    add_css_class: "notification-list-actions",
-                    set_orientation: gtk::Orientation::Horizontal,
-                    set_spacing: 6,
-                    set_visible: !self.notification.visible_actions().is_empty(),
-                }
-            },
-
-            gtk::Button {
-                add_css_class: "notification-list-dismiss",
-                add_css_class: "flat",
-                set_valign: gtk::Align::Start,
-                set_icon_name: "window-close-symbolic",
-
-                connect_clicked[sender] => move |_| {
-                    sender.input(NotificationRowInput::Dismiss);
-                }
-            },
+            add_css_class: "notification-list-row-wrapper",
+            set_orientation: gtk::Orientation::Vertical,
         }
-    }
-
-    fn pre_view() {
-        self.sync_row_widgets(
-            &widgets.root,
-            &widgets.icon,
-            &widgets.actions,
-            sender.clone(),
-        );
     }
 
     fn init_model(
@@ -143,7 +53,12 @@ impl FactoryComponent for NotificationRow {
         _index: &DynamicIndex,
         _sender: FactorySender<Self>,
     ) -> Self {
-        Self { notification }
+        Self {
+            notification,
+            card: None,
+            revealer: None,
+            dismissing: false,
+        }
     }
 
     fn init_widgets(
@@ -154,7 +69,7 @@ impl FactoryComponent for NotificationRow {
         sender: FactorySender<Self>,
     ) -> Self::Widgets {
         let widgets = view_output!();
-        self.sync_row_widgets(&widgets.root, &widgets.icon, &widgets.actions, sender);
+        self.sync_row_widgets(&widgets.root, sender);
         widgets
     }
 
@@ -170,75 +85,108 @@ impl FactoryComponent for NotificationRow {
                 });
             }
             NotificationRowInput::Dismiss => {
-                let _ = sender.output(NotificationRowOutput::Dismiss(self.notification.id));
+                self.start_dismiss_animation(sender);
+            }
+            NotificationRowInput::DismissFinished(id) => {
+                if self.dismissing && self.notification.id == id {
+                    let _ = sender.output(NotificationRowOutput::Dismiss(id));
+                }
             }
         }
     }
 }
 
 impl NotificationRow {
-    fn sync_row_widgets(
-        &self,
-        root: &gtk::Box,
-        icon: &gtk::Image,
-        actions_box: &gtk::Box,
-        sender: FactorySender<Self>,
-    ) {
-        for class_name in ["low", "normal", "critical"] {
-            root.remove_css_class(class_name);
+    pub(super) fn id(&self) -> u32 {
+        self.notification.id
+    }
+
+    fn sync_row_widgets(&mut self, root: &gtk::Box, sender: FactorySender<Self>) {
+        if let Some(card) = &self.card {
+            if !self.dismissing {
+                card.update(&self.notification);
+            }
+            return;
         }
 
-        root.add_css_class(self.notification.urgency_class());
+        let default_sender = sender.clone();
+        let action_sender = sender.clone();
+        let dismiss_sender = sender;
 
-        crate::notifications::icon::set_notification_icon(icon, &self.notification);
+        let revealer = gtk::Revealer::new();
+        revealer.add_css_class("notification-list-row-revealer");
+        revealer.set_transition_duration(NOTIFICATION_EXIT_ANIMATION_MS as u32);
+        revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
+        revealer.set_reveal_child(true);
 
-        while let Some(child) = actions_box.first_child() {
-            actions_box.remove(&child);
-        }
+        let card = NotificationCard::new(
+            &self.notification,
+            dropdown_card_options(),
+            NotificationCardCallbacks {
+                on_default: Some(std::rc::Rc::new(move |_| {
+                    default_sender.input(NotificationRowInput::InvokeDefault);
+                })),
+                on_action: Some(std::rc::Rc::new(move |_, action_id| {
+                    action_sender.input(NotificationRowInput::InvokeAction(action_id));
+                })),
+                on_dismiss: Some(std::rc::Rc::new(move |_| {
+                    dismiss_sender.input(NotificationRowInput::Dismiss);
+                })),
+            },
+        );
 
-        let actions = self.notification.visible_actions();
-        actions_box.set_visible(!actions.is_empty());
+        revealer.set_child(Some(card.root()));
+        root.append(&revealer);
 
-        for action in actions {
-            let button = gtk::Button::with_label(&action.label);
-            button.add_css_class("notification-list-action");
-
-            let sender = sender.clone();
-            button.connect_clicked(move |_| {
-                sender.input(NotificationRowInput::InvokeAction(action.id.clone()));
-            });
-
-            actions_box.append(&button);
-        }
+        self.card = Some(card);
+        self.revealer = Some(revealer);
     }
 
     pub(super) fn set_notification(&mut self, notification: NotificationToast) {
+        let id_changed = self.notification.id != notification.id;
         self.notification = notification;
-    }
 
-    fn body_preview_text(&self) -> String {
-        self.notification
-            .body
-            .as_deref()
-            .map(compact_preview_text)
-            .unwrap_or_default()
-    }
+        if id_changed {
+            self.dismissing = false;
 
-    fn has_body(&self) -> bool {
-        self.notification
-            .body
-            .as_ref()
-            .is_some_and(|body| !body.trim().is_empty())
-    }
-}
+            if let Some(card) = &self.card {
+                card.set_dismissing(false);
+                card.update(&self.notification);
+            }
 
-fn compact_preview_text(value: &str) -> String {
-    let mut lines = value.lines().take(BODY_PREVIEW_LINES).collect::<Vec<_>>();
-
-    if value.lines().count() > BODY_PREVIEW_LINES {
-        if let Some(last_line) = lines.last_mut() {
-            *last_line = "...";
+            if let Some(revealer) = &self.revealer {
+                revealer.set_reveal_child(true);
+            }
+        } else if !self.dismissing {
+            if let Some(card) = &self.card {
+                card.update(&self.notification);
+            }
         }
     }
-    lines.join("\n")
+
+    fn start_dismiss_animation(&mut self, sender: FactorySender<Self>) {
+        if self.dismissing {
+            return;
+        }
+
+        self.dismissing = true;
+
+        if let Some(card) = &self.card {
+            card.set_dismissing(true);
+        }
+
+        if let Some(revealer) = &self.revealer {
+            revealer.set_reveal_child(false);
+        }
+
+        let id = self.notification.id;
+        let input_sender = sender.input_sender().clone();
+
+        glib::timeout_add_local_once(
+            Duration::from_millis(NOTIFICATION_EXIT_ANIMATION_MS),
+            move || {
+                let _ = input_sender.send(NotificationRowInput::DismissFinished(id));
+            },
+        );
+    }
 }

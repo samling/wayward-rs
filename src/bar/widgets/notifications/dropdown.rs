@@ -227,21 +227,39 @@ impl SimpleComponent for NotificationsDropdown {
 impl NotificationsDropdown {
     fn sync_row_slots(&mut self, notifications: Vec<NotificationToast>) {
         let mut rows = self.rows.guard();
+        let target_ids = notifications
+            .iter()
+            .map(|notification| notification.id)
+            .collect::<Vec<_>>();
 
-        let shared_len = rows.len().min(notifications.len());
+        for index in (0..rows.len()).rev() {
+            if !target_ids.contains(&rows[index].id()) {
+                rows.remove(index);
+            }
+        }
 
-        for (index, notification) in notifications.iter().take(shared_len).enumerate() {
-            if let Some(row) = rows.get_mut(index) {
-                row.set_notification(notification.clone());
+        for (target_index, notification) in notifications.iter().enumerate() {
+            if target_index < rows.len() && rows[target_index].id() == notification.id {
+                if let Some(row) = rows.get_mut(target_index) {
+                    row.set_notification(notification.clone());
+                }
+                continue;
+            }
+
+            let existing_index = rows.iter().position(|row| row.id() == notification.id);
+
+            if let Some(existing_index) = existing_index {
+                rows.move_to(existing_index, target_index);
+                if let Some(row) = rows.get_mut(target_index) {
+                    row.set_notification(notification.clone());
+                }
+            } else {
+                rows.insert(target_index, notification.clone());
             }
         }
 
         while rows.len() > notifications.len() {
             rows.pop_back();
-        }
-
-        for notification in notifications.into_iter().skip(shared_len) {
-            rows.push_back(notification);
         }
     }
 }

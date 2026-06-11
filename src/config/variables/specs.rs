@@ -682,16 +682,16 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
     StyleSettingSpec {
         section: "Notification cards",
         group: "notifications",
-        key: "normal-border-width",
-        path: &["style", "notifications", "normal-border-width"],
+        key: "indicator-border-width",
+        path: &["style", "notifications", "indicator-border-width"],
         setting: Some(SettingUiSpec::Number {
-            label: "Normal border width",
-            default: 1,
+            label: "Indicator border width",
+            default: 4,
             min: 0.0,
             max: 8.0,
             step: 1.0,
         }),
-        variable: "--notification-normal-border-width",
+        variable: "--notification-indicator-border-width",
         css_kind: CssValueKind::Integer { unit: "px" },
     },
     StyleSettingSpec {

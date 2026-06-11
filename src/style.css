@@ -550,22 +550,29 @@ levelbar.osd-level block.filled {
     margin-bottom: 0;
 }
 
-.notification-list-row {
+.notification-list-row-wrapper {
+    background: transparent;
+}
+
+.notification-card {
     background-color: var(--notification-row-background-color, rgba(241, 243, 244, 0.055));
+    background-image: none;
     border: 1px solid var(--notification-row-border-color, rgba(241, 243, 244, 0.12));
-    border-left-width: 3px;
     border-radius: 6px;
+    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 transparent;
     color: inherit;
     padding: 0.7em;
     transform: scale(1);
     transform-origin: center;
     transition:
         transform 140ms ease-out,
+        opacity 140ms ease-out,
         background-color 140ms ease-out,
-        border-color 140ms ease-out;
+        border-color 140ms ease-out,
+        box-shadow 140ms ease-out;
 }
 
-.notification-list-row:hover {
+.notification-card:hover {
     background-color: var(--notification-row-hover-background-color, rgba(241, 243, 244, 0.085));
     border-top-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
     border-right-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
@@ -573,19 +580,25 @@ levelbar.osd-level block.filled {
     transform: scale(1.015);
 }
 
-.notification-list-row.low {
-    border-left-color: var(--notification-row-low-border-color, rgba(241, 243, 244, 0.28));
+.notification-card.dismissing,
+.notification-card.dismissing:hover {
+    opacity: 0;
+    transform: translateX(48px) scale(0.98);
 }
 
-.notification-list-row.normal {
-    border-left-color: var(--notification-row-normal-border-color, rgba(137, 180, 250, 0.8));
+.notification-card.low {
+    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-low-border-color, rgba(241, 243, 244, 0.28));
 }
 
-.notification-list-row.critical {
-    border-left-color: var(--notification-row-critical-border-color, rgba(242, 139, 130, 0.9));
+.notification-card.normal {
+    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-normal-border-color, rgba(137, 180, 250, 0.8));
 }
 
-.notification-list-icon {
+.notification-card.critical {
+    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-critical-border-color, rgba(242, 139, 130, 0.9));
+}
+
+.notification-card-icon {
     -gtk-icon-size: var(--notification-list-icon-size, 30px);
     color: inherit;
     margin-top: 0.1em;
@@ -593,33 +606,37 @@ levelbar.osd-level block.filled {
     opacity: 0.95;
 }
 
-.notification-list-text {
+.notification-card-text {
     color: inherit;
     font-family: var(--notification-font-family, "Adwaita Sans");
 }
 
-.notification-list-app-name {
+.notification-card-message {
+    margin-top: 0;
+}
+
+.notification-card-app-name {
     font-size: 0.86em;
     font-weight: 600;
     opacity: 0.68;
 }
 
-.notification-list-summary {
+.notification-card-summary {
     font-size: 1.15em;
     font-weight: 600;
 }
 
-.notification-list-body {
+.notification-card-body {
     font-size: 1.1em;
-    font-weight: 500;
+    font-weight: var(--notification-body-font-weight, 500);
     opacity: 0.82;
 }
 
-.notification-list-actions {
+.notification-card-actions {
     margin-top: 0.45em;
 }
 
-.notification-list-action {
+.notification-card-action {
     background: transparent;
     background-image: none;
     border: 1px solid var(--notification-list-action-border-color, rgba(241, 243, 244, 0.16));
@@ -630,27 +647,38 @@ levelbar.osd-level block.filled {
     padding: 0.25em 0.55em;
 }
 
-.notification-list-action:hover {
+.notification-card-action:hover {
     background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
     border-color: var(--notification-list-action-hover-border-color, rgba(137, 180, 250, 0.65));
 }
 
-.notification-list-dismiss,
-.notification-list-dismiss.flat {
+.notification-card-dismiss,
+.notification-card-dismiss.flat,
+.notification-card-message-button,
+.notification-card-message-button.flat {
     background: transparent;
     background-image: none;
     border: none;
-    border-radius: 999px;
     box-shadow: none;
     color: inherit;
     min-height: 0;
     min-width: 0;
+}
+
+.notification-card-dismiss,
+.notification-card-dismiss.flat {
+    border-radius: 999px;
     opacity: 0.62;
     padding: 0.25em;
 }
 
-.notification-list-dismiss:hover,
-.notification-list-dismiss.flat:hover {
+.notification-card-message-button,
+.notification-card-message-button.flat {
+    padding: 0;
+}
+
+.notification-card-dismiss:hover,
+.notification-card-dismiss.flat:hover {
     background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
     opacity: 1;
 }
@@ -674,85 +702,20 @@ levelbar.osd-level block.filled {
 }
 
 .notification-toast {
-    border-width: var(--notification-normal-border-width, 1px);
-    border-color: var(--notification-toast-border-color, rgba(241, 243, 244, 0.28));
-    min-width: 18em;
-    padding: 0;
+    min-width: 320px;
 }
 
-.notification-toast.critical {
-    border-color: var(--notification-toast-critical-border-color, rgba(242, 139, 130, 0.85));
+.notification-toast.notification-card {
+    background-color: var(--notification-toast-background-color, var(--surface-background-color, rgba(30, 30, 46, 1)));
+    padding: 0.85em 0.7em;
 }
 
-.notification-header {
-    border-bottom: 1px solid var(--notification-toast-border-color, rgba(241, 243, 244, 0.28));
-    padding: 0.55em 0.65em;
-}
-
-.notification-app-icon {
-    -gtk-icon-size: 1.35em;
-    color: inherit;
-    min-width: 1.35em;
-}
-
-.notification-app-name,
-.notification-summary {
-    font-weight: 600;
-}
-
-.notification-close,
-.notification-content-button,
-.notification-content-button.flat {
-    background: transparent;
-    background-image: none;
-    border: none;
-    box-shadow: none;
-    color: inherit;
-    min-height: 0;
-    min-width: 0;
-}
-
-.notification-close {
-    padding: 0.15em;
-}
-
-.notification-content {
-    padding: 0.65em;
-}
-
-.notification-content-button,
-.notification-content-button.flat {
-    padding: 0;
-}
-
-.notification-body {
-    font-weight: var(--notification-body-font-weight, 400);
-    opacity: 1;
-}
-
-.notification-actions {
-    border-top: 1px solid var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
-    padding: 0.5em 0.65em 0.65em;
-}
-
-.notification-action {
-    background: transparent;
-    background-image: none;
-    border: 1px solid var(--notification-action-border-color, rgba(241, 243, 244, 0.18));
-    border-radius: 6px;
-    box-shadow: none;
-    color: inherit;
-    min-height: 0;
-    padding: 0.3em 0.55em;
-}
-
-.notification-action:hover {
-    background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
-    border-color: var(--notification-list-action-hover-border-color, rgba(137, 180, 250, 0.65));
+.notification-toast.notification-card:hover {
+    background-color: var(--notification-toast-hover-background-color, rgba(38, 38, 54, 1));
 }
 
 .action-menu-dropdown-content {
-    min-width: 13em;
+    min-width: var(--action-menu-panel-width, 320px);
 }
 
 .action-menu-header {
