@@ -152,11 +152,15 @@ fn default_show_label() -> bool {
 
 impl ActionMenuActionConfig {
     fn screenshot(label: &str, icon: &str, mode: &str) -> Self {
+        let screenshot_path = dirs::home_dir()
+            .map(|home| home.join(".local/bin/screenshot"))
+            .unwrap_or_else(|| std::path::PathBuf::from(".local/bin/screenshot"));
+
         Self {
             label: label.to_string(),
             icon: Some(icon.to_string()),
             action: ActionMenuActionKind::Command,
-            command: Some("screenshot".to_string()),
+            command: Some(screenshot_path.to_string_lossy().to_string()),
             args: vec![mode.to_string()],
             class: Some("action-menu-screenshot-action".to_string()),
             tooltip: Some(format!("Screenshot {}", label.to_lowercase())),
