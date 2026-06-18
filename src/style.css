@@ -941,3 +941,54 @@ levelbar.osd-level block.filled {
   border-color: var(--settings-token-drop-border-color, rgba(125, 200, 255, 0.95));
   background-color: var(--settings-token-drop-background-color, rgba(125, 200, 255, 0.18));
 }
+
+.updates-content {
+  border-spacing: 0.3em;
+}
+
+.updates-count {
+  font-weight: 600;
+}
+
+.updates-dropdown-content {
+  min-width: 24em;
+}
+
+.updates-error {
+  color: #f28b82;
+  font-weight: 500;
+}
+
+.updates-empty {
+  opacity: 0.72;
+}
+
+.updates-row {
+  padding: 0.45em 0.6em;
+  border: 1px solid rgba(241, 243, 244, 0.12);
+  border-radius: 6px;
+  background-color: rgba(241, 243, 244, 0.05);
+}
+
+.updates-row.warning {
+  border-color: rgba(253, 214, 100, 0.65);
+  background-color: rgba(253, 214, 100, 0.08);
+}
+
+.updates-row.critical {
+  border-color: rgba(242, 139, 130, 0.8);
+  background-color: rgba(242, 139, 130, 0.1);
+}
+
+.updates-package-name {
+  font-weight: 600;
+}
+
+.updates-version {
+  opacity: 0.78;
+}
+
+.updates-new-version {
+  color: #f1f3f4;
+  opacity: 1;
+}

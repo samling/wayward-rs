@@ -1,4 +1,5 @@
 use crate::bar::widgets::systray::view_model::SystrayItemSummary;
+use crate::bar::widgets::updates::model::UpdatesSnapshot;
 use crate::bar::widgets::workspaces::model::WorkspaceSummary;
 use crate::notifications::model::NotificationToast;
 use wayle_battery::types::DeviceState;
@@ -11,6 +12,7 @@ pub(crate) enum BarItemState {
     Clock(ClockState),
     Systray(SystrayState),
     Notifications(NotificationState),
+    Updates(UpdatesState),
 }
 
 #[derive(Clone, Debug)]
@@ -71,10 +73,17 @@ impl BarItemState {
             Self::Clock(_) => "clock",
             Self::Systray(_) => "systray",
             Self::Notifications(_) => "notifications",
+            Self::Updates(_) => "updates",
         }
     }
 
     pub(crate) fn same_widget_as(&self, other: &Self) -> bool {
         self.widget_id() == other.widget_id()
     }
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum UpdatesState {
+    Ready(UpdatesSnapshot),
+    Unavailable(String),
 }
