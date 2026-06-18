@@ -11,7 +11,8 @@ use relm4::prelude::*;
 
 use crate::bar::state::{BarItemState, UpdatesState};
 use crate::bar::widget::{
-    BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetInstance, WidgetEvent, WidgetAction,
+    BarContext, BarWidget, BarWidgetRuntime, WidgetAction, WidgetBuildContext, WidgetEvent,
+    WidgetInstance,
 };
 use crate::services::ShellServices;
 
@@ -69,7 +70,7 @@ impl BarWidget for UpdatesWidget {
             })
             .detach();
 
-            Box::new(UpdatesRuntime{ controller })
+        Box::new(UpdatesRuntime { controller })
     }
 
     fn initial_state(&self) -> Option<BarItemState> {

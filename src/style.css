@@ -950,8 +950,39 @@ levelbar.osd-level block.filled {
   font-weight: 600;
 }
 
+.updates.refreshing .updates-count {
+  color: #89b4fa;
+}
+
 .updates-dropdown-content {
   min-width: 24em;
+}
+
+.updates-dropdown-header {
+  min-height: 2em;
+}
+
+.updates-refreshing {
+  color: #89b4fa;
+  font-weight: 600;
+}
+
+.updates-refresh-button,
+.updates-refresh-button.flat {
+  background: transparent;
+  background-image: none;
+  border: 1px solid rgba(241, 243, 244, 0.14);
+  border-radius: 6px;
+  color: inherit;
+  min-height: 1.8em;
+  min-width: 1.8em;
+  padding: 0;
+}
+
+.updates-refresh-button:hover,
+.updates-refresh-button.flat:hover {
+  background: rgba(241, 243, 244, 0.08);
+  border-color: rgba(137, 180, 250, 0.65);
 }
 
 .updates-error {

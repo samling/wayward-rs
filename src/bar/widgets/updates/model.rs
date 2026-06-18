@@ -52,7 +52,7 @@ impl UpdateSeverityMatcher {
     pub(super) fn severity_for(&self, package_name: &str) -> UpdateSeverity {
         if self.critical.is_match(package_name) {
             UpdateSeverity::Critical
-        } else if self.warning.is_match(package_name){
+        } else if self.warning.is_match(package_name) {
             UpdateSeverity::Warning
         } else {
             UpdateSeverity::Normal
@@ -135,11 +135,8 @@ mod tests {
 
     #[test]
     fn classifies_package_severity_by_glob() {
-        let matcher = UpdateSeverityMatcher::new(
-            &["linux*".to_string()],
-            &["mesa".to_string()],
-        )
-        .unwrap();
+        let matcher =
+            UpdateSeverityMatcher::new(&["linux*".to_string()], &["mesa".to_string()]).unwrap();
 
         assert_eq!(matcher.severity_for("linux"), UpdateSeverity::Critical);
         assert_eq!(

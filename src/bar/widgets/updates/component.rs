@@ -8,7 +8,9 @@ use crate::bar::layout::BarEdge;
 use crate::bar::widget::{BarRegion, WidgetAction, WidgetEvent};
 use crate::bar::widgets::updates::service::UpdatesServiceConfig;
 
-use super::dropdown::{UpdatesDropdown, UpdatesDropdownInit, UpdatesDropdownInput};
+use super::dropdown::{
+    UpdatesDropdown, UpdatesDropdownInit, UpdatesDropdownInput, UpdatesDropdownOutput,
+};
 use super::model::UpdatesSnapshot;
 
 pub(super) struct UpdatesComponent {
@@ -26,6 +28,7 @@ pub(super) enum UpdatesInput {
     SetPlacement { edge: BarEdge, region: BarRegion },
     SetSnapshot(UpdatesSnapshot),
     SetUnavailable(String),
+    RefreshRequested,
 }
 
 pub(super) struct UpdatesInit {
@@ -45,9 +48,9 @@ impl SimpleComponent for UpdatesComponent {
         gtk::MenuButton {
             set_always_show_arrow: false,
             set_cursor_from_name: Some("pointer"),
-            add_css_class: "bar-item",
-            add_css_class: "updates",
-            add_css_class: "flat",
+
+            #[watch]
+            set_css_classes: &model.root_css_classes(),
 
             #[watch]
             set_tooltip_text: model.tooltip_text().as_deref(),
@@ -77,14 +80,16 @@ impl SimpleComponent for UpdatesComponent {
     fn init(
         init: Self::Init,
         root: Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let dropdown = UpdatesDropdown::builder()
             .launch(UpdatesDropdownInit {
                 edge: init.edge,
                 region: init.region,
             })
-            .detach();
+            .forward(sender.input_sender(), |output| match output {
+                UpdatesDropdownOutput::RefreshRequested => UpdatesInput::RefreshRequested,
+            });
 
         let model = Self {
             edge: init.edge,
@@ -96,10 +101,8 @@ impl SimpleComponent for UpdatesComponent {
             config: init.config,
         };
 
-        let _updates_watcher = super::service::start(
-            model.bar_sender.clone(),
-            model.config.clone(),
-        );
+        let _updates_watcher =
+            super::service::start(model.bar_sender.clone(), model.config.clone());
 
         let widgets = view_output!();
 
@@ -108,12 +111,19 @@ impl SimpleComponent for UpdatesComponent {
         let bar_sender = model.bar_sender.clone();
         root.connect_notify_local(Some("active"), move |button, _| {
             if button.is_active() {
-                let _ = bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
-                    widget_id: "updates",
-                    action: WidgetAction::RefreshUpdates,
-                }));
+                send_refresh_request(&bar_sender);
             }
         });
+
+        let right_click = gtk::GestureClick::new();
+        right_click.set_button(gtk::gdk::BUTTON_SECONDARY);
+
+        let bar_sender = model.bar_sender.clone();
+        right_click.connect_released(move |_, _, _, _| {
+            send_refresh_request(&bar_sender);
+        });
+
+        root.add_controller(right_click);
 
         ComponentParts { model, widgets }
     }
@@ -138,6 +148,9 @@ impl SimpleComponent for UpdatesComponent {
                 self.snapshot = None;
                 self.unavailable = Some(error);
             }
+            UpdatesInput::RefreshRequested => {
+                send_refresh_request(&self.bar_sender);
+            }
         }
     }
 }
@@ -159,4 +172,28 @@ impl UpdatesComponent {
                 .map(|snapshot| format!("{} update(s)", snapshot.packages.len()))
         }
     }
+
+    fn root_css_classes(&self) -> Vec<&'static str> {
+        let mut classes = vec!["bar-item", "updates", "flat"];
+
+        if self.is_refreshing() {
+            classes.push("refreshing");
+        }
+
+        classes
+    }
+
+    fn is_refreshing(&self) -> bool {
+        self.snapshot
+            .as_ref()
+            .map(|snapshot| snapshot.refreshing)
+            .unwrap_or(false)
+    }
+}
+
+fn send_refresh_request(bar_sender: &relm4::Sender<BarMsg>) {
+    let _ = bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
+        widget_id: "updates",
+        action: WidgetAction::RefreshUpdates,
+    }));
 }

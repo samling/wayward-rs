@@ -29,11 +29,16 @@ pub(super) enum UpdatesDropdownInput {
     SetUnavailable(String),
 }
 
+#[derive(Debug)]
+pub(super) enum UpdatesDropdownOutput {
+    RefreshRequested,
+}
+
 #[relm4::component(pub(super))]
 impl SimpleComponent for UpdatesDropdown {
     type Init = UpdatesDropdownInit;
     type Input = UpdatesDropdownInput;
-    type Output = ();
+    type Output = UpdatesDropdownOutput;
 
     view! {
         #[root]
@@ -99,6 +104,25 @@ impl SimpleComponent for UpdatesDropdown {
 
                             set_text: "Refreshing",
                         },
+
+                        gtk::Button {
+                            add_css_class: "updates-refresh-button",
+                            add_css_class: "flat",
+                            set_cursor_from_name: Some("pointer"),
+                            set_tooltip_text: Some("Refresh updates"),
+
+                            #[watch]
+                            set_sensitive: !model.refreshing,
+
+                            #[wrap(Some)]
+                            set_child = &gtk::Image {
+                                set_icon_name: Some("view-refresh-symbolic"),
+                            },
+
+                            connect_clicked[sender] => move |_| {
+                                let _ = sender.output(UpdatesDropdownOutput::RefreshRequested);
+                            },
+                        },
                     },
 
                     gtk::Label {
@@ -150,12 +174,10 @@ impl SimpleComponent for UpdatesDropdown {
     fn init(
         init: Self::Init,
         _root: Self::Root,
-        _sender: ComponentSender<Self>,
+        sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let list = gtk::ListBox::default();
-        let rows = FactoryVecDeque::builder()
-            .launch(list.clone())
-            .detach();
+        let rows = FactoryVecDeque::builder().launch(list.clone()).detach();
 
         let model = Self {
             edge: init.edge,
@@ -204,7 +226,10 @@ impl UpdatesDropdown {
         let mut rows = self.rows.guard();
 
         for index in (0..rows.len()).rev() {
-            if !packages.iter().any(|package| package.name == rows[index].name()) {
+            if !packages
+                .iter()
+                .any(|package| package.name == rows[index].name())
+            {
                 rows.remove(index);
             }
         }

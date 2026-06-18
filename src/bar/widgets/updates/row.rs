@@ -53,8 +53,12 @@ impl FactoryComponent for UpdateRow {
         }
     }
 
-    fn init_model(package: Self::Init, _index: &DynamicIndex, _sender: FactorySender<Self>) -> Self {
-       Self { package } 
+    fn init_model(
+        package: Self::Init,
+        _index: &DynamicIndex,
+        _sender: FactorySender<Self>,
+    ) -> Self {
+        Self { package }
     }
 }
 
