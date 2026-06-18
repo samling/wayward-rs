@@ -1,4 +1,4 @@
-use std::process::Stdio;
+use std::process::{Stdio, Output};
 use std::time::Duration;
 use std::sync::OnceLock;
 
@@ -113,9 +113,12 @@ async fn load_updates(config: &UpdatesServiceConfig) -> Result<UpdatesSnapshot, 
         .await
         .map_err(|error| format!("failed to run checkupdates: {error}"))?;
 
-    if !output.status.success() {
-        let stderr = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("checkupdates failed: {}", stderr.trim()));
+    if !output.status.success() && output.status.code() != Some(2) {
+        return Err(format!(
+            "checkupdates failed ({}): {}",
+            output.status,
+            command_output_message(&output)
+        ));
     }
 
     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -133,4 +136,18 @@ async fn load_updates(config: &UpdatesServiceConfig) -> Result<UpdatesSnapshot, 
 
 fn updates_message(state: UpdatesState) -> BarMsg {
     BarMsg::ItemStateChanged(BarItemState::Updates(state))
+}
+
+fn command_output_message(output: &Output) -> String {
+    let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+    if !stderr.is_empty() {
+        return stderr;
+    }
+
+    let stdout = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    if !stdout.is_empty() {
+        return stdout;
+    }
+
+    "no output".to_string()
 }
