@@ -65,6 +65,19 @@ impl SimpleComponent for UpdatesComponent {
                 gtk::Image {
                     add_css_class: "updates-icon",
                     set_icon_name: Some("software-update-available-symbolic"),
+
+                    #[watch]
+                    set_visible: !model.is_refreshing(),
+                },
+
+                gtk::Spinner {
+                    add_css_class: "updates-spinner",
+
+                    #[watch]
+                    set_visible: model.is_refreshing(),
+
+                    #[watch]
+                    set_spinning: model.is_refreshing(),
                 },
 
                 gtk::Label {

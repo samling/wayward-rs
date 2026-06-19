@@ -48,6 +48,9 @@
     border-radius: 0;
     box-shadow: none;
     color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
     min-height: 0;
     min-width: 0;
     outline: none;
@@ -85,6 +88,9 @@ menubutton.bar-item > button.toggle {
     border-radius: inherit;
     box-shadow: none;
     color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    font-weight: inherit;
     min-height: 0;
     min-width: 0;
     outline: none;
@@ -148,7 +154,6 @@ menubutton.action-menu > button.toggle {
 
 .workspace-label {
     background: transparent;
-    font-weight: 600;
     padding: 0;
 }
 
@@ -173,7 +178,6 @@ menubutton.action-menu > button.toggle {
 .workspace-indicator {
     background-color: var(--workspace-indicator-background-color, rgba(137, 180, 250, 0.5));
     border-radius: var(--workspace-indicator-border-radius, 6px);
-    margin: -4px;
     min-height: var(--workspace-indicator-size, 8px);
     min-width: var(--workspace-indicator-size, 8px);
     padding: 0;
@@ -946,12 +950,10 @@ levelbar.osd-level block.filled {
   border-spacing: 0.3em;
 }
 
-.updates-count {
-  font-weight: 600;
-}
-
-.updates.refreshing .updates-count {
-  color: #89b4fa;
+.updates-icon,
+.updates-spinner {
+  min-height: 1em;
+  min-width: 1em;
 }
 
 .updates-dropdown-content {

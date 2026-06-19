@@ -191,6 +191,58 @@ mod tests {
     }
 
     #[test]
+    fn default_css_bar_facing_labels_do_not_override_font_weight() {
+        for selector in [".workspace-label", ".updates-count"] {
+            let rule = DEFAULT_CSS
+                .split(selector)
+                .nth(1)
+                .and_then(|css| css.split_once('}'))
+                .map(|(rule, _)| rule);
+
+            if let Some(rule) = rule {
+                assert!(!rule.contains("font-weight:"));
+            }
+        }
+    }
+
+    #[test]
+    fn default_css_bar_menu_buttons_inherit_font_weight() {
+        for selector in [".bar-item {", "menubutton.bar-item > button,"] {
+            let rule = DEFAULT_CSS
+                .split(selector)
+                .nth(1)
+                .and_then(|css| css.split_once('}'))
+                .map(|(rule, _)| rule)
+                .unwrap_or_else(|| panic!("{selector} rule should exist"));
+
+            assert!(rule.contains("font-weight: inherit;"));
+        }
+    }
+
+    #[test]
+    fn default_css_does_not_use_negative_margins() {
+        assert!(!DEFAULT_CSS.contains("margin: -"));
+        assert!(!DEFAULT_CSS.contains("margin-top: -"));
+        assert!(!DEFAULT_CSS.contains("margin-bottom: -"));
+        assert!(!DEFAULT_CSS.contains("margin-left: -"));
+        assert!(!DEFAULT_CSS.contains("margin-right: -"));
+        assert!(!DEFAULT_CSS.contains("margin-start: -"));
+        assert!(!DEFAULT_CSS.contains("margin-end: -"));
+    }
+
+    #[test]
+    fn generated_style_config_includes_bar_font_weight() {
+        let mut style = StyleConfig::default();
+        style
+            .bar
+            .insert("font-weight".to_string(), StyleValue::Integer(500));
+
+        let css = generated_style_config(&style);
+
+        assert!(css.contains("--bar-font-weight: 500;"));
+    }
+
+    #[test]
     fn generated_style_config_includes_notification_body_font_weight() {
         let mut style = StyleConfig::default();
         style
