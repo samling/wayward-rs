@@ -149,6 +149,7 @@ impl SimpleComponent for UpdatesDropdown {
                     gtk::ScrolledWindow {
                         add_css_class: "updates-list-scroll",
                         set_policy: (gtk::PolicyType::Never, gtk::PolicyType::Automatic),
+                        set_kinetic_scrolling: true,
                         set_min_content_width: 380,
                         set_propagate_natural_height: true,
                         set_max_content_height: 700,
@@ -191,10 +192,6 @@ impl SimpleComponent for UpdatesDropdown {
         let widgets = view_output!();
 
         dropdown::connect_revealer(&widgets.popover, &widgets.revealer);
-
-        let adjustment = widgets.scroller.vadjustment();
-        adjustment.set_step_increment(72.0);
-        adjustment.set_page_increment(240.0);
 
         ComponentParts { model, widgets }
     }
