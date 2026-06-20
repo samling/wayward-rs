@@ -303,17 +303,17 @@ impl SimpleComponent for BatteryDropdown {
             history_graph,
         };
 
-        if let Ok(history) = load_charge_history() {
-            let recent_history = recent_points(&history, CHARGE_HISTORY_WINDOW_SECONDS);
-            model
-                .history_graph
-                .set_points(graph_points(&recent_history));
-        }
+        refresh_history_graph(&model.history_graph);
 
         let history_graph = model.history_graph.root();
         let widgets = view_output!();
 
         dropdown::connect_revealer(&widgets.popover, &widgets.revealer);
+
+        let history_graph_on_map = model.history_graph.clone();
+        widgets.popover.connect_map(move |_| {
+            refresh_history_graph(&history_graph_on_map);
+        });
 
         ComponentParts { model, widgets }
     }
@@ -364,5 +364,27 @@ impl BatteryDropdown {
 
     fn is_active_profile(&self, profile: PowerProfile) -> bool {
         self.active_profile == Some(profile)
+    }
+}
+
+fn refresh_history_graph(history_graph: &BatteryHistoryGraph) {
+    match load_charge_history() {
+        Ok(history) => {
+            let recent_history = recent_points(&history, CHARGE_HISTORY_WINDOW_SECONDS);
+            let graph = graph_points(&recent_history);
+
+            tracing::debug!(
+                history_points = history.len(),
+                recent_points = recent_history.len(),
+                graph_points = graph.len(),
+                "Loaded battery charge history"
+            );
+
+            history_graph.set_points(graph);
+        }
+        Err(error) => {
+            tracing::warn!(?error, "Failed to load battery charge history");
+            history_graph.set_points(Vec::new());
+        }
     }
 }

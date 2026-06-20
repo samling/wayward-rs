@@ -5,7 +5,9 @@ use std::{cell::RefCell, rc::Rc};
 
 use super::config::{WorkspaceIndicatorEffect, WorkspacesConfig};
 
-#[derive(Clone, Copy, Debug)]
+const INDICATOR_OUTSET: f64 = 4.0;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct IndicatorBounds {
     x: f64,
     y: f64,
@@ -23,6 +25,7 @@ impl IndicatorBounds {
             width: bounds.width() as f64,
             height: bounds.height() as f64,
         })
+        .map(|bounds| bounds.with_outset(INDICATOR_OUTSET))
     }
 
     pub(super) fn apply_to(self, indicator_layer: &gtk::Fixed, indicator: &gtk::Box) {
@@ -32,6 +35,15 @@ impl IndicatorBounds {
         );
         indicator_layer.move_(indicator, self.x, self.y);
         indicator.set_visible(true);
+    }
+
+    fn with_outset(self, outset: f64) -> Self {
+        Self {
+            x: self.x - outset,
+            y: self.y - outset,
+            width: self.width + outset * 2.0,
+            height: self.height + outset * 2.0,
+        }
     }
 
     fn lerp(self, target: Self, progress: f64) -> Self {
@@ -135,6 +147,26 @@ mod tests {
         assert_eq!(
             animation_progress(WorkspaceIndicatorEffect::None, 0.25),
             1.0
+        );
+    }
+
+    #[test]
+    fn bounds_outset_expands_around_center() {
+        let bounds = IndicatorBounds {
+            x: 10.0,
+            y: 20.0,
+            width: 30.0,
+            height: 40.0,
+        };
+
+        assert_eq!(
+            bounds.with_outset(4.0),
+            IndicatorBounds {
+                x: 6.0,
+                y: 16.0,
+                width: 38.0,
+                height: 48.0,
+            }
         );
     }
 }

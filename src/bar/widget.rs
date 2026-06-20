@@ -90,6 +90,7 @@ pub(crate) enum WidgetAction {
         command: ActionMenuCommand,
     },
     OpenSettings,
+    RefreshUpdates,
 }
 
 #[derive(Clone, Debug)]
