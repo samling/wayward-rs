@@ -6,7 +6,7 @@ use wayle_systray::types::Coordinates;
 
 use super::view_model::SystrayItemSummary;
 use crate::bar::state::{BarItemState, SystrayState};
-use crate::bar::widget::{WidgetAction, WidgetEvent};
+use crate::bar::widget::{SystrayAction, WidgetAction, WidgetEvent};
 use crate::shell::ShellMsg;
 
 pub fn start(
@@ -40,12 +40,12 @@ pub async fn run_systray_watcher(
 
 pub(crate) fn handle_event(event: WidgetEvent, service: Option<Arc<SystemTrayService>>) {
     match event.action {
-        WidgetAction::Clicked {
+        WidgetAction::Systray(SystrayAction::Clicked {
             item_id,
             button,
             x,
             y,
-        } => {
+        }) => {
             let bus_name = item_id;
             handle_click(bus_name, button, x, y, service);
         }

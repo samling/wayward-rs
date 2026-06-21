@@ -1,6 +1,6 @@
 use super::row::{NotificationRow, NotificationRowOutput};
 use crate::bar::BarMsg;
-use crate::bar::widget::{WidgetAction, WidgetEvent};
+use crate::bar::widget::{NotificationAction, WidgetAction, WidgetEvent};
 use crate::bar::{dropdown, layout::BarEdge, widget::BarRegion};
 use crate::notifications::model::NotificationToast;
 use relm4::factory::FactoryVecDeque;
@@ -196,25 +196,28 @@ impl SimpleComponent for NotificationsDropdown {
             NotificationsDropdownInput::InvokeDefault(id) => {
                 let _ = self.bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
                     widget_id: "notifications",
-                    action: WidgetAction::InvokeNotificationDefault { id },
+                    action: WidgetAction::Notifications(NotificationAction::InvokeDefault { id }),
                 }));
             }
             NotificationsDropdownInput::InvokeAction { id, action_id } => {
                 let _ = self.bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
                     widget_id: "notifications",
-                    action: WidgetAction::InvokeNotificationAction { id, action_id },
+                    action: WidgetAction::Notifications(NotificationAction::InvokeAction {
+                        id,
+                        action_id,
+                    }),
                 }));
             }
             NotificationsDropdownInput::Dismiss(id) => {
                 let _ = self.bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
                     widget_id: "notifications",
-                    action: WidgetAction::DismissNotification { id },
+                    action: WidgetAction::Notifications(NotificationAction::Dismiss { id }),
                 }));
             }
             NotificationsDropdownInput::DismissAll => {
                 let _ = self.bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
                     widget_id: "notifications",
-                    action: WidgetAction::DismissAllNotifications,
+                    action: WidgetAction::Notifications(NotificationAction::DismissAll),
                 }));
             }
         }

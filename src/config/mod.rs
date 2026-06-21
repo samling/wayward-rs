@@ -63,10 +63,11 @@ fn write_default_file(path: Option<PathBuf>, contents: &str) {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub(crate) enum ConfigValue {
     Integer(i64),
     String(String),
+    StringList(Vec<String>),
     Bool(bool),
 }
 
@@ -76,6 +77,7 @@ impl ConfigValue {
             Self::Bool(value) => toml_edit::value(value),
             Self::Integer(value) => toml_edit::value(value),
             Self::String(value) => toml_edit::value(value),
+            Self::StringList(values) => toml_edit::value(string_array(&values)),
         }
     }
 }
@@ -479,6 +481,11 @@ fn set_document_value(
     path: &[&str],
     value: Option<ConfigValue>,
 ) {
+    let Some(value) = value else {
+        remove_document_value(document.as_item_mut(), path);
+        return;
+    };
+
     let mut item = document.as_item_mut();
 
     for segment in &path[..path.len() - 1] {
@@ -487,12 +494,29 @@ fn set_document_value(
     }
 
     let key = path[path.len() - 1];
+    item[key] = value.into_item();
+}
 
-    if let Some(value) = value {
-        item[key] = value.into_item();
-    } else if let Some(table) = item.as_table_like_mut() {
-        table.remove(key);
+fn remove_document_value(item: &mut toml_edit::Item, path: &[&str]) -> bool {
+    let Some((segment, rest)) = path.split_first() else {
+        return false;
+    };
+
+    let Some(table) = item.as_table_like_mut() else {
+        return false;
+    };
+
+    if rest.is_empty() {
+        table.remove(*segment);
+    } else if let Some(child) = table.get_mut(*segment) {
+        if remove_document_value(child, rest) {
+            table.remove(*segment);
+        }
+    } else {
+        return false;
     }
+
+    table.is_empty()
 }
 
 fn is_valid_bar_edge(edge: &str) -> bool {
@@ -675,6 +699,37 @@ end = []
         .unwrap();
 
         assert_eq!(config.notifications.monitor, None);
+    }
+
+    #[test]
+    fn set_document_value_does_not_create_tables_when_resetting_missing_path() {
+        let mut document = parse_document("");
+
+        set_document_value(
+            &mut document,
+            &["widgets", "updates", "critical-patterns"],
+            None,
+        );
+
+        assert!(document.get("widgets").is_none());
+    }
+
+    #[test]
+    fn set_document_value_removes_empty_tables_after_reset() {
+        let mut document = parse_document(
+            r#"
+[widgets.updates]
+critical-patterns = ["linux-*"]
+"#,
+        );
+
+        set_document_value(
+            &mut document,
+            &["widgets", "updates", "critical-patterns"],
+            None,
+        );
+
+        assert!(document.get("widgets").is_none());
     }
 
     fn config_with_notification_monitor(monitor: Option<&str>) -> AppConfig {

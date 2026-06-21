@@ -1,5 +1,6 @@
 use crate::bar::widgets::systray::view_model::SystrayItemSummary;
 use crate::bar::widgets::updates::model::UpdatesSnapshot;
+use crate::bar::widgets::volume::model::VolumeSnapshot;
 use crate::bar::widgets::workspaces::model::WorkspaceSummary;
 use crate::notifications::model::NotificationToast;
 use wayle_battery::types::DeviceState;
@@ -13,6 +14,8 @@ pub(crate) enum BarItemState {
     Systray(SystrayState),
     Notifications(NotificationState),
     Updates(UpdatesState),
+    Volume(VolumeState),
+    Brightness(BrightnessState),
 }
 
 #[derive(Clone, Debug)]
@@ -74,6 +77,8 @@ impl BarItemState {
             Self::Systray(_) => "systray",
             Self::Notifications(_) => "notifications",
             Self::Updates(_) => "updates",
+            Self::Volume(_) => "volume",
+            Self::Brightness(_) => "brightness",
         }
     }
 
@@ -86,4 +91,21 @@ impl BarItemState {
 pub(crate) enum UpdatesState {
     Ready(UpdatesSnapshot),
     Unavailable(String),
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum VolumeState {
+    Ready(VolumeSnapshot),
+    Unavailable(String),
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum BrightnessState {
+    Ready(BrightnessSnapshot),
+    Unavailable(String),
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct BrightnessSnapshot {
+    pub(crate) percent: f64,
 }

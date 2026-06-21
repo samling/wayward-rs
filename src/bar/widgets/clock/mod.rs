@@ -19,6 +19,8 @@ use self::component::{ClockComponent, ClockInit, ClockInput};
 
 pub(crate) struct ClockWidget;
 
+pub(crate) static WIDGET: ClockWidget = ClockWidget;
+
 struct ClockRuntime {
     controller: Controller<ClockComponent>,
 }

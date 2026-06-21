@@ -5,7 +5,7 @@ use relm4::{ComponentController, Controller};
 
 use crate::bar::BarMsg;
 use crate::bar::layout::BarEdge;
-use crate::bar::widget::{BarRegion, WidgetAction, WidgetEvent};
+use crate::bar::widget::{BarRegion, UpdatesAction, WidgetAction, WidgetEvent};
 use crate::bar::widgets::updates::service::UpdatesServiceConfig;
 
 use super::dropdown::{
@@ -207,6 +207,6 @@ impl UpdatesComponent {
 fn send_refresh_request(bar_sender: &relm4::Sender<BarMsg>) {
     let _ = bar_sender.send(BarMsg::WidgetEvent(WidgetEvent {
         widget_id: "updates",
-        action: WidgetAction::RefreshUpdates,
+        action: WidgetAction::Updates(UpdatesAction::Refresh),
     }));
 }

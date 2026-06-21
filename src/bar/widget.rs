@@ -69,28 +69,61 @@ pub(crate) struct WidgetEvent {
 
 #[derive(Clone, Debug)]
 pub(crate) enum WidgetAction {
+    ActionMenu(ActionMenuAction),
+    Brightness(BrightnessAction),
+    Notifications(NotificationAction),
+    Systray(SystrayAction),
+    Updates(UpdatesAction),
+    Volume(VolumeAction),
+    Workspaces(WorkspaceAction),
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum ActionMenuAction {
+    Run { command: ActionMenuCommand },
+    OpenSettings,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum BrightnessAction {
+    SetBrightness { percent: f64 },
+    RunBlueLightCommand { command: String },
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum NotificationAction {
+    InvokeDefault { id: u32 },
+    InvokeAction { id: u32, action_id: String },
+    Dismiss { id: u32 },
+    DismissAll,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum SystrayAction {
     Clicked {
         item_id: String,
         button: u32,
         x: i32,
         y: i32,
     },
-    InvokeNotificationDefault {
-        id: u32,
-    },
-    InvokeNotificationAction {
-        id: u32,
-        action_id: String,
-    },
-    DismissNotification {
-        id: u32,
-    },
-    DismissAllNotifications,
-    RunActionMenuAction {
-        command: ActionMenuCommand,
-    },
-    OpenSettings,
-    RefreshUpdates,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum UpdatesAction {
+    Refresh,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum VolumeAction {
+    SetOutputVolume { percent: f64 },
+    ToggleOutputMute,
+    SetDefaultOutput { key: u32 },
+    SetDefaultInput { key: u32 },
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum WorkspaceAction {
+    Clicked { item_id: String, button: u32 },
 }
 
 #[derive(Clone, Debug)]

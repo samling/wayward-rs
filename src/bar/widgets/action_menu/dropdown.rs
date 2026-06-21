@@ -2,7 +2,7 @@ use relm4::gtk;
 use relm4::gtk::prelude::*;
 use relm4::prelude::*;
 
-use crate::bar::widget::{ActionMenuCommand, WidgetAction, WidgetEvent};
+use crate::bar::widget::{ActionMenuAction, ActionMenuCommand, WidgetAction, WidgetEvent};
 use crate::bar::{BarMsg, dropdown, layout::BarEdge, widget::BarRegion};
 
 use super::config::{
@@ -111,14 +111,16 @@ fn widget_action(action: &ActionMenuActionConfig) -> Option<WidgetAction> {
                 return None;
             };
 
-            Some(WidgetAction::RunActionMenuAction {
+            Some(WidgetAction::ActionMenu(ActionMenuAction::Run {
                 command: ActionMenuCommand {
                     program,
                     args: action.args.clone(),
                 },
-            })
+            }))
         }
-        ActionMenuActionKind::OpenSettings => Some(WidgetAction::OpenSettings),
+        ActionMenuActionKind::OpenSettings => {
+            Some(WidgetAction::ActionMenu(ActionMenuAction::OpenSettings))
+        }
     }
 }
 

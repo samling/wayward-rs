@@ -18,6 +18,8 @@ use self::component::{NotificationsComponent, NotificationsInit, NotificationsIn
 
 pub(crate) struct NotificationsWidget;
 
+pub(crate) static WIDGET: NotificationsWidget = NotificationsWidget;
+
 struct NotificationsRuntime {
     controller: Controller<NotificationsComponent>,
 }

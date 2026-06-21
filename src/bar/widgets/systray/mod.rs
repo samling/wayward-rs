@@ -44,6 +44,8 @@ impl BarWidgetRuntime for SystrayRuntime {
 
 pub(crate) struct SystrayWidget;
 
+pub(crate) static WIDGET: SystrayWidget = SystrayWidget;
+
 impl BarWidget for SystrayWidget {
     fn id(&self) -> &'static str {
         ID

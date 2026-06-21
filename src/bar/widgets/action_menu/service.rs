@@ -1,10 +1,10 @@
 use std::process::Command;
 
-use crate::bar::widget::{ActionMenuCommand, WidgetAction, WidgetEvent};
+use crate::bar::widget::{ActionMenuAction, ActionMenuCommand, WidgetAction, WidgetEvent};
 
 pub(super) fn handle_event(event: WidgetEvent) {
     match event.action {
-        WidgetAction::RunActionMenuAction { command } => handle_command(command),
+        WidgetAction::ActionMenu(ActionMenuAction::Run { command }) => handle_command(command),
         _ => {}
     }
 }

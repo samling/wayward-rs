@@ -445,7 +445,10 @@ impl Component for Bar {
                 self.apply_state_to_mounted_widgets(&state);
             }
             BarMsg::WidgetEvent(event) => {
-                if matches!(event.action, WidgetAction::OpenSettings) {
+                if matches!(
+                    event.action,
+                    WidgetAction::ActionMenu(crate::bar::widget::ActionMenuAction::OpenSettings)
+                ) {
                     let _ = sender.output(ShellMsg::OpenSettings);
                 } else {
                     registry::handle_widget_event(event, &self.services);

@@ -2,20 +2,20 @@ use std::sync::Arc;
 
 use wayle_notification::NotificationService;
 
-use crate::bar::widget::{WidgetAction, WidgetEvent};
+use crate::bar::widget::{NotificationAction, WidgetAction, WidgetEvent};
 
 pub(super) fn handle_event(event: WidgetEvent, service: Option<Arc<NotificationService>>) {
     match event.action {
-        WidgetAction::InvokeNotificationDefault { id } => {
+        WidgetAction::Notifications(NotificationAction::InvokeDefault { id }) => {
             invoke_default(id, service);
         }
-        WidgetAction::InvokeNotificationAction { id, action_id } => {
+        WidgetAction::Notifications(NotificationAction::InvokeAction { id, action_id }) => {
             invoke_action(id, action_id, service);
         }
-        WidgetAction::DismissNotification { id } => {
+        WidgetAction::Notifications(NotificationAction::Dismiss { id }) => {
             dismiss_notification(id, service);
         }
-        WidgetAction::DismissAllNotifications => {
+        WidgetAction::Notifications(NotificationAction::DismissAll) => {
             dismiss_all(service);
         }
         _ => {}

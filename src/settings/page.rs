@@ -6,9 +6,10 @@ use relm4::{
     },
     prelude::ComponentSender,
 };
+use std::collections::BTreeMap;
 
 use super::{
-    controls::{color_row, number_row, string_row, toggle_row},
+    controls::{color_row, number_row, string_list_row, string_row, toggle_row},
     spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec},
     window::SettingsWindow,
 };
@@ -16,6 +17,7 @@ use super::{
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct SettingsConfig {
     pub(crate) style: StyleConfig,
+    pub(crate) widgets: BTreeMap<String, toml::value::Table>,
     pub(crate) bars: Vec<BarConfig>,
     pub(crate) available_monitors: Vec<String>,
 }
@@ -24,15 +26,62 @@ impl SettingsConfig {
     pub(crate) fn new(config: &crate::config::AppConfig, available_monitors: Vec<String>) -> Self {
         Self {
             style: config.style.clone(),
+            widgets: config.widgets.clone(),
             bars: config.bars.clone(),
             available_monitors,
         }
+    }
+
+    pub(crate) fn apply_config_value(
+        &mut self,
+        path: &[&str],
+        value: Option<&crate::config::ConfigValue>,
+    ) -> bool {
+        if self.style.apply_config_value(path, value) {
+            return true;
+        }
+
+        let ["widgets", widget, key] = path else {
+            return false;
+        };
+
+        match value {
+            Some(value) => {
+                let table = self.widgets.entry((*widget).to_string()).or_default();
+                table.insert((*key).to_string(), config_value_to_toml(value));
+            }
+            None => {
+                if let Some(table) = self.widgets.get_mut(*widget) {
+                    table.remove(*key);
+                    if table.is_empty() {
+                        self.widgets.remove(*widget);
+                    }
+                }
+            }
+        }
+
+        true
+    }
+}
+
+fn config_value_to_toml(value: &crate::config::ConfigValue) -> toml::Value {
+    match value {
+        crate::config::ConfigValue::Bool(value) => toml::Value::Boolean(*value),
+        crate::config::ConfigValue::Integer(value) => toml::Value::Integer(*value),
+        crate::config::ConfigValue::String(value) => toml::Value::String(value.clone()),
+        crate::config::ConfigValue::StringList(values) => toml::Value::Array(
+            values
+                .iter()
+                .map(|value| toml::Value::String(value.clone()))
+                .collect(),
+        ),
     }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum SettingsPage {
     Appearance,
+    Widgets,
     BarLayout,
 }
 
@@ -40,6 +89,7 @@ impl SettingsPage {
     pub(crate) fn title(self) -> &'static str {
         match self {
             Self::Appearance => "Appearance",
+            Self::Widgets => "Widgets",
             Self::BarLayout => "Bar Layout",
         }
     }
@@ -57,6 +107,11 @@ pub(crate) fn render_current_page(
     match active_page {
         SettingsPage::Appearance => {
             let page = super::pages::notifications::page(&config.style);
+            title.set_label(&page.title);
+            render_page(container, page, sender);
+        }
+        SettingsPage::Widgets => {
+            let page = super::pages::widgets::page(&config.widgets);
             title.set_label(&page.title);
             render_page(container, page, sender);
         }
@@ -126,6 +181,9 @@ fn render_section(
             SettingSpec::String(setting) => {
                 group.append(&string_row(setting, sender));
             }
+            SettingSpec::StringList(setting) => {
+                group.append(&string_list_row(setting, sender));
+            }
             SettingSpec::Color(setting) => {
                 group.append(&color_row(setting, sender));
             }
@@ -134,4 +192,82 @@ fn render_section(
 
     section_box.append(&group);
     container.append(&section_box);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::config::ConfigValue;
+
+    #[test]
+    fn settings_config_applies_widget_string_value() {
+        let mut config = SettingsConfig {
+            style: StyleConfig::default(),
+            widgets: BTreeMap::new(),
+            bars: Vec::new(),
+            available_monitors: Vec::new(),
+        };
+
+        assert!(config.apply_config_value(
+            &["widgets", "brightness", "blue-light-enable-command"],
+            Some(&ConfigValue::String("sunsetr".to_string())),
+        ));
+
+        let value = config
+            .widgets
+            .get("brightness")
+            .and_then(|table| table.get("blue-light-enable-command"))
+            .and_then(|value| value.as_str());
+
+        assert_eq!(value, Some("sunsetr"));
+    }
+
+    #[test]
+    fn settings_config_applies_widget_string_list_value() {
+        let mut config = SettingsConfig {
+            style: StyleConfig::default(),
+            widgets: BTreeMap::new(),
+            bars: Vec::new(),
+            available_monitors: Vec::new(),
+        };
+
+        assert!(config.apply_config_value(
+            &["widgets", "updates", "critical-patterns"],
+            Some(&ConfigValue::StringList(vec!["linux-*".to_string()])),
+        ));
+
+        let values = config
+            .widgets
+            .get("updates")
+            .and_then(|table| table.get("critical-patterns"))
+            .and_then(|value| value.as_array())
+            .map(|values| {
+                values
+                    .iter()
+                    .filter_map(|value| value.as_str())
+                    .collect::<Vec<_>>()
+            });
+
+        assert_eq!(values, Some(vec!["linux-*"]));
+    }
+
+    #[test]
+    fn settings_config_removes_empty_widget_table_after_reset() {
+        let mut updates = toml::value::Table::new();
+        updates.insert(
+            "critical-patterns".to_string(),
+            toml::Value::Array(vec![toml::Value::String("linux-*".to_string())]),
+        );
+
+        let mut config = SettingsConfig {
+            style: StyleConfig::default(),
+            widgets: BTreeMap::from([("updates".to_string(), updates)]),
+            bars: Vec::new(),
+            available_monitors: Vec::new(),
+        };
+
+        assert!(config.apply_config_value(&["widgets", "updates", "critical-patterns"], None));
+
+        assert!(!config.widgets.contains_key("updates"));
+    }
 }
