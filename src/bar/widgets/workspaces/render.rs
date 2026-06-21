@@ -4,7 +4,7 @@ use relm4::gtk;
 use super::{ID, model::WorkspaceSummary};
 use crate::bar::BarMsg;
 use crate::bar::state::WorkspaceState;
-use crate::bar::widget::{WidgetAction, WidgetEvent};
+use crate::bar::widget::{WidgetAction, WidgetEvent, WorkspaceAction};
 
 pub(super) struct RenderedWorkspace {
     id: u64,
@@ -66,15 +66,13 @@ fn attach_click_handler(root: &gtk::Box, sender: &relm4::Sender<BarMsg>, workspa
     click.set_button(0);
 
     let sender = sender.clone();
-    click.connect_released(move |gesture, _n_press, x, y| {
+    click.connect_released(move |gesture, _n_press, _x, _y| {
         let _ = sender.send(BarMsg::WidgetEvent(WidgetEvent {
             widget_id: ID,
-            action: WidgetAction::Clicked {
+            action: WidgetAction::Workspaces(WorkspaceAction::Clicked {
                 item_id: workspace_id.to_string(),
                 button: gesture.current_button(),
-                x: x as i32,
-                y: y as i32,
-            },
+            }),
         }));
     });
 

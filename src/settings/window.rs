@@ -18,6 +18,7 @@ pub(crate) struct SettingsWindow {
     config: SettingsConfig,
     active_page: SettingsPage,
     appearance_scroll: f64,
+    widgets_scroll: f64,
     bar_layout_scroll: f64,
 }
 
@@ -133,6 +134,23 @@ impl Component for SettingsWindow {
                             },
                         },
 
+                        #[name = "widgets_button"]
+                        gtk::Button {
+                            add_css_class: "settings-sidebar-item",
+
+                            #[watch]
+                            set_css_classes: &sidebar_button_classes(model.active_page, SettingsPage::Widgets),
+
+                            connect_clicked[sender] => move |_| {
+                                sender.input(SettingsInput::SetPage(SettingsPage::Widgets));
+                            },
+
+                            gtk::Label {
+                                set_label: SettingsPage::Widgets.title(),
+                                set_halign: gtk::Align::Start,
+                            },
+                        },
+
                         #[name = "bar_layout_button"]
                         gtk::Button {
                             add_css_class: "settings-sidebar-item",
@@ -192,6 +210,7 @@ impl Component for SettingsWindow {
             config,
             active_page: SettingsPage::Appearance,
             appearance_scroll: 0.0,
+            widgets_scroll: 0.0,
             bar_layout_scroll: 0.0,
         };
         let widgets = view_output!();
@@ -255,19 +274,19 @@ impl Component for SettingsWindow {
                     tracing::error!(?path, "Failed to save setting: {error}")
                 } else if self
                     .config
-                    .style
                     .apply_config_value(path, value_for_model.as_ref())
-                    && value_for_model.is_none()
                 {
-                    self.save_scroll(widgets);
-                    render_current_page(
-                        &widgets.page_content,
-                        &widgets.page_title,
-                        self.active_page,
-                        &self.config,
-                        &sender,
-                    );
-                    self.restore_scroll(widgets);
+                    if value_for_model.is_none() {
+                        self.save_scroll(widgets);
+                        render_current_page(
+                            &widgets.page_content,
+                            &widgets.page_title,
+                            self.active_page,
+                            &self.config,
+                            &sender,
+                        );
+                        self.restore_scroll(widgets);
+                    }
                 }
             }
             SettingsInput::SetBarRegion {
@@ -317,6 +336,7 @@ impl SettingsWindow {
     fn scroll_position_mut(&mut self) -> &mut f64 {
         match self.active_page {
             SettingsPage::Appearance => &mut self.appearance_scroll,
+            SettingsPage::Widgets => &mut self.widgets_scroll,
             SettingsPage::BarLayout => &mut self.bar_layout_scroll,
         }
     }
@@ -324,6 +344,7 @@ impl SettingsWindow {
     fn scroll_position(&self) -> f64 {
         match self.active_page {
             SettingsPage::Appearance => self.appearance_scroll,
+            SettingsPage::Widgets => self.widgets_scroll,
             SettingsPage::BarLayout => self.bar_layout_scroll,
         }
     }

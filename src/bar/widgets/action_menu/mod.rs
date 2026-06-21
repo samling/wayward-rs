@@ -20,6 +20,8 @@ use self::config::ActionMenuConfig;
 
 pub(crate) struct ActionMenuWidget;
 
+pub(crate) static WIDGET: ActionMenuWidget = ActionMenuWidget;
+
 struct ActionMenuRuntime {
     controller: Controller<ActionMenuComponent>,
 }

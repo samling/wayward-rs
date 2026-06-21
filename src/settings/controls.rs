@@ -1,5 +1,5 @@
 use super::{
-    spec::{ColorSpec, NumberSpec, StringSpec, ToggleSpec},
+    spec::{ColorSpec, NumberSpec, StringListSpec, StringSpec, ToggleSpec},
     window::SettingsInput,
 };
 use crate::config::ConfigValue;
@@ -156,6 +156,39 @@ pub(crate) fn string_row(
     let entry = gtk::Entry::new();
     entry.set_text(&setting.display_value());
     entry.set_width_chars(18);
+
+    let path = setting.path;
+    let saved_setting = setting.clone();
+    let writer = SettingWriter::new(path, sender.input_sender().clone());
+    let change_writer = writer.clone();
+
+    row.append(&entry);
+    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
+
+    entry.connect_changed(move |entry| {
+        reset_button.set_sensitive(true);
+        change_writer.send_debounced(saved_setting.value_for_config(entry.text().to_string()));
+    });
+    row
+}
+
+pub(crate) fn string_list_row(
+    setting: StringListSpec,
+    sender: &ComponentSender<super::window::SettingsWindow>,
+) -> gtk::Box {
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    row.add_css_class("settings-row");
+
+    let label = gtk::Label::new(Some(setting.label));
+    label.set_hexpand(true);
+    label.set_halign(gtk::Align::Start);
+    label.add_css_class("settings-row-label");
+    row.append(&label);
+
+    let entry = gtk::Entry::new();
+    entry.set_text(&setting.display_value());
+    entry.set_width_chars(28);
+    entry.set_tooltip_text(Some("Separate values with commas"));
 
     let path = setting.path;
     let saved_setting = setting.clone();

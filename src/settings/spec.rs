@@ -17,6 +17,7 @@ pub(crate) enum SettingSpec {
     Number(NumberSpec),
     Toggle(ToggleSpec),
     String(StringSpec),
+    StringList(StringListSpec),
     Color(ColorSpec),
 }
 
@@ -80,6 +81,36 @@ impl StringSpec {
 }
 
 #[derive(Clone, Debug)]
+pub(crate) struct StringListSpec {
+    pub(crate) label: &'static str,
+    pub(crate) path: &'static [&'static str],
+    pub(crate) value: Option<Vec<String>>,
+    pub(crate) default: &'static [&'static str],
+}
+
+impl StringListSpec {
+    pub(crate) fn display_value(&self) -> String {
+        self.value
+            .clone()
+            .unwrap_or_else(|| self.default.iter().map(|value| value.to_string()).collect())
+            .join(", ")
+    }
+
+    pub(crate) fn value_for_config(&self, value: String) -> ConfigValue {
+        ConfigValue::StringList(parse_string_list(&value))
+    }
+}
+
+fn parse_string_list(value: &str) -> Vec<String> {
+    value
+        .split(',')
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+        .collect()
+}
+
+#[derive(Clone, Debug)]
 pub(crate) struct ColorSpec {
     pub(crate) label: &'static str,
     pub(crate) path: &'static [&'static str],
@@ -96,5 +127,37 @@ impl ColorSpec {
 
     pub(crate) fn value_for_config(&self, value: String) -> ConfigValue {
         ConfigValue::String(value)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn string_list_spec_displays_values_as_comma_separated_text() {
+        let setting = StringListSpec {
+            label: "Critical patterns",
+            path: &["widgets", "updates", "critical-patterns"],
+            value: Some(vec!["linux-*".to_string(), "pacman".to_string()]),
+            default: &[],
+        };
+
+        assert_eq!(setting.display_value(), "linux-*, pacman");
+    }
+
+    #[test]
+    fn string_list_spec_parses_comma_separated_text_for_config() {
+        let setting = StringListSpec {
+            label: "Critical patterns",
+            path: &["widgets", "updates", "critical-patterns"],
+            value: None,
+            default: &[],
+        };
+
+        assert_eq!(
+            setting.value_for_config(" linux-* , pacman,, ".to_string()),
+            ConfigValue::StringList(vec!["linux-*".to_string(), "pacman".to_string()])
+        );
     }
 }

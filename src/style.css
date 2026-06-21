@@ -239,6 +239,11 @@ popover.dropdown arrow {
     min-width: 360px;
 }
 
+.volume-dropdown-content,
+.brightness-dropdown-content {
+    min-width: 320px;
+}
+
 .clock-dropdown-title,
 .battery-dropdown-title,
 .battery-dropdown-header {
@@ -401,6 +406,103 @@ button.profile-button.performance:hover,
 button.profile-button.performance:focus,
 button.profile-button.performance:checked {
     border-radius: 0 6px 6px 0;
+}
+
+/* Volume and brightness */
+.volume-content,
+.brightness-content {
+    min-height: 0;
+}
+
+.volume-icon,
+.brightness-icon {
+    -gtk-icon-size: 1.25em;
+    min-width: 1.25em;
+}
+
+.volume-percent,
+.brightness-percent,
+.volume-dropdown-percent,
+.brightness-dropdown-percent {
+    font-weight: 600;
+}
+
+.control-row {
+    border-spacing: 0.6em;
+}
+
+.control-label {
+    min-width: 4.5em;
+    opacity: 0.72;
+}
+
+.control-scale trough {
+    background-color: rgba(241, 243, 244, 0.16);
+    border-radius: 999px;
+    min-height: 8px;
+}
+
+.control-scale highlight {
+    background-color: var(--battery-meter-fill-color, rgba(137, 180, 250, 0.72));
+    border-radius: 999px;
+    min-height: 8px;
+}
+
+.control-scale slider {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    min-height: 0;
+    min-width: 0;
+    opacity: 0;
+}
+
+.control-combo {
+    min-width: 14em;
+}
+
+.control-toggle,
+button.control-toggle,
+button.control-toggle.toggle {
+    background: transparent;
+    background-image: none;
+    border: 1px solid var(--surface-border-color, rgba(241, 243, 244, 0.14));
+    border-radius: 6px;
+    box-shadow: none;
+    color: inherit;
+    min-height: 0;
+    outline: none;
+    padding: 0.35em 0.65em;
+}
+
+.control-toggle.icon-toggle,
+button.control-toggle.icon-toggle,
+button.control-toggle.icon-toggle.toggle {
+    min-height: 32px;
+    min-width: 32px;
+    padding: 0;
+}
+
+.control-toggle-icon {
+    -gtk-icon-size: 1.15em;
+}
+
+.control-toggle:hover,
+button.control-toggle:hover,
+button.control-toggle.toggle:hover {
+    background: rgba(241, 243, 244, 0.08);
+    background-image: none;
+    border-color: rgba(137, 180, 250, 0.55);
+    box-shadow: none;
+}
+
+.control-toggle:checked,
+button.control-toggle:checked,
+button.control-toggle.toggle:checked {
+    background: rgba(137, 180, 250, 0.22);
+    background-image: none;
+    border-color: rgba(137, 180, 250, 0.75);
+    box-shadow: none;
 }
 
 /* Systray */

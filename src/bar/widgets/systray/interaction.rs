@@ -7,7 +7,7 @@ use wayle_systray::adapters::gtk4::Adapter;
 use super::view_model::SystrayItemSummary;
 use super::{ID, service};
 use crate::bar::BarMsg;
-use crate::bar::widget::{WidgetAction, WidgetEvent};
+use crate::bar::widget::{SystrayAction, WidgetAction, WidgetEvent};
 
 pub(super) fn attach_click_handler(
     widget: &gtk::Widget,
@@ -40,12 +40,12 @@ pub(super) fn attach_click_handler(
 
         let _ = sender.send(BarMsg::WidgetEvent(WidgetEvent {
             widget_id: ID,
-            action: WidgetAction::Clicked {
+            action: WidgetAction::Systray(SystrayAction::Clicked {
                 item_id: bus_name.clone(),
                 button,
                 x: x as i32,
                 y: y as i32,
-            },
+            }),
         }));
     });
 

@@ -50,6 +50,8 @@ impl BarWidgetRuntime for BatteryRuntime {
 
 pub(crate) struct BatteryWidget;
 
+pub(crate) static WIDGET: BatteryWidget = BatteryWidget;
+
 impl BarWidget for BatteryWidget {
     fn id(&self) -> &'static str {
         "battery"

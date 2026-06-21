@@ -5,7 +5,7 @@ use relm4::Sender;
 use wayle_niri::{NiriService, WorkspaceReferenceArg};
 
 use crate::bar::state::WorkspaceState;
-use crate::bar::widget::{WidgetAction, WidgetEvent};
+use crate::bar::widget::{WidgetAction, WidgetEvent, WorkspaceAction};
 use crate::bar::widgets::workspaces::model::WorkspaceSummary;
 use crate::shell::ShellMsg;
 
@@ -59,9 +59,9 @@ fn send_workspace_snapshot(sender: &Sender<ShellMsg>, service: &NiriService) -> 
 
 pub(crate) fn handle_event(event: WidgetEvent, service: Option<Arc<NiriService>>) {
     match event.action {
-        WidgetAction::Clicked {
+        WidgetAction::Workspaces(WorkspaceAction::Clicked {
             item_id, button, ..
-        } => {
+        }) => {
             handle_click(item_id, button, service);
         }
         _ => {}

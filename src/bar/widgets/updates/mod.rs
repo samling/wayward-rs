@@ -11,14 +11,16 @@ use relm4::prelude::*;
 
 use crate::bar::state::{BarItemState, UpdatesState};
 use crate::bar::widget::{
-    BarContext, BarWidget, BarWidgetRuntime, WidgetAction, WidgetBuildContext, WidgetEvent,
-    WidgetInstance,
+    BarContext, BarWidget, BarWidgetRuntime, UpdatesAction, WidgetAction, WidgetBuildContext,
+    WidgetEvent, WidgetInstance,
 };
 use crate::services::ShellServices;
 
 use self::component::{UpdatesComponent, UpdatesInit, UpdatesInput};
 
 pub(crate) struct UpdatesWidget;
+
+pub(crate) static WIDGET: UpdatesWidget = UpdatesWidget;
 
 struct UpdatesRuntime {
     controller: Controller<UpdatesComponent>,
@@ -81,7 +83,7 @@ impl BarWidget for UpdatesWidget {
 
     fn handle_event(&self, event: WidgetEvent, _services: &ShellServices) {
         match event.action {
-            WidgetAction::RefreshUpdates => {
+            WidgetAction::Updates(UpdatesAction::Refresh) => {
                 service::request_refresh();
             }
             _ => {}

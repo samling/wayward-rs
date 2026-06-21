@@ -50,6 +50,8 @@ impl BarWidgetRuntime for WorkspacesRuntime {
 
 pub(crate) struct WorkspacesWidget;
 
+pub(crate) static WIDGET: WorkspacesWidget = WorkspacesWidget;
+
 impl BarWidget for WorkspacesWidget {
     fn id(&self) -> &'static str {
         ID

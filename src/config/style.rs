@@ -113,6 +113,7 @@ impl From<&ConfigValue> for StyleValue {
             ConfigValue::Integer(value) => Self::Integer(*value),
             ConfigValue::Bool(value) => Self::Bool(*value),
             ConfigValue::String(value) => Self::String(value.clone()),
+            ConfigValue::StringList(values) => Self::String(values.join(", ")),
         }
     }
 }
