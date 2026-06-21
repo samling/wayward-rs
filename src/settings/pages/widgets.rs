@@ -29,22 +29,24 @@ pub(crate) fn page(widgets: &BTreeMap<String, toml::value::Table>) -> SettingsPa
                 title: "Brightness".to_string(),
                 settings: vec![
                     SettingSpec::String(StringSpec {
-                        label: "Blue light enable command",
-                        path: &["widgets", "brightness", "blue-light-enable-command"],
-                        value: string_value(widgets, "brightness", "blue-light-enable-command"),
-                        default: "",
+                        label: "sunsetr automatic preset",
+                        path: &["widgets", "brightness", "sunsetr", "automatic-preset"],
+                        value: nested_string_value(
+                            widgets,
+                            "brightness",
+                            &["sunsetr", "automatic-preset"],
+                        ),
+                        default: "default",
                     }),
                     SettingSpec::String(StringSpec {
-                        label: "Blue light disable command",
-                        path: &["widgets", "brightness", "blue-light-disable-command"],
-                        value: string_value(widgets, "brightness", "blue-light-disable-command"),
-                        default: "",
-                    }),
-                    SettingSpec::String(StringSpec {
-                        label: "Blue light state command",
-                        path: &["widgets", "brightness", "blue-light-state-command"],
-                        value: string_value(widgets, "brightness", "blue-light-state-command"),
-                        default: "",
+                        label: "sunsetr paused preset",
+                        path: &["widgets", "brightness", "sunsetr", "paused-preset"],
+                        value: nested_string_value(
+                            widgets,
+                            "brightness",
+                            &["sunsetr", "paused-preset"],
+                        ),
+                        default: "day",
                     }),
                 ],
             },
@@ -52,15 +54,20 @@ pub(crate) fn page(widgets: &BTreeMap<String, toml::value::Table>) -> SettingsPa
     }
 }
 
-fn string_value(
+fn nested_string_value(
     widgets: &BTreeMap<String, toml::value::Table>,
     widget: &str,
-    key: &str,
+    path: &[&str],
 ) -> Option<String> {
-    widgets
-        .get(widget)
-        .and_then(|table| table.get(key))
-        .and_then(|value| value.as_str())
+    let mut value = widgets.get(widget)?;
+
+    for key in &path[..path.len().saturating_sub(1)] {
+        value = value.get(*key)?.as_table()?;
+    }
+
+    value
+        .get(path.last().copied()?)?
+        .as_str()
         .map(ToOwned::to_owned)
 }
 

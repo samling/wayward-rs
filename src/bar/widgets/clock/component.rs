@@ -75,9 +75,11 @@ impl SimpleComponent for ClockComponent {
         let content = gtk::Box::new(model.edge.orientation(), 0);
         content.add_css_class("bar-item-content");
         content.add_css_class("clock-content");
+        crate::bar::style::configure_bar_item_content(&content);
 
         let label = gtk::Label::new(Some(&model.label_text));
         label.add_css_class("clock-label");
+        crate::bar::style::configure_bar_label(&label);
         content.append(&label);
 
         root.set_always_show_arrow(false);

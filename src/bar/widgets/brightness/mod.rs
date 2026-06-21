@@ -2,6 +2,7 @@ mod component;
 mod config;
 mod dropdown;
 mod service;
+mod sunsetr;
 
 use relm4::Controller;
 use relm4::gtk;
@@ -52,6 +53,10 @@ impl BarWidgetRuntime for BrightnessRuntime {
 impl BarWidget for BrightnessWidget {
     fn id(&self) -> &'static str {
         "brightness"
+    }
+
+    fn config_table_keys(&self) -> &'static [&'static str] {
+        &["sunsetr"]
     }
 
     fn build(

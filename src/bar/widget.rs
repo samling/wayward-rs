@@ -87,7 +87,7 @@ pub(crate) enum ActionMenuAction {
 #[derive(Clone, Debug)]
 pub(crate) enum BrightnessAction {
     SetBrightness { percent: f64 },
-    RunBlueLightCommand { command: String },
+    SetSunsetrPreset { preset: String },
 }
 
 #[derive(Clone, Debug)]

@@ -88,6 +88,7 @@ impl SimpleComponent for WorkspacesComponent {
         let content = gtk::Box::new(orientation, 4);
         content.add_css_class("bar-item-content");
         content.add_css_class("workspaces-content");
+        crate::bar::style::configure_bar_item_content(&content);
         overlay.add_overlay(&content);
         overlay.set_measure_overlay(&content, true);
 
@@ -165,11 +166,13 @@ impl WorkspacesComponent {
 
         let indicator_layer = self.indicator_layer.clone();
         let indicator = self.indicator.clone();
+        let content = self.content.clone();
         let animation_state = self.indicator_animation.clone();
         let config = self.config.clone();
 
         gtk::glib::idle_add_local_once(move || {
-            let Some(target) = IndicatorBounds::from_widget(&active_workspace, &indicator_layer)
+            let Some(target) =
+                IndicatorBounds::from_widget(&active_workspace, &indicator_layer, &content)
             else {
                 let mut state = animation_state.borrow_mut();
 

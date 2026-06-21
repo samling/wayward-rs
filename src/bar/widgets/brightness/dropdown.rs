@@ -7,11 +7,12 @@ use relm4::prelude::*;
 
 use crate::bar::{dropdown, layout::BarEdge, widget::BarRegion};
 
+use super::sunsetr::SunsetrState;
+
 #[derive(Clone, Debug)]
 pub(super) struct BrightnessDropdownSnapshot {
     pub(super) percent: f64,
-    pub(super) blue_light_configured: bool,
-    pub(super) blue_light_enabled: Option<bool>,
+    pub(super) sunsetr_state: SunsetrState,
 }
 
 pub(super) struct BrightnessDropdown {
@@ -33,14 +34,14 @@ pub(super) enum BrightnessDropdownInput {
     SetSnapshot(BrightnessDropdownSnapshot),
     SetUnavailable(String),
     BrightnessChanged(f64),
-    BlueLightToggled(bool),
+    SunsetrActionClicked,
 }
 
 #[derive(Debug)]
 pub(super) enum BrightnessDropdownOutput {
     Opened,
     SetBrightness(f64),
-    SetBlueLightEnabled(bool),
+    SetSunsetrPaused(bool),
 }
 
 #[relm4::component(pub(super))]
@@ -148,12 +149,25 @@ impl Component for BrightnessDropdown {
                             set_hexpand: true,
                         },
 
-                        #[name = "blue_light_toggle"]
-                        gtk::ToggleButton {
+                        #[name = "sunsetr_status_label"]
+                        gtk::Label {
+                            add_css_class: "blue-light-status",
+                            set_halign: gtk::Align::End,
+                        },
+
+                        #[name = "sunsetr_button"]
+                        gtk::Button {
                             add_css_class: "control-toggle",
                             set_cursor_from_name: Some("pointer"),
-                            set_label: "Off",
+                            set_label: "Pause",
                         },
+                    },
+
+                    #[name = "sunsetr_detail_label"]
+                    gtk::Label {
+                        add_css_class: "blue-light-detail",
+                        set_halign: gtk::Align::Start,
+                        set_wrap: true,
                     },
                 }
             }
@@ -207,8 +221,14 @@ impl Component for BrightnessDropdown {
             BrightnessDropdownInput::BrightnessChanged(percent) => {
                 let _ = sender.output(BrightnessDropdownOutput::SetBrightness(percent));
             }
-            BrightnessDropdownInput::BlueLightToggled(enabled) => {
-                let _ = sender.output(BrightnessDropdownOutput::SetBlueLightEnabled(enabled));
+            BrightnessDropdownInput::SunsetrActionClicked => {
+                if let Some(paused) = self
+                    .snapshot
+                    .as_ref()
+                    .and_then(|snapshot| snapshot.sunsetr_state.action_paused())
+                {
+                    let _ = sender.output(BrightnessDropdownOutput::SetSunsetrPaused(paused));
+                }
             }
         }
 
@@ -228,36 +248,30 @@ impl BrightnessDropdown {
                 widgets
                     .percent_label
                     .set_text(&format!("{:.0}%", snapshot.percent));
-                widgets.blue_light_toggle.set_sensitive(
-                    snapshot.blue_light_configured && snapshot.blue_light_enabled.is_some(),
-                );
-
-                match snapshot.blue_light_enabled {
-                    Some(enabled) => {
-                        widgets.blue_light_toggle.set_active(enabled);
-                        widgets
-                            .blue_light_toggle
-                            .set_label(if enabled { "On" } else { "Off" });
-                    }
-                    None => {
-                        widgets.blue_light_toggle.set_active(false);
-                        widgets
-                            .blue_light_toggle
-                            .set_label(if snapshot.blue_light_configured {
-                                "..."
-                            } else {
-                                "Not configured"
-                            });
-                    }
-                }
-
                 widgets
-                    .blue_light_toggle
-                    .set_tooltip_text(if snapshot.blue_light_configured {
-                        Some("Toggle blue-light filter")
-                    } else {
-                        Some("Configure blue-light commands in settings")
-                    });
+                    .sunsetr_status_label
+                    .set_text(snapshot.sunsetr_state.status_text());
+                widgets
+                    .sunsetr_detail_label
+                    .set_text(&snapshot.sunsetr_state.detail_text());
+
+                if let Some(label) = snapshot.sunsetr_state.action_label() {
+                    widgets.sunsetr_button.set_label(label);
+                    widgets.sunsetr_button.set_sensitive(true);
+                    widgets
+                        .sunsetr_button
+                        .set_tooltip_text(Some(if label == "Pause" {
+                            "Pause sunsetr on the daytime preset"
+                        } else {
+                            "Resume sunsetr automatic mode"
+                        }));
+                } else {
+                    widgets.sunsetr_button.set_label("Unavailable");
+                    widgets.sunsetr_button.set_sensitive(false);
+                    widgets
+                        .sunsetr_button
+                        .set_tooltip_text(Some("sunsetr is not available"));
+                }
             }
             None => {
                 let error = self
@@ -269,7 +283,9 @@ impl BrightnessDropdown {
                 widgets.percent_label.set_text("!");
                 widgets.brightness_scale.set_value(0.0);
                 widgets.brightness_scale.set_sensitive(false);
-                widgets.blue_light_toggle.set_sensitive(false);
+                widgets.sunsetr_status_label.set_text("Unknown");
+                widgets.sunsetr_detail_label.set_text("");
+                widgets.sunsetr_button.set_sensitive(false);
             }
         }
 
@@ -294,14 +310,12 @@ fn connect_controls(
         });
 
     let input_sender = sender.input_sender().clone();
-    widgets.blue_light_toggle.connect_toggled(move |toggle| {
+    widgets.sunsetr_button.connect_clicked(move |_| {
         if syncing.get() {
             return;
         }
 
-        let active = toggle.is_active();
-        toggle.set_label(if active { "On" } else { "Off" });
-        let _ = input_sender.send(BrightnessDropdownInput::BlueLightToggled(active));
+        let _ = input_sender.send(BrightnessDropdownInput::SunsetrActionClicked);
     });
 }
 

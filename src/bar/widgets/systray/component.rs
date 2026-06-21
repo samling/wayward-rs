@@ -63,6 +63,7 @@ impl SimpleComponent for SystrayComponent {
         let content = gtk::Box::new(orientation, 4);
         content.add_css_class("bar-item-content");
         content.add_css_class("systray-content");
+        crate::bar::style::configure_bar_item_content(&content);
         root.append(&content);
 
         let model = Self {

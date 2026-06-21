@@ -5,7 +5,17 @@
     font-family: var(--bar-font-family, "Adwaita Sans"), "Symbols Nerd Font", "Symbols Nerd Font Mono", "JetBrainsMono Nerd Font";
     font-size: var(--bar-font-size, 12px);
     font-weight: var(--bar-font-weight, 100);
-    padding: 0;
+    min-height: 0;
+    min-width: 0;
+    padding: var(--bar-padding-y, 0px) var(--bar-padding-x, 0px);
+}
+
+.bar.horizontal {
+    min-height: var(--bar-size, 24px);
+}
+
+.bar.vertical {
+    min-width: var(--bar-size, 24px);
 }
 
 .bar-region {
@@ -36,8 +46,7 @@
 
 .bar.vertical .bar-region {
     margin: 0;
-    min-width: var(--bar-vertical-region-min-width, 20px);
-    padding: var(--bar-vertical-region-padding, 4px);
+    padding: 0;
 }
 
 /* Bar items */
@@ -54,7 +63,7 @@
     min-height: 0;
     min-width: 0;
     outline: none;
-    padding: 0 var(--bar-item-padding-x, 8px);
+    padding: 0;
 }
 
 .bar.vertical .bar-item {
@@ -72,16 +81,91 @@
 }
 
 .bar-item-content {
+    background-color: var(--bar-widget-background-color, transparent);
+    border: var(--bar-widget-border-width, 0px) solid var(--bar-widget-border-color, transparent);
+    border-radius: var(--bar-widget-border-radius, 0px);
+    box-sizing: border-box;
     color: inherit;
-    margin-bottom: var(--bar-item-content-margin-y, 4px);
-    margin-top: var(--bar-item-content-margin-y, 4px);
+    margin: var(--bar-widget-margin-y, 0px) var(--bar-widget-margin-x, 0px);
+    min-height: 0;
+    min-width: 0;
+    padding: var(--bar-widget-padding-y, 0px) var(--bar-widget-padding-x, 4px);
+}
+
+.bar-item-content label,
+.bar-item-content image {
+    margin: 0;
     min-height: 0;
     min-width: 0;
     padding: 0;
 }
 
-menubutton.bar-item > button,
-menubutton.bar-item > button.toggle {
+.action-menu .bar-item-content {
+    background-color: var(--action-menu-widget-background-color, var(--bar-widget-background-color, transparent));
+    border-color: var(--action-menu-widget-border-color, var(--bar-widget-border-color, transparent));
+    border-radius: var(--action-menu-widget-border-radius, var(--bar-widget-border-radius, 0px));
+    border-width: var(--action-menu-widget-border-width, var(--bar-widget-border-width, 0px));
+}
+
+.battery .bar-item-content {
+    background-color: var(--battery-widget-background-color, var(--bar-widget-background-color, transparent));
+    border-color: var(--battery-widget-border-color, var(--bar-widget-border-color, transparent));
+    border-radius: var(--battery-widget-border-radius, var(--bar-widget-border-radius, 0px));
+    border-width: var(--battery-widget-border-width, var(--bar-widget-border-width, 0px));
+}
+
+.brightness .bar-item-content {
+    background-color: var(--brightness-widget-background-color, var(--bar-widget-background-color, transparent));
+    border-color: var(--brightness-widget-border-color, var(--bar-widget-border-color, transparent));
+    border-radius: var(--brightness-widget-border-radius, var(--bar-widget-border-radius, 0px));
+    border-width: var(--brightness-widget-border-width, var(--bar-widget-border-width, 0px));
+}
+
+.clock .bar-item-content {
+    background-color: var(--clock-widget-background-color, var(--bar-widget-background-color, transparent));
+    border-color: var(--clock-widget-border-color, var(--bar-widget-border-color, transparent));
+    border-radius: var(--clock-widget-border-radius, var(--bar-widget-border-radius, 0px));
+    border-width: var(--clock-widget-border-width, var(--bar-widget-border-width, 0px));
+}
+
+.notifications .bar-item-content {
+    background-color: var(--notifications-widget-background-color, var(--bar-widget-background-color, transparent));
+    border-color: var(--notifications-widget-border-color, var(--bar-widget-border-color, transparent));
+    border-radius: var(--notifications-widget-border-radius, var(--bar-widget-border-radius, 0px));
+    border-width: var(--notifications-widget-border-width, var(--bar-widget-border-width, 0px));
+}
+
+.systray .bar-item-content {
+    background-color: var(--systray-widget-background-color, var(--bar-widget-background-color, transparent));
+    border-color: var(--systray-widget-border-color, var(--bar-widget-border-color, transparent));
+    border-radius: var(--systray-widget-border-radius, var(--bar-widget-border-radius, 0px));
+    border-width: var(--systray-widget-border-width, var(--bar-widget-border-width, 0px));
+}
+
+.updates .bar-item-content {
+    background-color: var(--updates-widget-background-color, var(--bar-widget-background-color, transparent));
+    border-color: var(--updates-widget-border-color, var(--bar-widget-border-color, transparent));
+    border-radius: var(--updates-widget-border-radius, var(--bar-widget-border-radius, 0px));
+    border-width: var(--updates-widget-border-width, var(--bar-widget-border-width, 0px));
+}
+
+.volume .bar-item-content {
+    background-color: var(--volume-widget-background-color, var(--bar-widget-background-color, transparent));
+    border-color: var(--volume-widget-border-color, var(--bar-widget-border-color, transparent));
+    border-radius: var(--volume-widget-border-radius, var(--bar-widget-border-radius, 0px));
+    border-width: var(--volume-widget-border-width, var(--bar-widget-border-width, 0px));
+}
+
+.workspaces .bar-item-content {
+    background-color: var(--workspaces-widget-background-color, var(--bar-widget-background-color, transparent));
+    border-color: var(--workspaces-widget-border-color, var(--bar-widget-border-color, transparent));
+    border-radius: var(--workspaces-widget-border-radius, var(--bar-widget-border-radius, 0px));
+    border-width: var(--workspaces-widget-border-width, var(--bar-widget-border-width, 0px));
+}
+
+menubutton.bar-item button,
+menubutton.bar-item button.toggle,
+menubutton.bar-item button.flat {
     background: transparent;
     background-image: none;
     border: none;
@@ -91,17 +175,18 @@ menubutton.bar-item > button.toggle {
     font-family: inherit;
     font-size: inherit;
     font-weight: inherit;
+    margin: 0;
     min-height: 0;
     min-width: 0;
     outline: none;
     padding: 0;
 }
 
-menubutton.bar-item > button:hover,
-menubutton.bar-item > button:focus,
-menubutton.bar-item > button:focus-visible,
-menubutton.bar-item > button:active,
-menubutton.bar-item > button:checked {
+menubutton.bar-item button:hover,
+menubutton.bar-item button:focus,
+menubutton.bar-item button:focus-visible,
+menubutton.bar-item button:active,
+menubutton.bar-item button:checked {
     background: transparent;
     background-image: none;
     border: none;
@@ -111,13 +196,8 @@ menubutton.bar-item > button:checked {
     outline: none;
 }
 
-menubutton.action-menu > button,
-menubutton.action-menu > button.toggle {
-    padding: 0 8px;
-}
-
-.bar.vertical menubutton.action-menu > button,
-.bar.vertical menubutton.action-menu > button.toggle {
+.bar.vertical menubutton.action-menu button,
+.bar.vertical menubutton.action-menu button.toggle {
     padding: 0;
 }
 
@@ -178,8 +258,6 @@ menubutton.action-menu > button.toggle {
 .workspace-indicator {
     background-color: var(--workspace-indicator-background-color, rgba(137, 180, 250, 0.5));
     border-radius: var(--workspace-indicator-border-radius, 6px);
-    min-height: var(--workspace-indicator-size, 8px);
-    min-width: var(--workspace-indicator-size, 8px);
     padding: 0;
 }
 
@@ -280,8 +358,8 @@ popover.dropdown arrow {
 }
 
 .battery-icon {
-    -gtk-icon-size: 1.25em;
-    min-width: 1.25em;
+    -gtk-icon-size: 1em;
+    min-width: 1em;
 }
 
 .battery-percentage,
@@ -416,8 +494,8 @@ button.profile-button.performance:checked {
 
 .volume-icon,
 .brightness-icon {
-    -gtk-icon-size: 1.25em;
-    min-width: 1.25em;
+    -gtk-icon-size: 1em;
+    min-width: 1em;
 }
 
 .volume-percent,

@@ -109,11 +109,15 @@ pub(crate) fn settings_for_section(
 }
 
 fn write_mapped_css_variable(css: &mut String, group: &StyleGroupConfig, spec: &StyleSettingSpec) {
+    let should_write_default = should_write_default(spec);
+
     match spec.css_kind {
         CssValueKind::Integer { unit } => {
-            let value = group
-                .integer(spec.key)
-                .or_else(|| spec.setting.and_then(SettingUiSpec::integer_default));
+            let value = group.integer(spec.key).or_else(|| {
+                should_write_default
+                    .then(|| spec.setting.and_then(SettingUiSpec::integer_default))
+                    .flatten()
+            });
 
             if let Some(value) = value {
                 write_css_variable(css, spec.variable, value, unit);
@@ -121,9 +125,13 @@ fn write_mapped_css_variable(css: &mut String, group: &StyleGroupConfig, spec: &
         }
         CssValueKind::String { quoted } => {
             let value = group.string(spec.key).or_else(|| {
-                spec.setting
-                    .and_then(SettingUiSpec::string_default)
-                    .map(str::to_string)
+                should_write_default
+                    .then(|| {
+                        spec.setting
+                            .and_then(SettingUiSpec::string_default)
+                            .map(str::to_string)
+                    })
+                    .flatten()
             });
 
             if let Some(value) = value {
@@ -139,9 +147,11 @@ fn write_mapped_css_variable(css: &mut String, group: &StyleGroupConfig, spec: &
             true_value,
             false_value,
         } => {
-            let value = group
-                .bool(spec.key)
-                .or_else(|| spec.setting.and_then(SettingUiSpec::bool_default));
+            let value = group.bool(spec.key).or_else(|| {
+                should_write_default
+                    .then(|| spec.setting.and_then(SettingUiSpec::bool_default))
+                    .flatten()
+            });
 
             if let Some(value) = value {
                 let value = if value { true_value } else { false_value };
@@ -149,6 +159,10 @@ fn write_mapped_css_variable(css: &mut String, group: &StyleGroupConfig, spec: &
             }
         }
     }
+}
+
+fn should_write_default(spec: &StyleSettingSpec) -> bool {
+    spec.group == "bar" || !spec.key.starts_with("widget-")
 }
 
 fn write_css_variable<T: std::fmt::Display>(css: &mut String, name: &str, value: T, unit: &str) {

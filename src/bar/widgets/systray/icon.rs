@@ -81,7 +81,9 @@ pub(super) fn systray_item_content(
         item.id.as_str()
     };
 
-    gtk::Label::new(Some(text)).upcast()
+    let label = gtk::Label::new(Some(text));
+    crate::bar::style::configure_bar_label(&label);
+    label.upcast()
 }
 
 fn image_from_pixmap(

@@ -13,7 +13,7 @@ impl OsdEvent {
         match self {
             Self::Brightness { percent } => format!("Brightness: {:.0}%", percent),
             Self::Volume { percent, muted } if *muted => {
-                format!("Volume muted {:.0}%", percent)
+                format!("Muted: 0%")
             }
             Self::Volume { percent, muted: _ } => format!("Volume: {:.0}%", percent),
         }
@@ -37,7 +37,9 @@ impl OsdEvent {
 
     pub(crate) fn percent(&self) -> f64 {
         match self {
-            Self::Brightness { percent } | Self::Volume { percent, .. } => *percent,
+            Self::Brightness { percent } => *percent,
+            Self::Volume { muted: true, .. } => 0.0,
+            Self::Volume { percent, .. } => *percent,
         }
     }
 }

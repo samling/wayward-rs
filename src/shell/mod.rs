@@ -129,11 +129,13 @@ impl SimpleComponent for Shell {
                 }
             }
             ShellMsg::StyleChanged => {
+                let bar_style = bar::BarStyle::from_config(&self.config);
+
                 for running_bar in &self.bars {
                     let _ = running_bar
                         .controller
                         .sender()
-                        .send(bar::BarMsg::StyleChanged);
+                        .send(bar::BarMsg::StyleChanged(bar_style));
                 }
             }
             ShellMsg::MonitorsChanged => {
@@ -211,11 +213,13 @@ impl Shell {
         let css = crate::style::generated_style_config(&self.config.style);
 
         if style.set_generated_css(css) {
+            let bar_style = bar::BarStyle::from_config(&self.config);
+
             for running_bar in &self.bars {
                 let _ = running_bar
                     .controller
                     .sender()
-                    .send(bar::BarMsg::StyleChanged);
+                    .send(bar::BarMsg::StyleChanged(bar_style));
             }
         }
     }

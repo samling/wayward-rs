@@ -163,6 +163,53 @@ mod tests {
     }
 
     #[test]
+    fn default_css_resets_bar_window_minimum_size() {
+        let bar_rule = DEFAULT_CSS
+            .split("\n.bar {")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("bar rule should exist");
+
+        assert!(bar_rule.contains("min-height: 0;"));
+        assert!(bar_rule.contains("min-width: 0;"));
+        assert!(bar_rule.contains("padding: var(--bar-padding-y, 0px) var(--bar-padding-x, 0px);"));
+    }
+
+    #[test]
+    fn default_css_bar_orientation_rules_apply_global_size() {
+        let horizontal_rule = DEFAULT_CSS
+            .split("\n.bar.horizontal {")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("horizontal bar rule should exist");
+        let vertical_rule = DEFAULT_CSS
+            .split("\n.bar.vertical {")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("vertical bar rule should exist");
+
+        assert!(horizontal_rule.contains("min-height: var(--bar-size, 24px);"));
+        assert!(vertical_rule.contains("min-width: var(--bar-size, 24px);"));
+    }
+
+    #[test]
+    fn default_css_bar_item_has_no_spacing_padding() {
+        let item_rule = DEFAULT_CSS
+            .split("\n.bar-item {")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("bar item rule should exist");
+
+        assert!(item_rule.contains("padding: 0;"));
+        assert!(!item_rule.contains("--bar-item-gap-x"));
+        assert!(!item_rule.contains("--bar-item-padding-x"));
+    }
+
+    #[test]
     fn default_css_has_one_bar_item_content_base_rule() {
         let content_rule = DEFAULT_CSS
             .split("\n.bar-item-content {")
@@ -171,7 +218,30 @@ mod tests {
             .map(|(rule, _)| rule)
             .expect("bar item content rule should exist");
 
-        assert!(content_rule.contains("padding:"));
+        assert!(
+            content_rule.contains(
+                "margin: var(--bar-widget-margin-y, 0px) var(--bar-widget-margin-x, 0px);"
+            )
+        );
+        assert!(content_rule.contains(
+            "padding: var(--bar-widget-padding-y, 0px) var(--bar-widget-padding-x, 4px);"
+        ));
+        assert!(!content_rule.contains("--bar-item-content-margin-y"));
+        assert!(!content_rule.contains("--bar-item-padding-x"));
+    }
+
+    #[test]
+    fn default_css_resets_bar_item_content_child_spacing() {
+        let child_rule = DEFAULT_CSS
+            .split(".bar-item-content label,")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("bar item content child reset should exist");
+
+        assert!(child_rule.contains("margin: 0;"));
+        assert!(child_rule.contains("min-height: 0;"));
+        assert!(child_rule.contains("padding: 0;"));
     }
 
     #[test]
@@ -206,8 +276,22 @@ mod tests {
     }
 
     #[test]
+    fn default_css_workspace_indicator_does_not_force_size() {
+        let rule = DEFAULT_CSS
+            .split("\n.workspace-indicator {")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("workspace indicator rule should exist");
+
+        assert!(!rule.contains("min-height:"));
+        assert!(!rule.contains("min-width:"));
+        assert!(!rule.contains("--workspace-indicator-size"));
+    }
+
+    #[test]
     fn default_css_bar_menu_buttons_inherit_font_weight() {
-        for selector in [".bar-item {", "menubutton.bar-item > button,"] {
+        for selector in [".bar-item {", "menubutton.bar-item button,"] {
             let rule = DEFAULT_CSS
                 .split(selector)
                 .nth(1)
@@ -217,6 +301,20 @@ mod tests {
 
             assert!(rule.contains("font-weight: inherit;"));
         }
+    }
+
+    #[test]
+    fn default_css_bar_menu_buttons_reset_theme_size() {
+        let rule = DEFAULT_CSS
+            .split("menubutton.bar-item button,")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("bar menu button reset rule should exist");
+
+        assert!(rule.contains("margin: 0;"));
+        assert!(rule.contains("min-height: 0;"));
+        assert!(rule.contains("padding: 0;"));
     }
 
     #[test]
@@ -240,6 +338,66 @@ mod tests {
         let css = generated_style_config(&style);
 
         assert!(css.contains("--bar-font-weight: 500;"));
+    }
+
+    #[test]
+    fn generated_style_config_includes_bar_layout_controls() {
+        let css = generated_style_config(&StyleConfig::default());
+
+        assert!(css.contains("--bar-size: 24px;"));
+        assert!(css.contains("--bar-padding-x: 0px;"));
+        assert!(css.contains("--bar-padding-y: 0px;"));
+        assert!(css.contains("--bar-widget-gap: 4px;"));
+        assert!(css.contains("--bar-widget-padding-x: 4px;"));
+        assert!(css.contains("--bar-widget-padding-y: 0px;"));
+        assert!(css.contains("--bar-widget-margin-x: 0px;"));
+        assert!(css.contains("--bar-widget-margin-y: 0px;"));
+        assert!(!css.contains("--bar-item-content-margin-y"));
+        assert!(!css.contains("--bar-item-padding-x"));
+        assert!(!css.contains("--bar-item-gap-x"));
+    }
+
+    #[test]
+    fn generated_style_config_includes_global_widget_surface_controls() {
+        let mut style = StyleConfig::default();
+        style.bar.insert(
+            "widget-background-color".to_string(),
+            StyleValue::String("rgba(255, 255, 255, 0.1)".to_string()),
+        );
+        style
+            .bar
+            .insert("widget-border-width".to_string(), StyleValue::Integer(1));
+
+        let css = generated_style_config(&style);
+
+        assert!(css.contains("--bar-widget-background-color: rgba(255, 255, 255, 0.1);"));
+        assert!(css.contains("--bar-widget-border-width: 1px;"));
+    }
+
+    #[test]
+    fn generated_style_config_includes_configured_per_widget_surface_controls() {
+        let mut style = StyleConfig::default();
+        style.brightness.insert(
+            "widget-background-color".to_string(),
+            StyleValue::String("rgba(137, 180, 250, 0.2)".to_string()),
+        );
+        style
+            .brightness
+            .insert("widget-border-radius".to_string(), StyleValue::Integer(8));
+
+        let css = generated_style_config(&style);
+
+        assert!(css.contains("--brightness-widget-background-color: rgba(137, 180, 250, 0.2);"));
+        assert!(css.contains("--brightness-widget-border-radius: 8px;"));
+    }
+
+    #[test]
+    fn generated_style_config_does_not_emit_unconfigured_per_widget_surface_defaults() {
+        let css = generated_style_config(&StyleConfig::default());
+
+        assert!(css.contains("--bar-widget-background-color: transparent;"));
+        assert!(!css.contains("--brightness-widget-background-color: transparent;"));
+        assert!(!css.contains("--volume-widget-border-width: 0px;"));
     }
 
     #[test]

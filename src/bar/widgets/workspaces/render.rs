@@ -58,6 +58,7 @@ fn clear(row: &gtk::Box, rendered: &mut Vec<RenderedWorkspace>) {
 pub(super) fn render_status(row: &gtk::Box, status: &str) {
     let label = gtk::Label::new(Some(status));
     label.add_css_class("status");
+    crate::bar::style::configure_bar_label(&label);
     row.append(&label);
 }
 
@@ -136,6 +137,7 @@ fn render_workspaces(
 
                 let label = gtk::Label::new(None);
                 label.add_css_class("workspace-label");
+                crate::bar::style::configure_bar_label(&label);
                 label.set_hexpand(true);
                 label.set_halign(gtk::Align::Center);
                 label.set_xalign(0.5);

@@ -1,29 +1,23 @@
 use serde::Deserialize;
 
 #[derive(Clone, Debug, Default, Deserialize)]
-#[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
+#[serde(default, rename_all = "kebab-case")]
 pub(super) struct BrightnessConfig {
-    pub(super) blue_light_enable_command: String,
-    pub(super) blue_light_disable_command: String,
-    pub(super) blue_light_state_command: String,
+    pub(super) sunsetr: SunsetrConfig,
 }
 
-impl BrightnessConfig {
-    pub(super) fn blue_light_toggle_configured(&self) -> bool {
-        !self.blue_light_enable_command.trim().is_empty()
-            && !self.blue_light_disable_command.trim().is_empty()
-            && !self.blue_light_state_command.trim().is_empty()
-    }
+#[derive(Clone, Debug, Deserialize)]
+#[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
+pub(super) struct SunsetrConfig {
+    pub(super) automatic_preset: String,
+    pub(super) paused_preset: String,
+}
 
-    pub(super) fn blue_light_command_for_state(&self, enabled: bool) -> Option<&str> {
-        if !self.blue_light_toggle_configured() {
-            return None;
-        }
-
-        if enabled {
-            Some(self.blue_light_enable_command.as_str())
-        } else {
-            Some(self.blue_light_disable_command.as_str())
+impl Default for SunsetrConfig {
+    fn default() -> Self {
+        Self {
+            automatic_preset: "default".to_string(),
+            paused_preset: "day".to_string(),
         }
     }
 }
@@ -33,42 +27,10 @@ mod tests {
     use super::*;
 
     #[test]
-    fn blue_light_toggle_requires_enable_disable_and_state_commands() {
-        let config = BrightnessConfig {
-            blue_light_enable_command: "enable-night-mode".to_string(),
-            blue_light_disable_command: "disable-night-mode".to_string(),
-            blue_light_state_command: "check-night-mode".to_string(),
-        };
+    fn sunsetr_config_defaults_to_default_and_day_presets() {
+        let config = BrightnessConfig::default();
 
-        assert!(config.blue_light_toggle_configured());
-    }
-
-    #[test]
-    fn blue_light_toggle_is_unconfigured_when_any_command_is_missing() {
-        let config = BrightnessConfig {
-            blue_light_enable_command: "enable-night-mode".to_string(),
-            blue_light_disable_command: String::new(),
-            blue_light_state_command: "check-night-mode".to_string(),
-        };
-
-        assert!(!config.blue_light_toggle_configured());
-    }
-
-    #[test]
-    fn blue_light_command_for_state_picks_enable_or_disable_command() {
-        let config = BrightnessConfig {
-            blue_light_enable_command: "enable-night-mode".to_string(),
-            blue_light_disable_command: "disable-night-mode".to_string(),
-            blue_light_state_command: "check-night-mode".to_string(),
-        };
-
-        assert_eq!(
-            config.blue_light_command_for_state(true),
-            Some("enable-night-mode")
-        );
-        assert_eq!(
-            config.blue_light_command_for_state(false),
-            Some("disable-night-mode")
-        );
+        assert_eq!(config.sunsetr.automatic_preset, "default");
+        assert_eq!(config.sunsetr.paused_preset, "day");
     }
 }

@@ -5,7 +5,8 @@ use std::{cell::RefCell, rc::Rc};
 
 use super::config::{WorkspaceIndicatorEffect, WorkspacesConfig};
 
-const INDICATOR_OUTSET: f64 = 4.0;
+const INDICATOR_HORIZONTAL_OUTSET: f64 = 4.0;
+const INDICATOR_VERTICAL_OUTSET: f64 = 0.0;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) struct IndicatorBounds {
@@ -16,8 +17,13 @@ pub(super) struct IndicatorBounds {
 }
 
 impl IndicatorBounds {
-    pub(super) fn from_widget(widget: &gtk::Box, indicator_layer: &gtk::Fixed) -> Option<Self> {
+    pub(super) fn from_widget(
+        widget: &gtk::Box,
+        indicator_layer: &gtk::Fixed,
+        container: &gtk::Box,
+    ) -> Option<Self> {
         let bounds = widget.compute_bounds(indicator_layer)?;
+        let container_bounds = container.compute_bounds(indicator_layer)?;
 
         Some(Self {
             x: bounds.x() as f64,
@@ -25,7 +31,13 @@ impl IndicatorBounds {
             width: bounds.width() as f64,
             height: bounds.height() as f64,
         })
-        .map(|bounds| bounds.with_outset(INDICATOR_OUTSET))
+        .map(|bounds| bounds.with_outset(INDICATOR_HORIZONTAL_OUTSET, INDICATOR_VERTICAL_OUTSET))
+        .map(|bounds| {
+            bounds.clamp_x(
+                container_bounds.x() as f64,
+                (container_bounds.x() + container_bounds.width()) as f64,
+            )
+        })
     }
 
     pub(super) fn apply_to(self, indicator_layer: &gtk::Fixed, indicator: &gtk::Box) {
@@ -37,12 +49,31 @@ impl IndicatorBounds {
         indicator.set_visible(true);
     }
 
-    fn with_outset(self, outset: f64) -> Self {
+    fn with_outset(self, x_outset: f64, y_outset: f64) -> Self {
         Self {
-            x: self.x - outset,
-            y: self.y - outset,
-            width: self.width + outset * 2.0,
-            height: self.height + outset * 2.0,
+            x: self.x - x_outset,
+            y: self.y - y_outset,
+            width: self.width + x_outset * 2.0,
+            height: self.height + y_outset * 2.0,
+        }
+    }
+
+    fn clamp_x(self, min_x: f64, max_x: f64) -> Self {
+        if max_x <= min_x {
+            return Self {
+                x: min_x,
+                width: 0.0,
+                ..self
+            };
+        }
+
+        let x = self.x.max(min_x);
+        let end = (self.x + self.width).min(max_x);
+
+        Self {
+            x,
+            width: (end - x).max(0.0),
+            ..self
         }
     }
 
@@ -151,7 +182,7 @@ mod tests {
     }
 
     #[test]
-    fn bounds_outset_expands_around_center() {
+    fn bounds_outset_can_preserve_height() {
         let bounds = IndicatorBounds {
             x: 10.0,
             y: 20.0,
@@ -160,12 +191,32 @@ mod tests {
         };
 
         assert_eq!(
-            bounds.with_outset(4.0),
+            bounds.with_outset(4.0, 0.0),
             IndicatorBounds {
                 x: 6.0,
-                y: 16.0,
+                y: 20.0,
                 width: 38.0,
-                height: 48.0,
+                height: 40.0,
+            }
+        );
+    }
+
+    #[test]
+    fn bounds_clamp_x_keeps_indicator_within_container() {
+        let bounds = IndicatorBounds {
+            x: -4.0,
+            y: 20.0,
+            width: 20.0,
+            height: 12.0,
+        };
+
+        assert_eq!(
+            bounds.clamp_x(0.0, 12.0),
+            IndicatorBounds {
+                x: 0.0,
+                y: 20.0,
+                width: 12.0,
+                height: 12.0,
             }
         );
     }

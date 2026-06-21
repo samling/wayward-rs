@@ -51,6 +51,7 @@ impl SimpleComponent for BatteryComponent {
             add_css_class: "flat",
 
             #[wrap(Some)]
+            #[name = "content"]
             set_child = &gtk::Box {
                 add_css_class: "bar-item-content",
                 add_css_class: "battery-content",
@@ -65,6 +66,7 @@ impl SimpleComponent for BatteryComponent {
                     set_icon_name: Some(model.view_model.icon_name),
                 },
 
+                #[name = "percentage"]
                 gtk::Label {
                     add_css_class: "battery-percentage",
 
@@ -72,6 +74,7 @@ impl SimpleComponent for BatteryComponent {
                     set_text: &model.view_model.percentage_text,
                 },
 
+                #[name = "energy_rate"]
                 gtk::Label {
                     add_css_class: "battery-energy-rate",
 
@@ -103,6 +106,9 @@ impl SimpleComponent for BatteryComponent {
         };
 
         let widgets = view_output!();
+        crate::bar::style::configure_bar_item_content(&widgets.content);
+        crate::bar::style::configure_bar_label(&widgets.percentage);
+        crate::bar::style::configure_bar_label(&widgets.energy_rate);
 
         root.set_popover(Some(model.dropdown.widget()));
 
