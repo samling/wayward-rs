@@ -119,7 +119,7 @@ flowchart TD
         widget_build --> mounted_widget["MountedWidget"]
     end
 
-    subgraph Mounted["Mounted widget rendezvous point"]
+    subgraph Mounted["Mounted widget state"]
         mounted_widget --> runtime["BarWidgetRuntime"]
         runtime --> relm_component["widget Relm component"]
         runtime --> gtk_root["GTK root widget"]
