@@ -291,7 +291,7 @@ mod tests {
 
     #[test]
     fn default_css_bar_menu_buttons_inherit_font_weight() {
-        for selector in [".bar-item {", "menubutton.bar-item button,"] {
+        for selector in [".bar-item {", "menubutton.bar-item > button,"] {
             let rule = DEFAULT_CSS
                 .split(selector)
                 .nth(1)
@@ -306,7 +306,7 @@ mod tests {
     #[test]
     fn default_css_bar_menu_buttons_reset_theme_size() {
         let rule = DEFAULT_CSS
-            .split("menubutton.bar-item button,")
+            .split("menubutton.bar-item > button,")
             .nth(1)
             .and_then(|css| css.split_once('}'))
             .map(|(rule, _)| rule)
@@ -315,6 +315,13 @@ mod tests {
         assert!(rule.contains("margin: 0;"));
         assert!(rule.contains("min-height: 0;"));
         assert!(rule.contains("padding: 0;"));
+    }
+
+    #[test]
+    fn default_css_bar_menu_button_reset_does_not_target_dropdown_buttons() {
+        assert!(!DEFAULT_CSS.contains("menubutton.bar-item button,"));
+        assert!(!DEFAULT_CSS.contains("menubutton.bar-item button.flat"));
+        assert!(DEFAULT_CSS.contains("menubutton.bar-item > button,"));
     }
 
     #[test]

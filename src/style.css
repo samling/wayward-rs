@@ -163,9 +163,9 @@
     border-width: var(--workspaces-widget-border-width, var(--bar-widget-border-width, 0px));
 }
 
-menubutton.bar-item button,
-menubutton.bar-item button.toggle,
-menubutton.bar-item button.flat {
+menubutton.bar-item > button,
+menubutton.bar-item > button.toggle,
+menubutton.bar-item > button.flat {
     background: transparent;
     background-image: none;
     border: none;
@@ -182,11 +182,11 @@ menubutton.bar-item button.flat {
     padding: 0;
 }
 
-menubutton.bar-item button:hover,
-menubutton.bar-item button:focus,
-menubutton.bar-item button:focus-visible,
-menubutton.bar-item button:active,
-menubutton.bar-item button:checked {
+menubutton.bar-item > button:hover,
+menubutton.bar-item > button:focus,
+menubutton.bar-item > button:focus-visible,
+menubutton.bar-item > button:active,
+menubutton.bar-item > button:checked {
     background: transparent;
     background-image: none;
     border: none;
@@ -196,8 +196,8 @@ menubutton.bar-item button:checked {
     outline: none;
 }
 
-.bar.vertical menubutton.action-menu button,
-.bar.vertical menubutton.action-menu button.toggle {
+.bar.vertical menubutton.action-menu > button,
+.bar.vertical menubutton.action-menu > button.toggle {
     padding: 0;
 }
 
