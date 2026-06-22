@@ -15,8 +15,8 @@ pub(crate) fn add_bar_item_classes(
 }
 
 pub(crate) fn configure_bar_item_content(widget: &impl WidgetExt) {
-    widget.set_halign(gtk::Align::Center);
-    widget.set_valign(gtk::Align::Center);
+    widget.set_halign(gtk::Align::Fill);
+    widget.set_valign(gtk::Align::Fill);
 }
 
 pub(crate) fn configure_bar_label(label: &gtk::Label) {
