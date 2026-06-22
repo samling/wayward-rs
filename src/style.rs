@@ -290,16 +290,15 @@ mod tests {
     }
 
     #[test]
-    fn default_css_workspaces_overlay_does_not_shrink_item_height() {
+    fn default_css_workspaces_items_own_workspace_spacing() {
         let rule = DEFAULT_CSS
-            .split("\n.workspaces-overlay {")
+            .split("\n.workspaces-items {")
             .nth(1)
             .and_then(|css| css.split_once('}'))
             .map(|(rule, _)| rule)
-            .expect("workspaces overlay rule should exist");
+            .expect("workspaces items rule should exist");
 
-        assert!(rule.contains("margin-bottom: 0;"));
-        assert!(rule.contains("margin-top: 0;"));
+        assert!(rule.contains("border-spacing: 0.4em;"));
     }
 
     #[test]
@@ -323,6 +322,7 @@ mod tests {
                 "padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x"
             )
         );
+        assert!(!content_rule.contains("border-spacing:"));
         assert!(workspace_rule.contains("padding: var(--bar-widget-padding-y, 0px) 0.65em;"));
     }
 

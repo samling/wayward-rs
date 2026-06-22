@@ -53,9 +53,6 @@ impl SimpleComponent for BatteryComponent {
             #[wrap(Some)]
             #[name = "content"]
             set_child = &gtk::Box {
-                add_css_class: "bar-item-content",
-                add_css_class: "battery-content",
-
                 #[watch]
                 set_orientation: model.edge.orientation(),
 
@@ -106,7 +103,7 @@ impl SimpleComponent for BatteryComponent {
         };
 
         let widgets = view_output!();
-        crate::bar::style::configure_bar_item_content(&widgets.content);
+        crate::bar::style::add_bar_item_content_classes(&widgets.content, "battery-content");
         crate::bar::style::configure_bar_label(&widgets.percentage);
         crate::bar::style::configure_bar_label(&widgets.energy_rate);
 

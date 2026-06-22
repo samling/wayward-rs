@@ -65,8 +65,6 @@ impl SimpleComponent for BrightnessComponent {
             #[wrap(Some)]
             #[name = "content"]
             set_child = &gtk::Box {
-                add_css_class: "bar-item-content",
-                add_css_class: "brightness-content",
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 3,
 
@@ -118,7 +116,7 @@ impl SimpleComponent for BrightnessComponent {
         };
 
         let widgets = view_output!();
-        crate::bar::style::configure_bar_item_content(&widgets.content);
+        crate::bar::style::add_bar_item_content_classes(&widgets.content, "brightness-content");
         crate::bar::style::configure_bar_label(&widgets.percent);
 
         root.set_popover(Some(model.dropdown.widget()));

@@ -15,8 +15,14 @@ pub(crate) fn add_bar_item_classes(
 }
 
 pub(crate) fn configure_bar_item_content(widget: &impl WidgetExt) {
-    widget.set_halign(gtk::Align::Fill);
-    widget.set_valign(gtk::Align::Fill);
+    widget.set_halign(gtk::Align::Center);
+    widget.set_valign(gtk::Align::Center);
+}
+
+pub(crate) fn add_bar_item_content_classes(widget: &impl WidgetExt, class_name: &str) {
+    widget.add_css_class("bar-item-content");
+    widget.add_css_class(class_name);
+    configure_bar_item_content(widget);
 }
 
 pub(crate) fn configure_bar_label(label: &gtk::Label) {
