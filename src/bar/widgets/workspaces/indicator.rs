@@ -17,13 +17,12 @@ pub(super) struct IndicatorBounds {
 }
 
 impl IndicatorBounds {
-    pub(super) fn from_widget(
-        widget: &gtk::Box,
-        indicator_layer: &gtk::Fixed,
-        container: &gtk::Box,
-    ) -> Option<Self> {
+    pub(super) fn from_widget(widget: &gtk::Box, indicator_layer: &gtk::Fixed) -> Option<Self> {
         let bounds = widget.compute_bounds(indicator_layer)?;
-        let container_bounds = container.compute_bounds(indicator_layer)?;
+        let surface_x = 0.0;
+        let surface_end = indicator_layer.width() as f64;
+        let is_first = widget.prev_sibling().is_none();
+        let is_last = widget.next_sibling().is_none();
 
         Some(Self {
             x: bounds.x() as f64,
@@ -32,12 +31,10 @@ impl IndicatorBounds {
             height: bounds.height() as f64,
         })
         .map(|bounds| bounds.with_outset(INDICATOR_HORIZONTAL_OUTSET, INDICATOR_VERTICAL_OUTSET))
-        .map(|bounds| {
-            bounds.clamp_x(
-                container_bounds.x() as f64,
-                (container_bounds.x() + container_bounds.width()) as f64,
-            )
+        .map(|indicator_bounds| {
+            indicator_bounds.extend_to_outer_edges(is_first, is_last, surface_x, surface_end)
         })
+        .map(|bounds| bounds.clamp_x(surface_x, surface_end))
     }
 
     pub(super) fn apply_to(self, indicator_layer: &gtk::Fixed, indicator: &gtk::Box) {
@@ -69,6 +66,31 @@ impl IndicatorBounds {
 
         let x = self.x.max(min_x);
         let end = (self.x + self.width).min(max_x);
+
+        Self {
+            x,
+            width: (end - x).max(0.0),
+            ..self
+        }
+    }
+
+    fn extend_to_outer_edges(
+        self,
+        is_first: bool,
+        is_last: bool,
+        outer_x: f64,
+        outer_end: f64,
+    ) -> Self {
+        let mut x = self.x;
+        let mut end = self.x + self.width;
+
+        if is_first {
+            x = outer_x;
+        }
+
+        if is_last {
+            end = outer_end;
+        }
 
         Self {
             x,
@@ -216,6 +238,81 @@ mod tests {
                 x: 0.0,
                 y: 20.0,
                 width: 12.0,
+                height: 12.0,
+            }
+        );
+    }
+
+    #[test]
+    fn bounds_extend_to_outer_start_when_item_touches_inner_start() {
+        let bounds = IndicatorBounds {
+            x: 6.0,
+            y: 20.0,
+            width: 20.0,
+            height: 12.0,
+        };
+
+        assert_eq!(
+            bounds.extend_to_outer_edges(true, false, 0.0, 90.0),
+            IndicatorBounds {
+                x: 0.0,
+                y: 20.0,
+                width: 26.0,
+                height: 12.0,
+            }
+        );
+    }
+
+    #[test]
+    fn bounds_extend_to_outer_end_when_item_touches_inner_end() {
+        let bounds = IndicatorBounds {
+            x: 56.0,
+            y: 20.0,
+            width: 28.0,
+            height: 12.0,
+        };
+
+        assert_eq!(
+            bounds.extend_to_outer_edges(false, true, 0.0, 90.0),
+            IndicatorBounds {
+                x: 56.0,
+                y: 20.0,
+                width: 34.0,
+                height: 12.0,
+            }
+        );
+    }
+
+    #[test]
+    fn bounds_keep_middle_items_at_outset_size() {
+        let bounds = IndicatorBounds {
+            x: 26.0,
+            y: 20.0,
+            width: 28.0,
+            height: 12.0,
+        };
+
+        assert_eq!(
+            bounds.extend_to_outer_edges(false, false, 0.0, 90.0),
+            bounds
+        );
+    }
+
+    #[test]
+    fn bounds_extend_to_both_edges_when_only_item() {
+        let bounds = IndicatorBounds {
+            x: 6.0,
+            y: 20.0,
+            width: 28.0,
+            height: 12.0,
+        };
+
+        assert_eq!(
+            bounds.extend_to_outer_edges(true, true, 0.0, 90.0),
+            IndicatorBounds {
+                x: 0.0,
+                y: 20.0,
+                width: 90.0,
                 height: 12.0,
             }
         );

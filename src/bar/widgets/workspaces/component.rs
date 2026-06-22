@@ -70,14 +70,9 @@ impl SimpleComponent for WorkspacesComponent {
         crate::bar::style::add_bar_item_content_classes(&overlay, "workspaces-content");
         root.append(&overlay);
 
-        let base = gtk::Box::new(orientation, 0);
-        base.add_css_class("workspaces-base");
-        overlay.set_child(Some(&base));
-
         let indicator_layer = gtk::Fixed::new();
         indicator_layer.add_css_class("workspaces-indicator-layer");
-        overlay.add_overlay(&indicator_layer);
-        overlay.set_measure_overlay(&indicator_layer, false);
+        overlay.set_child(Some(&indicator_layer));
 
         let indicator = gtk::Box::new(orientation, 0);
         indicator.add_css_class("workspace-indicator");
@@ -164,13 +159,11 @@ impl WorkspacesComponent {
 
         let indicator_layer = self.indicator_layer.clone();
         let indicator = self.indicator.clone();
-        let content = self.content.clone();
         let animation_state = self.indicator_animation.clone();
         let config = self.config.clone();
 
         gtk::glib::idle_add_local_once(move || {
-            let Some(target) =
-                IndicatorBounds::from_widget(&active_workspace, &indicator_layer, &content)
+            let Some(target) = IndicatorBounds::from_widget(&active_workspace, &indicator_layer)
             else {
                 let mut state = animation_state.borrow_mut();
 

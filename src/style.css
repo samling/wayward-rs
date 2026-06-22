@@ -205,11 +205,12 @@ menubutton.bar-item > button:checked {
     border-radius: var(--workspaces-content-border-radius, 6px);
     margin-bottom: 0;
     margin-top: 0;
-    padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x, 4px));
+    padding: 0;
 }
 
 .workspaces-items {
     border-spacing: 0.4em;
+    padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x, 4px));
 }
 
 .bar.vertical .workspaces-items {

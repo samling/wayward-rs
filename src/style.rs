@@ -299,10 +299,15 @@ mod tests {
             .expect("workspaces items rule should exist");
 
         assert!(rule.contains("border-spacing: 0.4em;"));
+        assert!(
+            rule.contains(
+                "padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x"
+            )
+        );
     }
 
     #[test]
-    fn default_css_workspaces_apply_global_vertical_padding_once() {
+    fn default_css_workspaces_surface_does_not_shrink_indicator_layer() {
         let content_rule = DEFAULT_CSS
             .split("\n.workspaces-content {")
             .nth(1)
@@ -317,11 +322,7 @@ mod tests {
             .map(|(rule, _)| rule)
             .expect("workspace rule should exist");
 
-        assert!(
-            content_rule.contains(
-                "padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x"
-            )
-        );
+        assert!(content_rule.contains("padding: 0;"));
         assert!(!content_rule.contains("border-spacing:"));
         assert!(workspace_rule.contains("padding: var(--bar-widget-padding-y, 0px) 0.65em;"));
     }
