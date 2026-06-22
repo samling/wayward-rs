@@ -97,6 +97,7 @@ impl SimpleComponent for BatteryDropdown {
                     set_spacing: 8,
 
                     gtk::Box {
+                        add_css_class: "dropdown-header",
                         add_css_class: "battery-dropdown-header",
                         set_orientation: gtk::Orientation::Horizontal,
                         set_spacing: 8,

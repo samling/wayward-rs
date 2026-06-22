@@ -84,7 +84,6 @@
     background-color: var(--bar-widget-background-color, transparent);
     border: var(--bar-widget-border-width, 0px) solid var(--bar-widget-border-color, transparent);
     border-radius: var(--bar-widget-border-radius, 0px);
-    box-sizing: border-box;
     color: inherit;
     margin: var(--bar-widget-margin-y, 0px) var(--bar-widget-margin-x, 0px);
     min-height: 0;
@@ -204,8 +203,8 @@ menubutton.bar-item > button:checked {
 /* Workspaces */
 .workspaces-overlay {
     background: transparent;
-    margin-bottom: 4px;
-    margin-top: 4px;
+    margin-bottom: 0;
+    margin-top: 0;
 }
 
 .workspaces-content {
@@ -214,7 +213,7 @@ menubutton.bar-item > button:checked {
     border-radius: var(--workspaces-content-border-radius, 6px);
     margin-bottom: 0;
     margin-top: 0;
-    padding: var(--workspaces-content-padding, 4px);
+    padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x, 4px));
 }
 
 .bar.vertical .workspaces-content {
@@ -225,7 +224,7 @@ menubutton.bar-item > button:checked {
     background-color: transparent;
     border-radius: var(--workspace-border-radius, 6px);
     color: inherit;
-    padding: 0.12em 0.65em;
+    padding: var(--bar-widget-padding-y, 0px) 0.65em;
 }
 
 .bar.vertical .workspace {
@@ -306,6 +305,37 @@ popover.dropdown arrow {
 
 .dropdown-title {
     font-weight: 600;
+}
+
+.dropdown-header {
+    background-color: var(--dropdown-header-background-color, rgba(241, 243, 244, 0.045));
+    border: 1px solid var(--dropdown-header-border-color, rgba(241, 243, 244, 0.08));
+    border-radius: var(--dropdown-header-border-radius, 7px);
+    padding: 0.65em 0.75em;
+}
+
+.dropdown-empty {
+    background-color: var(--dropdown-empty-background-color, rgba(241, 243, 244, 0.045));
+    border: 1px solid var(--dropdown-empty-border-color, rgba(241, 243, 244, 0.09));
+    border-radius: var(--dropdown-empty-border-radius, 7px);
+    color: inherit;
+    margin-top: 0.1em;
+    min-height: 8.5em;
+    padding: 1.4em 1.2em;
+}
+
+.dropdown-empty-icon {
+    -gtk-icon-size: var(--dropdown-empty-icon-size, 2.15em);
+    margin-bottom: 0.1em;
+    opacity: 0.72;
+}
+
+.dropdown-empty-title {
+    font-weight: 650;
+}
+
+.dropdown-empty-subtitle {
+    opacity: 0.62;
 }
 
 /* Clock */
@@ -514,9 +544,22 @@ button.profile-button.performance:checked {
     opacity: 0.72;
 }
 
+.volume-mute-cell {
+    opacity: 1;
+}
+
+.volume-mute-button,
+button.volume-mute-button,
+button.volume-mute-button.toggle {
+    min-height: 32px;
+    min-width: 32px;
+    padding: 0;
+}
+
 .control-scale trough {
     background-color: rgba(241, 243, 244, 0.16);
     border-radius: 999px;
+    margin: 0;
     min-height: 8px;
 }
 
@@ -530,9 +573,16 @@ button.profile-button.performance:checked {
     background: transparent;
     border: none;
     box-shadow: none;
+    margin: 0;
     min-height: 0;
     min-width: 0;
     opacity: 0;
+}
+
+.control-scale {
+    margin: 0;
+    min-width: 14em;
+    padding: 0;
 }
 
 .control-combo {
@@ -900,7 +950,23 @@ levelbar.osd-level block.filled {
 }
 
 .action-menu-header {
-    margin-bottom: 0.2em;
+    margin-bottom: 0.15em;
+}
+
+.action-menu-section {
+    margin: 0;
+}
+
+.action-menu-section-title {
+    color: inherit;
+    font-weight: 600;
+}
+
+.action-menu-section > .action-menu-section-title {
+    color: var(--dropdown-section-title-color, rgba(241, 243, 244, 0.72));
+    font-size: 0.86em;
+    font-weight: 600;
+    margin-top: 0.1em;
 }
 
 .action-menu-settings,
@@ -911,7 +977,7 @@ levelbar.osd-level block.filled {
 .action-menu-action.flat,
 .action-menu-screenshot-action,
 .action-menu-screenshot-action.flat {
-    background: transparent;
+    background: var(--action-menu-button-background-color, rgba(241, 243, 244, 0.055));
     background-image: none;
     border: 1px solid var(--action-menu-button-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
@@ -925,12 +991,23 @@ levelbar.osd-level block.filled {
 .action-menu-power,
 .action-menu-action,
 .action-menu-screenshot-action {
-    min-width: 4.8em;
     padding: 0.65em 0.75em;
+}
+
+.action-menu-settings,
+.action-menu-power {
+    min-height: 30px;
+    min-width: 30px;
+    padding: 0;
 }
 
 .action-menu-button-content {
     color: inherit;
+}
+
+.action-menu-action-item {
+    color: inherit;
+    margin: 0;
 }
 
 .action-menu-action-label {
@@ -953,7 +1030,7 @@ levelbar.osd-level block.filled {
 
 .action-menu-action-icon {
     font-family: var(--action-menu-icon-font-family, "Symbols Nerd Font"), "Symbols Nerd Font Mono", "Adwaita Sans";
-    font-size: var(--action-menu-icon-font-size, 1.65em);
+    font-size: var(--action-menu-icon-font-size, 1.45em);
     font-weight: 400;
     line-height: 1;
 }
@@ -961,13 +1038,37 @@ levelbar.osd-level block.filled {
 .action-menu-settings .action-menu-action-icon,
 .action-menu-power .action-menu-action-icon,
 .action-menu-action-icon.power {
-    font-size: var(--action-menu-icon-font-size, 1.65em);
+    font-size: var(--action-menu-header-icon-font-size, 1.25em);
 }
 
 .action-menu-settings label,
 .action-menu-power label {
     margin: 0;
     padding: 0;
+}
+
+.action-menu-screenshot-action,
+.action-menu-screenshot-action.flat {
+    min-height: var(--action-menu-screenshot-button-size, 44px);
+    min-width: var(--action-menu-screenshot-button-size, 44px);
+    padding: 8px;
+}
+
+.updates-list-scroll,
+.updates-list,
+.updates-list-items,
+.updates-list-items row,
+.updates-row {
+  min-width: 0;
+}
+
+.updates-list-items row {
+  margin: 0 0 0.45em 0;
+  padding: 0;
+}
+
+.updates-list-items row:last-child {
+  margin-bottom: 0;
 }
 
 /* Settings */
@@ -1167,10 +1268,6 @@ levelbar.osd-level block.filled {
 .updates-error {
   color: #f28b82;
   font-weight: 500;
-}
-
-.updates-empty {
-  opacity: 0.72;
 }
 
 .updates-row {

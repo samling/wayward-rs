@@ -61,6 +61,7 @@ impl SimpleComponent for ClockDropdown {
         content.add_css_class("clock-dropdown-content");
 
         let title = gtk::Label::new(Some(&model.date.format("%B %Y").to_string()));
+        title.add_css_class("dropdown-header");
         title.add_css_class("dropdown-title");
         title.add_css_class("clock-dropdown-title");
         content.append(&title);

@@ -290,6 +290,43 @@ mod tests {
     }
 
     #[test]
+    fn default_css_workspaces_overlay_does_not_shrink_item_height() {
+        let rule = DEFAULT_CSS
+            .split("\n.workspaces-overlay {")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("workspaces overlay rule should exist");
+
+        assert!(rule.contains("margin-bottom: 0;"));
+        assert!(rule.contains("margin-top: 0;"));
+    }
+
+    #[test]
+    fn default_css_workspaces_apply_global_vertical_padding_once() {
+        let content_rule = DEFAULT_CSS
+            .split("\n.workspaces-content {")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("workspaces content rule should exist");
+
+        let workspace_rule = DEFAULT_CSS
+            .split("\n.workspace {")
+            .nth(1)
+            .and_then(|css| css.split_once('}'))
+            .map(|(rule, _)| rule)
+            .expect("workspace rule should exist");
+
+        assert!(
+            content_rule.contains(
+                "padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x"
+            )
+        );
+        assert!(workspace_rule.contains("padding: var(--bar-widget-padding-y, 0px) 0.65em;"));
+    }
+
+    #[test]
     fn default_css_bar_menu_buttons_inherit_font_weight() {
         for selector in [".bar-item {", "menubutton.bar-item > button,"] {
             let rule = DEFAULT_CSS
@@ -333,6 +370,22 @@ mod tests {
         assert!(!DEFAULT_CSS.contains("margin-right: -"));
         assert!(!DEFAULT_CSS.contains("margin-start: -"));
         assert!(!DEFAULT_CSS.contains("margin-end: -"));
+    }
+
+    #[test]
+    fn default_css_avoids_unsupported_gtk_properties() {
+        for property in [
+            "align-items:",
+            "align-self:",
+            "box-sizing:",
+            "max-height:",
+            "max-width:",
+        ] {
+            assert!(
+                !DEFAULT_CSS.contains(property),
+                "default GTK CSS should not contain unsupported property {property}"
+            );
+        }
     }
 
     #[test]

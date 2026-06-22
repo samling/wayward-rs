@@ -15,7 +15,7 @@ impl Default for ActionMenuConfig {
             layout: ActionMenuLayoutConfig::default(),
             sections: vec![
                 ActionMenuSectionConfig {
-                    title: None,
+                    title: Some("Actions".to_string()),
                     columns: Some(2),
                     align: ActionMenuSectionAlign::End,
                     actions: vec![
@@ -44,7 +44,7 @@ impl Default for ActionMenuConfig {
                 ActionMenuSectionConfig {
                     title: Some("Screenshot".to_string()),
                     columns: Some(3),
-                    align: ActionMenuSectionAlign::Fill,
+                    align: ActionMenuSectionAlign::Center,
                     actions: vec![
                         ActionMenuActionConfig::screenshot("Region", "\u{f125}", "region"),
                         ActionMenuActionConfig::screenshot("Window", "\u{f2d0}", "window"),
@@ -56,7 +56,7 @@ impl Default for ActionMenuConfig {
     }
 }
 
-#[derive(Clone, Copy, Debug, Deserialize)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
 #[serde(rename_all = "kebab-case")]
 pub(super) enum ActionMenuSectionAlign {
     Start,

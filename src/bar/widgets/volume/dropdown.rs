@@ -123,19 +123,30 @@ impl Component for VolumeDropdown {
                         add_css_class: "volume-control-row",
                         set_orientation: gtk::Orientation::Horizontal,
                         set_spacing: 8,
+                        set_hexpand: true,
 
-                        #[name = "mute_button"]
-                        gtk::ToggleButton {
-                            add_css_class: "control-toggle",
-                            add_css_class: "icon-toggle",
-                            set_cursor_from_name: Some("pointer"),
-                            set_size_request: (32, 32),
-                            set_tooltip_text: Some("Toggle mute"),
+                        gtk::Box {
+                            add_css_class: "control-label",
+                            add_css_class: "volume-mute-cell",
+                            set_halign: gtk::Align::Fill,
+                            set_orientation: gtk::Orientation::Horizontal,
 
-                            #[wrap(Some)]
-                            set_child = &gtk::Image {
-                                add_css_class: "control-toggle-icon",
-                                set_icon_name: Some("audio-volume-high-symbolic"),
+                            #[name = "mute_button"]
+                            gtk::ToggleButton {
+                                add_css_class: "control-toggle",
+                                add_css_class: "icon-toggle",
+                                add_css_class: "volume-mute-button",
+                                set_cursor_from_name: Some("pointer"),
+                                set_halign: gtk::Align::Center,
+                                set_valign: gtk::Align::Center,
+                                set_size_request: (32, 32),
+                                set_tooltip_text: Some("Toggle mute"),
+
+                                #[wrap(Some)]
+                                set_child = &gtk::Image {
+                                    add_css_class: "control-toggle-icon",
+                                    set_icon_name: Some("audio-volume-high-symbolic"),
+                                },
                             },
                         },
 
@@ -143,6 +154,8 @@ impl Component for VolumeDropdown {
                         gtk::Scale {
                             add_css_class: "control-scale",
                             set_hexpand: true,
+                            set_halign: gtk::Align::Fill,
+                            set_valign: gtk::Align::Center,
                             set_orientation: gtk::Orientation::Horizontal,
                             set_draw_value: false,
                             set_range: (0.0, 100.0),
@@ -154,6 +167,7 @@ impl Component for VolumeDropdown {
                         add_css_class: "control-row",
                         set_orientation: gtk::Orientation::Horizontal,
                         set_spacing: 8,
+                        set_hexpand: true,
 
                         gtk::Label {
                             add_css_class: "control-label",
@@ -172,6 +186,7 @@ impl Component for VolumeDropdown {
                         add_css_class: "control-row",
                         set_orientation: gtk::Orientation::Horizontal,
                         set_spacing: 8,
+                        set_hexpand: true,
 
                         gtk::Label {
                             add_css_class: "control-label",

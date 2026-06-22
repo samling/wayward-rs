@@ -129,6 +129,7 @@ impl Component for BrightnessDropdown {
                         gtk::Scale {
                             add_css_class: "control-scale",
                             set_hexpand: true,
+                            set_halign: gtk::Align::Fill,
                             set_orientation: gtk::Orientation::Horizontal,
                             set_draw_value: false,
                             set_range: (0.0, 100.0),

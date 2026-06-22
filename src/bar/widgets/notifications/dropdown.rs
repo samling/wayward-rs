@@ -81,6 +81,7 @@ impl SimpleComponent for NotificationsDropdown {
                     set_spacing: 8,
 
                     gtk::Box {
+                        add_css_class: "dropdown-header",
                         add_css_class: "notifications-dropdown-header",
                         set_orientation: gtk::Orientation::Horizontal,
                         set_spacing: 8,
@@ -108,14 +109,50 @@ impl SimpleComponent for NotificationsDropdown {
                         }
                     },
 
-                    #[name = "empty_label"]
-                    gtk::Label {
+                    gtk::Box {
+                        add_css_class: "dropdown-empty",
                         add_css_class: "notifications-empty",
-                        set_halign: gtk::Align::Start,
-                        set_text: "No notifications",
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_spacing: 0,
+                        set_halign: gtk::Align::Fill,
 
                         #[watch]
                         set_visible: model.notifications.is_empty(),
+
+                        gtk::Box {
+                            set_vexpand: true,
+                        },
+
+                        gtk::Box {
+                            add_css_class: "dropdown-empty-content",
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_spacing: 6,
+                            set_halign: gtk::Align::Center,
+
+                            gtk::Image {
+                                add_css_class: "dropdown-empty-icon",
+                                set_halign: gtk::Align::Center,
+                                set_icon_name: Some("preferences-system-notifications-symbolic"),
+                            },
+
+                            gtk::Label {
+                                add_css_class: "dropdown-empty-title",
+                                set_halign: gtk::Align::Center,
+                                set_justify: gtk::Justification::Center,
+                                set_text: "No notifications",
+                            },
+
+                            gtk::Label {
+                                add_css_class: "dropdown-empty-subtitle",
+                                set_halign: gtk::Align::Center,
+                                set_justify: gtk::Justification::Center,
+                                set_text: "You're all caught up",
+                            },
+                        },
+
+                        gtk::Box {
+                            set_vexpand: true,
+                        },
                     },
 
                     #[name = "scroller"]
@@ -126,6 +163,9 @@ impl SimpleComponent for NotificationsDropdown {
                         set_min_content_width: 360,
                         set_propagate_natural_height: true,
                         set_max_content_height: 900,
+
+                        #[watch]
+                        set_visible: !model.notifications.is_empty(),
 
                         #[wrap(Some)]
                         set_child = &gtk::Box {

@@ -82,6 +82,7 @@ impl SimpleComponent for UpdatesDropdown {
                     set_spacing: 8,
 
                     gtk::Box {
+                        add_css_class: "dropdown-header",
                         add_css_class: "updates-dropdown-header",
                         set_orientation: gtk::Orientation::Horizontal,
                         set_spacing: 8,
@@ -136,13 +137,50 @@ impl SimpleComponent for UpdatesDropdown {
                         set_text: model.last_error.as_deref().unwrap_or(""),
                     },
 
-                    gtk::Label {
+                    gtk::Box {
+                        add_css_class: "dropdown-empty",
                         add_css_class: "updates-empty",
-                        set_halign: gtk::Align::Start,
-                        set_text: "System is up to date",
+                        set_orientation: gtk::Orientation::Vertical,
+                        set_spacing: 0,
+                        set_halign: gtk::Align::Fill,
 
                         #[watch]
                         set_visible: model.packages.is_empty() && model.last_error.is_none(),
+
+                        gtk::Box {
+                            set_vexpand: true,
+                        },
+
+                        gtk::Box {
+                            add_css_class: "dropdown-empty-content",
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_spacing: 6,
+                            set_halign: gtk::Align::Center,
+
+                            gtk::Image {
+                                add_css_class: "dropdown-empty-icon",
+                                set_halign: gtk::Align::Center,
+                                set_icon_name: Some("emblem-ok-symbolic"),
+                            },
+
+                            gtk::Label {
+                                add_css_class: "dropdown-empty-title",
+                                set_halign: gtk::Align::Center,
+                                set_justify: gtk::Justification::Center,
+                                set_text: "System is up to date",
+                            },
+
+                            gtk::Label {
+                                add_css_class: "dropdown-empty-subtitle",
+                                set_halign: gtk::Align::Center,
+                                set_justify: gtk::Justification::Center,
+                                set_text: "No package updates found",
+                            },
+                        },
+
+                        gtk::Box {
+                            set_vexpand: true,
+                        },
                     },
 
                     #[name = "scroller"]
@@ -150,19 +188,25 @@ impl SimpleComponent for UpdatesDropdown {
                         add_css_class: "updates-list-scroll",
                         set_policy: (gtk::PolicyType::Never, gtk::PolicyType::Automatic),
                         set_kinetic_scrolling: true,
+                        set_hexpand: true,
                         set_min_content_width: 380,
                         set_propagate_natural_height: true,
                         set_max_content_height: 700,
+
+                        #[watch]
+                        set_visible: !model.packages.is_empty(),
 
                         #[wrap(Some)]
                         set_child = &gtk::Box {
                             add_css_class: "updates-list",
                             set_orientation: gtk::Orientation::Vertical,
                             set_spacing: 6,
+                            set_hexpand: true,
 
                             #[local_ref]
                             list -> gtk::ListBox {
                                 add_css_class: "updates-list-items",
+                                set_hexpand: true,
                                 set_selection_mode: gtk::SelectionMode::None,
                             }
                         },
