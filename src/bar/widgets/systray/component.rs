@@ -10,7 +10,9 @@ use crate::bar::BarMsg;
 use crate::bar::layout::BarEdge;
 
 use super::icon::{SystrayIconCache, systray_item_content};
-use super::interaction::attach_click_handler;
+use super::interaction::{
+    SystrayMenuCache, attach_click_handler, new_menu_cache, unparent_cached_menu,
+};
 use super::view_model::SystrayItemSummary;
 
 pub(super) struct SystrayComponent {
@@ -142,8 +144,10 @@ impl SystrayComponent {
 
 struct SystrayItemRuntime {
     root: gtk::Box,
+    menu_cache: SystrayMenuCache,
     status_class: Option<String>,
     last_item: Option<SystrayItemSummary>,
+    child: Option<gtk::Widget>,
 }
 
 impl SystrayItemRuntime {
@@ -159,12 +163,15 @@ impl SystrayItemRuntime {
         root.add_css_class("systray-item");
         root.set_cursor_from_name(Some("pointer"));
 
-        attach_click_handler(root.upcast_ref(), sender, item, service);
+        let menu_cache = new_menu_cache();
+        attach_click_handler(root.upcast_ref(), sender, item, service, menu_cache.clone());
 
         let mut runtime = Self {
             root,
+            menu_cache,
             status_class: None,
             last_item: None,
+            child: None,
         };
         runtime.update(item, icon_cache, icon_size);
         runtime
@@ -182,7 +189,7 @@ impl SystrayItemRuntime {
 
         self.last_item = Some(item.clone());
 
-        while let Some(child) = self.root.first_child() {
+        if let Some(child) = self.child.take() {
             self.root.remove(&child);
         }
 
@@ -198,6 +205,13 @@ impl SystrayItemRuntime {
 
         let child = systray_item_content(item, icon_cache, icon_size);
         self.root.append(&child);
+        self.child = Some(child);
+    }
+}
+
+impl Drop for SystrayItemRuntime {
+    fn drop(&mut self) {
+        unparent_cached_menu(&self.menu_cache);
     }
 }
 

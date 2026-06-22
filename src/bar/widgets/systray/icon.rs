@@ -1,11 +1,34 @@
 use relm4::gtk;
 use relm4::gtk::glib::object::Cast;
-use std::collections::{HashMap, HashSet};
+use std::cell::RefCell;
+use std::collections::{HashMap, HashSet, hash_map::DefaultHasher};
+use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 
 use super::view_model::SystrayItemSummary;
 
 const ICON_EXTENSIONS: [&str; 3] = ["png", "svg", "xpm"];
+
+thread_local! {
+    static ICON_PAINTABLES: RefCell<HashMap<IconCacheKey, gtk::gdk::Paintable>> =
+        RefCell::new(HashMap::new());
+}
+
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+enum IconCacheKey {
+    File {
+        path: PathBuf,
+    },
+    ThemeName {
+        name: String,
+        size: i32,
+    },
+    Pixmap {
+        width: i32,
+        height: i32,
+        digest: u64,
+    },
+}
 
 #[derive(Default)]
 pub(super) struct SystrayIconCache {
@@ -53,9 +76,9 @@ pub(super) fn systray_item_content(
         icon_cache.add_theme_path(icon_theme_path);
 
         if let Some(path) = icon_cache.resolve_icon_path(icon_theme_path, icon_name) {
-            let image = gtk::Image::from_file(path);
-            image.set_pixel_size(icon_size);
-            return image.upcast();
+            if let Some(image) = image_from_icon_path(path, icon_size) {
+                return image.upcast();
+            }
         }
     }
 
@@ -90,16 +113,26 @@ fn image_from_pixmap(
     pixmap: &wayle_systray::types::item::IconPixmap,
     icon_size: i32,
 ) -> gtk::Image {
-    let bytes = gtk::glib::Bytes::from_owned(pixmap.data.clone());
-    let texture = gtk::gdk::MemoryTexture::new(
-        pixmap.width,
-        pixmap.height,
-        gtk::gdk::MemoryFormat::A8r8g8b8,
-        &bytes,
-        pixmap.width as usize * 4,
-    );
+    let key = IconCacheKey::Pixmap {
+        width: pixmap.width,
+        height: pixmap.height,
+        digest: pixmap_digest(pixmap),
+    };
 
-    let image = gtk::Image::from_paintable(Some(&texture));
+    let paintable = cached_paintable(key, || {
+        let bytes = gtk::glib::Bytes::from_owned(pixmap.data.clone());
+        let texture = gtk::gdk::MemoryTexture::new(
+            pixmap.width,
+            pixmap.height,
+            gtk::gdk::MemoryFormat::A8r8g8b8,
+            &bytes,
+            pixmap.width as usize * 4,
+        );
+
+        Some(texture.upcast())
+    });
+
+    let image = gtk::Image::from_paintable(paintable.as_ref());
     image.set_pixel_size(icon_size);
     image
 }
@@ -112,14 +145,62 @@ fn image_from_icon_name(icon_name: &str, icon_size: i32) -> Option<gtk::Image> {
         return None;
     }
 
-    let image = gtk::Image::from_icon_name(icon_name);
+    let key = IconCacheKey::ThemeName {
+        name: icon_name.to_string(),
+        size: icon_size,
+    };
+
+    let paintable = cached_paintable(key, || {
+        let paintable = icon_theme.lookup_icon(
+            icon_name,
+            &[],
+            icon_size,
+            1,
+            gtk::TextDirection::None,
+            gtk::IconLookupFlags::empty(),
+        );
+
+        Some(paintable.upcast())
+    })?;
+
+    let image = gtk::Image::from_paintable(Some(&paintable));
     image.set_pixel_size(icon_size);
     Some(image)
 }
 
 fn image_from_icon_file(path: &str, icon_size: i32) -> Option<gtk::Image> {
-    let texture = gtk::gdk::Texture::from_filename(path).ok()?;
-    let image = gtk::Image::from_paintable(Some(&texture));
+    image_from_icon_path(PathBuf::from(path), icon_size)
+}
+
+fn image_from_icon_path(path: PathBuf, icon_size: i32) -> Option<gtk::Image> {
+    let key = IconCacheKey::File { path: path.clone() };
+
+    let paintable = cached_paintable(key, || {
+        let texture = gtk::gdk::Texture::from_filename(&path).ok()?;
+        Some(texture.upcast())
+    })?;
+
+    let image = gtk::Image::from_paintable(Some(&paintable));
     image.set_pixel_size(icon_size);
     Some(image)
+}
+
+fn cached_paintable(
+    key: IconCacheKey,
+    load: impl FnOnce() -> Option<gtk::gdk::Paintable>,
+) -> Option<gtk::gdk::Paintable> {
+    if let Some(paintable) = ICON_PAINTABLES.with(|cache| cache.borrow().get(&key).cloned()) {
+        return Some(paintable);
+    }
+
+    let paintable = load()?;
+    ICON_PAINTABLES.with(|cache| cache.borrow_mut().insert(key, paintable.clone()));
+
+    Some(paintable)
+}
+
+fn pixmap_digest(pixmap: &wayle_systray::types::item::IconPixmap) -> u64 {
+    let mut hasher = DefaultHasher::new();
+    pixmap.data.hash(&mut hasher);
+    hasher.finish()
 }
