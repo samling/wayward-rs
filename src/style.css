@@ -793,8 +793,10 @@ levelbar.osd-level block.filled {
     box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 transparent;
     color: inherit;
     padding: 0.7em;
+    transform: translateX(0);
     transition:
         opacity 140ms ease-out,
+        transform 140ms ease-out,
         background-color 140ms ease-out,
         border-color 140ms ease-out,
         box-shadow 140ms ease-out;
@@ -810,6 +812,12 @@ levelbar.osd-level block.filled {
 .notification-card.dismissing,
 .notification-card.dismissing:hover {
     opacity: 0;
+    transform: translateX(56px);
+}
+
+.notification-card.entering {
+    opacity: 0;
+    transform: translateX(56px);
 }
 
 .notification-card.low {
@@ -928,7 +936,7 @@ levelbar.osd-level block.filled {
 }
 
 .notification-toast {
-    min-width: 320px;
+    min-width: 392px;
 }
 
 .notification-toast.notification-card {

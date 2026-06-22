@@ -7,6 +7,7 @@ use super::model::{NotificationAction, NotificationToast};
 
 const DROPDOWN_TEXT_WIDTH_CHARS: i32 = 34;
 const DROPDOWN_BODY_PREVIEW_LINES: usize = 4;
+const NOTIFICATION_CARD_WIDTH: i32 = 392;
 pub(crate) const NOTIFICATION_EXIT_ANIMATION_MS: u64 = 220;
 
 #[derive(Clone, Default)]
@@ -29,7 +30,7 @@ pub(crate) struct NotificationCardOptions {
 pub(crate) fn dropdown_card_options() -> NotificationCardOptions {
     NotificationCardOptions {
         class_name: "notification-list-row",
-        width_request: Some(320),
+        width_request: Some(NOTIFICATION_CARD_WIDTH),
         text_width_chars: DROPDOWN_TEXT_WIDTH_CHARS,
         summary_lines: 2,
         body_lines: 3,
@@ -40,7 +41,7 @@ pub(crate) fn dropdown_card_options() -> NotificationCardOptions {
 pub(crate) fn toast_card_options() -> NotificationCardOptions {
     NotificationCardOptions {
         class_name: "notification-toast",
-        width_request: Some(320),
+        width_request: Some(NOTIFICATION_CARD_WIDTH),
         text_width_chars: DROPDOWN_TEXT_WIDTH_CHARS,
         summary_lines: 2,
         body_lines: 4,
@@ -152,6 +153,14 @@ impl NotificationCard {
             self.root.add_css_class("dismissing");
         } else {
             self.root.remove_css_class("dismissing");
+        }
+    }
+
+    pub(crate) fn set_entering(&self, entering: bool) {
+        if entering {
+            self.root.add_css_class("entering");
+        } else {
+            self.root.remove_css_class("entering");
         }
     }
 
