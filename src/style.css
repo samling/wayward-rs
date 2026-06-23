@@ -250,7 +250,7 @@ menubutton.bar-item > button:checked {
 
 .workspace-label {
     background: transparent;
-    min-height: 1em;
+    min-height: var(--workspace-label-min-height, 12px);
     padding: 0;
 }
 
