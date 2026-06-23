@@ -98,6 +98,18 @@
     padding: 0;
 }
 
+.bar-item-icon-slot {
+    min-height: var(--bar-icon-size, 16px);
+    min-width: var(--bar-icon-size, 16px);
+}
+
+.bar-item-glyph {
+    font-size: var(--bar-icon-size, 16px);
+    line-height: 1;
+    min-height: var(--bar-icon-size, 16px);
+    min-width: var(--bar-icon-size, 16px);
+}
+
 .battery-icon,
 .brightness-icon,
 .notifications-icon,
@@ -1050,8 +1062,6 @@ levelbar.osd-level block.filled {
 
 .action-menu-bar-icon {
     font-family: var(--action-menu-icon-font-family, "Symbols Nerd Font"), "Symbols Nerd Font Mono", "Adwaita Sans";
-    font-size: var(--bar-icon-size, 16px);
-    line-height: 1;
 }
 
 .action-menu-settings .action-menu-action-icon,
