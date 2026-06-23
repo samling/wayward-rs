@@ -2,7 +2,7 @@ use crate::config::{BarConfig, StyleConfig};
 use relm4::{
     gtk::{
         self,
-        prelude::{BoxExt, WidgetExt},
+        prelude::{BoxExt, ButtonExt, WidgetExt},
     },
     prelude::ComponentSender,
 };
@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use super::{
     controls::{color_row, number_row, string_list_row, string_row, toggle_row},
     spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec},
-    window::SettingsWindow,
+    window::{SettingsInput, SettingsWindow},
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -136,25 +136,35 @@ impl SettingsPage {
 
 pub(crate) fn render_current_page(
     container: &gtk::Box,
+    appearance_subpages: &gtk::Box,
     title: &gtk::Label,
     active_page: SettingsPage,
+    active_appearance_section: &'static str,
     config: &SettingsConfig,
     sender: &ComponentSender<SettingsWindow>,
 ) {
     clear_container(container);
+    clear_container(appearance_subpages);
 
     match active_page {
         SettingsPage::Appearance => {
-            let page = super::pages::notifications::page(&config.style);
-            title.set_label(&page.title);
-            render_page(container, page, sender);
+            appearance_subpages.set_visible(true);
+            render_appearance_subpages(appearance_subpages, active_appearance_section, sender);
+            title.set_label(SettingsPage::Appearance.title());
+            render_section(
+                container,
+                super::pages::notifications::section_spec(active_appearance_section, &config.style),
+                sender,
+            );
         }
         SettingsPage::Widgets => {
+            appearance_subpages.set_visible(false);
             let page = super::pages::widgets::page(&config.widgets);
             title.set_label(&page.title);
             render_page(container, page, sender);
         }
         SettingsPage::BarLayout => {
+            appearance_subpages.set_visible(false);
             title.set_label(SettingsPage::BarLayout.title());
             super::pages::bar_layout::render(
                 container,
@@ -164,6 +174,13 @@ pub(crate) fn render_current_page(
             );
         }
     };
+}
+
+pub(crate) fn default_appearance_section() -> &'static str {
+    super::pages::notifications::sections()
+        .into_iter()
+        .next()
+        .unwrap_or("Palette")
 }
 
 pub(crate) fn sidebar_button_classes(
@@ -180,6 +197,35 @@ pub(crate) fn sidebar_button_classes(
 fn clear_container(container: &gtk::Box) {
     while let Some(child) = container.first_child() {
         container.remove(&child);
+    }
+}
+
+fn render_appearance_subpages(
+    container: &gtk::Box,
+    active_section: &'static str,
+    sender: &ComponentSender<SettingsWindow>,
+) {
+    for section in super::pages::notifications::sections() {
+        let button = gtk::Button::with_label(section);
+        button.set_css_classes(&appearance_subpage_button_classes(active_section, section));
+
+        let input_sender = sender.input_sender().clone();
+        button.connect_clicked(move |_| {
+            let _ = input_sender.send(SettingsInput::SetAppearanceSection(section));
+        });
+
+        container.append(&button);
+    }
+}
+
+fn appearance_subpage_button_classes(
+    active_section: &'static str,
+    section: &'static str,
+) -> Vec<&'static str> {
+    if active_section == section {
+        vec!["settings-subpage-button", "active"]
+    } else {
+        vec!["settings-subpage-button"]
     }
 }
 

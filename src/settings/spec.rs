@@ -116,6 +116,7 @@ pub(crate) struct ColorSpec {
     pub(crate) path: &'static [&'static str],
     pub(crate) value: Option<String>,
     pub(crate) default: &'static str,
+    pub(crate) inherited: Option<String>,
     pub(crate) role: ColorSettingRole,
 }
 
@@ -130,11 +131,12 @@ impl ColorSpec {
     pub(crate) fn display_value(&self) -> String {
         self.value
             .clone()
+            .or_else(|| self.inherited.clone())
             .unwrap_or_else(|| self.default.to_string())
     }
 
     pub(crate) fn entry_value(&self) -> String {
-        if self.role == ColorSettingRole::Override && self.value.is_none() {
+        if self.is_inherited() {
             String::new()
         } else {
             self.display_value()
@@ -142,15 +144,19 @@ impl ColorSpec {
     }
 
     pub(crate) fn display_label(&self) -> String {
-        match self.role {
-            ColorSettingRole::Palette => self.label.to_string(),
-            ColorSettingRole::Default => append_suffix_once(self.label, "default"),
-            ColorSettingRole::Override => append_suffix_once(self.label, "override"),
-        }
+        self.label.to_string()
     }
 
     pub(crate) fn placeholder(&self) -> Option<&'static str> {
-        (self.role == ColorSettingRole::Override).then_some("Inherited")
+        self.is_inherited().then_some("Inherited")
+    }
+
+    pub(crate) fn is_inherited(&self) -> bool {
+        self.role == ColorSettingRole::Override && self.value.is_none()
+    }
+
+    pub(crate) fn is_custom(&self) -> bool {
+        self.value.is_some()
     }
 
     pub(crate) fn reset_tooltip(&self) -> &'static str {
@@ -163,14 +169,6 @@ impl ColorSpec {
 
     pub(crate) fn value_for_config(&self, value: String) -> ConfigValue {
         ConfigValue::String(value)
-    }
-}
-
-fn append_suffix_once(label: &str, suffix: &str) -> String {
-    if label.to_ascii_lowercase().contains(suffix) {
-        label.to_string()
-    } else {
-        format!("{label} {suffix}")
     }
 }
 

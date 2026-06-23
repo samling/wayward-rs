@@ -1,7 +1,7 @@
 use crate::config::{
     StyleConfig,
     style::StyleGroupExt,
-    variables::{SettingUiSpec, settings_for_section},
+    variables::{SettingUiSpec, palette_color_default, settings_for_section},
 };
 
 use super::super::spec::{
@@ -48,6 +48,7 @@ pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> Settin
                     path: spec.path,
                     value: group.and_then(|group| group.string(spec.key)),
                     default,
+                    inherited: inherited_color(spec, style, default),
                     role: color_setting_role(spec),
                 })),
             }
@@ -67,5 +68,44 @@ fn color_setting_role(spec: &crate::config::variables::StyleSettingSpec) -> Colo
         ColorSettingRole::Default
     } else {
         ColorSettingRole::Override
+    }
+}
+
+fn inherited_color(
+    spec: &crate::config::variables::StyleSettingSpec,
+    style: &StyleConfig,
+    default: &'static str,
+) -> Option<String> {
+    if color_setting_role(spec) != ColorSettingRole::Override {
+        return None;
+    }
+
+    if spec.group != "bar" && matches!(spec.key, "widget-background-color" | "widget-border-color")
+    {
+        return Some(
+            style
+                .group("bar")
+                .and_then(|group| group.string(spec.key))
+                .unwrap_or_else(|| global_widget_color_default(spec.key).to_string()),
+        );
+    }
+
+    if let Some(palette_key) = spec.palette_fallback_key() {
+        return Some(
+            style
+                .group("palette")
+                .and_then(|group| group.string(palette_key))
+                .or_else(|| palette_color_default(palette_key).map(str::to_string))
+                .unwrap_or_else(|| default.to_string()),
+        );
+    }
+
+    Some(default.to_string())
+}
+
+fn global_widget_color_default(key: &str) -> &'static str {
+    match key {
+        "widget-background-color" | "widget-border-color" => "transparent",
+        _ => "transparent",
     }
 }

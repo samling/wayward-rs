@@ -10,13 +10,16 @@ use relm4::{
     prelude::*,
 };
 
-use super::page::{SettingsPage, render_current_page, sidebar_button_classes};
+use super::page::{
+    SettingsPage, default_appearance_section, render_current_page, sidebar_button_classes,
+};
 
 pub(crate) use super::page::SettingsConfig;
 
 pub(crate) struct SettingsWindow {
     config: SettingsConfig,
     active_page: SettingsPage,
+    active_appearance_section: &'static str,
     appearance_scroll: f64,
     widgets_scroll: f64,
     bar_layout_scroll: f64,
@@ -26,6 +29,7 @@ pub(crate) struct SettingsWindow {
 pub(crate) enum SettingsInput {
     Close,
     SetPage(SettingsPage),
+    SetAppearanceSection(&'static str),
     SetConfig(SettingsConfig),
     SetValue {
         path: &'static [&'static str],
@@ -182,6 +186,13 @@ impl Component for SettingsWindow {
                             add_css_class: "settings-page-title",
                         },
 
+                        #[name = "appearance_subpages"]
+                        gtk::Box {
+                            set_orientation: gtk::Orientation::Horizontal,
+                            set_spacing: 6,
+                            add_css_class: "settings-subpage-nav",
+                        },
+
                         #[name = "page_scroll"]
                         gtk::ScrolledWindow {
                             set_hexpand: true,
@@ -209,6 +220,7 @@ impl Component for SettingsWindow {
         let model = Self {
             config,
             active_page: SettingsPage::Appearance,
+            active_appearance_section: default_appearance_section(),
             appearance_scroll: 0.0,
             widgets_scroll: 0.0,
             bar_layout_scroll: 0.0,
@@ -219,8 +231,10 @@ impl Component for SettingsWindow {
 
         render_current_page(
             &widgets.page_content,
+            &widgets.appearance_subpages,
             &widgets.page_title,
             model.active_page,
+            model.active_appearance_section,
             &model.config,
             &sender,
         );
@@ -245,8 +259,30 @@ impl Component for SettingsWindow {
                     self.active_page = page;
                     render_current_page(
                         &widgets.page_content,
+                        &widgets.appearance_subpages,
                         &widgets.page_title,
                         self.active_page,
+                        self.active_appearance_section,
+                        &self.config,
+                        &sender,
+                    );
+                    self.restore_scroll(widgets);
+                }
+            }
+            SettingsInput::SetAppearanceSection(section) => {
+                if self.active_page != SettingsPage::Appearance
+                    || self.active_appearance_section != section
+                {
+                    self.save_scroll(widgets);
+                    self.active_page = SettingsPage::Appearance;
+                    self.active_appearance_section = section;
+                    self.appearance_scroll = 0.0;
+                    render_current_page(
+                        &widgets.page_content,
+                        &widgets.appearance_subpages,
+                        &widgets.page_title,
+                        self.active_page,
+                        self.active_appearance_section,
                         &self.config,
                         &sender,
                     );
@@ -259,8 +295,10 @@ impl Component for SettingsWindow {
                     self.config = config;
                     render_current_page(
                         &widgets.page_content,
+                        &widgets.appearance_subpages,
                         &widgets.page_title,
                         self.active_page,
+                        self.active_appearance_section,
                         &self.config,
                         &sender,
                     );
@@ -280,8 +318,10 @@ impl Component for SettingsWindow {
                         self.save_scroll(widgets);
                         render_current_page(
                             &widgets.page_content,
+                            &widgets.appearance_subpages,
                             &widgets.page_title,
                             self.active_page,
+                            self.active_appearance_section,
                             &self.config,
                             &sender,
                         );

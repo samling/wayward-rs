@@ -230,6 +230,11 @@ pub(crate) fn color_row(
 
     let entry = gtk::Entry::new();
     entry.add_css_class("settings-color-value");
+    if setting.is_inherited() {
+        entry.add_css_class("settings-color-value-inherited");
+    } else if setting.is_custom() {
+        entry.add_css_class("settings-color-value-custom");
+    }
     entry.set_placeholder_text(setting.placeholder());
     entry.set_text(&setting.entry_value());
     entry.set_width_chars(24);
@@ -265,6 +270,8 @@ pub(crate) fn color_row(
         };
 
         entry.remove_css_class("error");
+        entry.remove_css_class("settings-color-value-inherited");
+        entry.add_css_class("settings-color-value-custom");
         entry_reset_button.set_sensitive(true);
 
         entry_updating.set(true);
@@ -310,6 +317,8 @@ pub(crate) fn color_row(
                 button_entry.set_text(&value);
                 button_updating.set(false);
 
+                button_entry.remove_css_class("settings-color-value-inherited");
+                button_entry.add_css_class("settings-color-value-custom");
                 button_reset_button.set_sensitive(true);
                 change_writer.send_now(Some(saved_setting.value_for_config(value)));
             },

@@ -1116,6 +1116,31 @@ levelbar.osd-level block.filled {
   margin: 18px 24px 4px;
 }
 
+.settings-subpage-nav {
+  margin: 0 24px;
+}
+
+.settings-subpage-button {
+  background: transparent;
+  background-image: none;
+  border: 1px solid var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08));
+  border-radius: 999px;
+  box-shadow: none;
+  color: var(--settings-row-value-color, var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.58)));
+  font-weight: 600;
+  padding: 5px 10px;
+}
+
+.settings-subpage-button:hover {
+  background-color: var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.08));
+}
+
+.settings-subpage-button.active {
+  background-color: var(--md-sys-color-secondary-container, rgba(255, 255, 255, 0.12));
+  border-color: var(--md-sys-color-secondary, rgba(203, 166, 247, 0.42));
+  color: var(--md-sys-color-on-secondary-container, rgba(245, 245, 245, 0.95));
+}
+
 .settings-section {
   margin: 0 24px 18px;
 }
@@ -1155,7 +1180,15 @@ levelbar.osd-level block.filled {
 
 .settings-color-value {
     font-family: monospace;
-    opacity: 0.75;
+    opacity: 1;
+}
+
+.settings-color-value-inherited {
+    opacity: 0.58;
+}
+
+.settings-color-value-custom {
+    opacity: 1;
 }
 
 .settings-color-value.error {
