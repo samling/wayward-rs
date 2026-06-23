@@ -911,15 +911,23 @@ levelbar.osd-level block.filled {
 }
 
 .action-menu-dropdown-content {
-    min-width: var(--action-menu-panel-width, 320px);
+    min-width: var(--action-menu-panel-width, 268px);
 }
 
 .action-menu-header {
-    margin-bottom: 0.15em;
+    margin-bottom: 0;
+    padding: 0.55em 0.65em;
 }
 
 .action-menu-section {
     margin: 0;
+}
+
+.action-menu-card-section {
+    background-color: var(--action-menu-section-background-color, rgba(241, 243, 244, 0.045));
+    border: 1px solid var(--action-menu-section-border-color, rgba(241, 243, 244, 0.07));
+    border-radius: var(--action-menu-section-border-radius, 7px);
+    padding: var(--action-menu-section-padding, 0.9em 0.95em);
 }
 
 .action-menu-section-title {
@@ -931,7 +939,8 @@ levelbar.osd-level block.filled {
     color: var(--dropdown-section-title-color, rgba(241, 243, 244, 0.72));
     font-size: 0.86em;
     font-weight: 600;
-    margin-top: 0.1em;
+    margin-bottom: 0.15em;
+    margin-top: 0;
 }
 
 .action-menu-settings,
@@ -942,9 +951,9 @@ levelbar.osd-level block.filled {
 .action-menu-action.flat,
 .action-menu-screenshot-action,
 .action-menu-screenshot-action.flat {
-    background: var(--action-menu-button-background-color, rgba(241, 243, 244, 0.055));
+    background: var(--action-menu-button-background-color, rgba(205, 164, 249, 0.18));
     background-image: none;
-    border: 1px solid var(--action-menu-button-border-color, rgba(241, 243, 244, 0.14));
+    border: 1px solid var(--action-menu-button-border-color, rgba(205, 164, 249, 0.24));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -956,13 +965,13 @@ levelbar.osd-level block.filled {
 .action-menu-power,
 .action-menu-action,
 .action-menu-screenshot-action {
-    padding: 0.65em 0.75em;
+    padding: 0;
 }
 
 .action-menu-settings,
 .action-menu-power {
-    min-height: 30px;
-    min-width: 30px;
+    min-height: 28px;
+    min-width: 28px;
     padding: 0;
 }
 
@@ -976,7 +985,7 @@ levelbar.osd-level block.filled {
 }
 
 .action-menu-action-label {
-    font-size: 0.82em;
+    font-size: 0.78em;
     font-weight: 500;
     opacity: 0.78;
 }
@@ -989,13 +998,13 @@ levelbar.osd-level block.filled {
 .action-menu-action.flat:hover,
 .action-menu-screenshot-action:hover,
 .action-menu-screenshot-action.flat:hover {
-    background: var(--action-menu-button-hover-background-color, rgba(241, 243, 244, 0.08));
-    border-color: var(--action-menu-button-hover-border-color, rgba(137, 180, 250, 0.65));
+    background: var(--action-menu-button-hover-background-color, rgba(205, 164, 249, 0.28));
+    border-color: var(--action-menu-button-hover-border-color, rgba(205, 164, 249, 0.5));
 }
 
 .action-menu-action-icon {
     font-family: var(--action-menu-icon-font-family, "Symbols Nerd Font"), "Symbols Nerd Font Mono", "Adwaita Sans";
-    font-size: var(--action-menu-icon-font-size, 1.45em);
+    font-size: var(--action-menu-icon-font-size, 1.72em);
     font-weight: 400;
     line-height: 1;
 }
@@ -1007,7 +1016,7 @@ levelbar.osd-level block.filled {
 .action-menu-settings .action-menu-action-icon,
 .action-menu-power .action-menu-action-icon,
 .action-menu-action-icon.power {
-    font-size: var(--action-menu-header-icon-font-size, 1.25em);
+    font-size: var(--action-menu-header-icon-font-size, 1.15em);
 }
 
 .action-menu-settings label,
@@ -1018,9 +1027,9 @@ levelbar.osd-level block.filled {
 
 .action-menu-screenshot-action,
 .action-menu-screenshot-action.flat {
-    min-height: var(--action-menu-screenshot-button-size, 44px);
-    min-width: var(--action-menu-screenshot-button-size, 44px);
-    padding: 8px;
+    min-height: var(--action-menu-screenshot-button-size, 40px);
+    min-width: var(--action-menu-screenshot-button-size, 40px);
+    padding: 0;
 }
 
 .updates-list-scroll,

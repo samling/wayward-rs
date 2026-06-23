@@ -164,7 +164,8 @@ impl WorkspacesComponent {
         let edge = self.edge;
 
         gtk::glib::idle_add_local_once(move || {
-            let Some(target) = IndicatorBounds::from_widget(&active_workspace, &indicator_layer, edge)
+            let Some(target) =
+                IndicatorBounds::from_widget(&active_workspace, &indicator_layer, edge)
             else {
                 let mut state = animation_state.borrow_mut();
 

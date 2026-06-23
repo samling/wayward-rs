@@ -70,6 +70,11 @@ fn build_section(
 ) -> gtk::Box {
     let section_box = gtk::Box::new(gtk::Orientation::Vertical, layout.row_spacing.max(0));
     section_box.add_css_class("action-menu-section");
+    if section.align == ActionMenuSectionAlign::End {
+        section_box.add_css_class("action-menu-toolbar-section");
+    } else {
+        section_box.add_css_class("action-menu-card-section");
+    }
 
     let grid = gtk::Grid::new();
     grid.add_css_class("action-menu-actions");
@@ -122,7 +127,7 @@ fn widget_action(action: &ActionMenuActionConfig) -> Option<WidgetAction> {
     match action.action {
         ActionMenuActionKind::Command => {
             let Some(program) = action.command.clone() else {
-                tracing::error!("Ignoring acdtion menu command without a program");
+                tracing::error!("Ignoring action menu command without a program");
                 return None;
             };
 

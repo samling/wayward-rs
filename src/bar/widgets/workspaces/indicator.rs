@@ -18,7 +18,11 @@ pub(super) struct IndicatorBounds {
 }
 
 impl IndicatorBounds {
-    pub(super) fn from_widget(widget: &gtk::Box, surface: &impl WidgetExt, edge: BarEdge) -> Option<Self> {
+    pub(super) fn from_widget(
+        widget: &gtk::Box,
+        surface: &impl WidgetExt,
+        edge: BarEdge,
+    ) -> Option<Self> {
         let bounds = widget.compute_bounds(surface)?;
         let surface_x = 0.0;
         let surface_y = 0.0;
@@ -69,15 +73,15 @@ impl IndicatorBounds {
 
     fn with_outset(self, edge: BarEdge, outset: f64) -> Self {
         match edge {
-        BarEdge::Top | BarEdge::Bottom => Self {
-            x: self.x - outset,
-            width: self.width + outset * 2.0,
-            ..self
-        },
-        BarEdge::Left | BarEdge::Right => Self {
-            y: self.y - outset,
-            height: self.height + outset * 2.0,
-            ..self
+            BarEdge::Top | BarEdge::Bottom => Self {
+                x: self.x - outset,
+                width: self.width + outset * 2.0,
+                ..self
+            },
+            BarEdge::Left | BarEdge::Right => Self {
+                y: self.y - outset,
+                height: self.height + outset * 2.0,
+                ..self
             },
         }
     }
