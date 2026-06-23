@@ -76,7 +76,7 @@ fn build_section(
     grid.set_halign(gtk_align(section.align));
     grid.set_hexpand(matches!(section.align, ActionMenuSectionAlign::Fill));
     grid.set_column_homogeneous(true);
-    grid.set_column_spacing(section_column_spacing(section, layout) as u32);
+    grid.set_column_spacing(layout.column_spacing.max(0) as u32);
     grid.set_row_spacing(layout.row_spacing.max(0) as u32);
 
     let columns = section.columns.unwrap_or(layout.columns).max(1);
@@ -118,25 +118,6 @@ fn build_section(
     section_box
 }
 
-fn section_column_spacing(
-    section: &ActionMenuSectionConfig,
-    layout: &ActionMenuLayoutConfig,
-) -> i32 {
-    let has_labeled_icon_actions = !section.actions.is_empty()
-        && section
-            .actions
-            .iter()
-            .all(|action| action.show_label && !action.label.is_empty() && action.icon.is_some());
-
-    if has_labeled_icon_actions {
-        layout
-            .column_spacing
-            .max(layout.button_width.unwrap_or(44).max(1))
-    } else {
-        layout.column_spacing.max(0)
-    }
-}
-
 fn widget_action(action: &ActionMenuActionConfig) -> Option<WidgetAction> {
     match action.action {
         ActionMenuActionKind::Command => {
@@ -170,6 +151,7 @@ fn build_action_control(
         item.add_css_class("action-menu-action-item");
         item.set_halign(gtk::Align::Center);
         item.set_valign(gtk::Align::Center);
+        item.set_width_request(layout.button_width.unwrap_or(44).max(1));
 
         let label = gtk::Label::new(Some(&action.label));
         label.add_css_class("action-menu-action-label");
