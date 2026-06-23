@@ -240,8 +240,8 @@ mod tests {
             .expect("bar item content child reset should exist");
 
         assert!(child_rule.contains("margin: 0;"));
-        assert!(child_rule.contains("min-height: 0;"));
         assert!(child_rule.contains("padding: 0;"));
+        assert!(!child_rule.contains("min-height:"));
     }
 
     #[test]
@@ -298,12 +298,13 @@ mod tests {
             .map(|(rule, _)| rule)
             .expect("workspaces items rule should exist");
 
-        assert!(rule.contains("border-spacing: 0.4em;"));
+        assert!(rule.contains("border-spacing: var(--workspaces-gap, 5px);"));
         assert!(
             rule.contains(
                 "padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x"
             )
         );
+        assert!(!rule.contains("em"));
     }
 
     #[test]
@@ -324,7 +325,12 @@ mod tests {
 
         assert!(content_rule.contains("padding: 0;"));
         assert!(!content_rule.contains("border-spacing:"));
-        assert!(workspace_rule.contains("padding: var(--bar-widget-padding-y, 0px) 0.65em;"));
+        assert!(
+            workspace_rule.contains(
+                "padding: var(--workspace-padding-y, 2px) var(--workspace-padding-x, 8px);"
+            )
+        );
+        assert!(!workspace_rule.contains("em"));
     }
 
     #[test]
@@ -436,7 +442,7 @@ mod tests {
     }
 
     #[test]
-    fn generated_style_config_includes_configured_per_widget_surface_controls() {
+    fn generated_style_config_ignores_per_widget_surface_controls() {
         let mut style = StyleConfig::default();
         style.brightness.insert(
             "widget-background-color".to_string(),
@@ -448,12 +454,12 @@ mod tests {
 
         let css = generated_style_config(&style);
 
-        assert!(css.contains("--brightness-widget-background-color: rgba(137, 180, 250, 0.2);"));
-        assert!(css.contains("--brightness-widget-border-radius: 8px;"));
+        assert!(!css.contains("--brightness-widget-background-color"));
+        assert!(!css.contains("--brightness-widget-border-radius"));
     }
 
     #[test]
-    fn generated_style_config_does_not_emit_unconfigured_per_widget_surface_defaults() {
+    fn generated_style_config_only_emits_shared_widget_surface_defaults() {
         let css = generated_style_config(&StyleConfig::default());
 
         assert!(css.contains("--bar-widget-background-color: transparent;"));

@@ -47,23 +47,10 @@ impl SimpleComponent for ActionMenuComponent {
             set_child = &gtk::Box {
                 set_orientation: gtk::Orientation::Horizontal,
 
-                #[name = "icon_slot"]
-                gtk::Box {
-                    add_css_class: "bar-item-icon-slot",
-                    set_halign: gtk::Align::Center,
-                    set_valign: gtk::Align::Center,
-                    set_orientation: gtk::Orientation::Horizontal,
-
-                    #[name = "bar_icon"]
-                    gtk::Label {
-                        add_css_class: "bar-item-glyph",
-                        add_css_class: "action-menu-bar-icon",
-                        set_width_request: 16,
-                        set_height_request: 16,
-                        set_xalign: 0.5,
-                        set_yalign: 0.5,
-                        set_text: "\u{f303}",
-                    },
+                #[name = "bar_icon"]
+                gtk::Label {
+                    add_css_class: "action-menu-bar-icon",
+                    set_text: "\u{f303}",
                 },
             },
         }

@@ -98,18 +98,6 @@
     padding: 0;
 }
 
-.bar-item-icon-slot {
-    min-height: var(--bar-icon-size, 16px);
-    min-width: var(--bar-icon-size, 16px);
-}
-
-.bar-item-glyph {
-    font-size: var(--bar-icon-size, 16px);
-    line-height: 1;
-    min-height: var(--bar-icon-size, 16px);
-    min-width: var(--bar-icon-size, 16px);
-}
-
 .battery-icon,
 .brightness-icon,
 .notifications-icon,
@@ -127,69 +115,6 @@
 .volume-icon {
     min-height: var(--bar-icon-size, 16px);
     min-width: var(--bar-icon-size, 16px);
-}
-
-.action-menu .bar-item-content {
-    background-color: var(--action-menu-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--action-menu-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--action-menu-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--action-menu-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.battery .bar-item-content {
-    background-color: var(--battery-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--battery-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--battery-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--battery-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.brightness .bar-item-content {
-    background-color: var(--brightness-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--brightness-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--brightness-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--brightness-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.clock .bar-item-content {
-    background-color: var(--clock-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--clock-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--clock-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--clock-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.notifications .bar-item-content {
-    background-color: var(--notifications-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--notifications-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--notifications-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--notifications-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.systray .bar-item-content {
-    background-color: var(--systray-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--systray-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--systray-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--systray-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.updates .bar-item-content {
-    background-color: var(--updates-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--updates-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--updates-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--updates-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.volume .bar-item-content {
-    background-color: var(--volume-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--volume-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--volume-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--volume-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.workspaces .bar-item-content {
-    background-color: var(--workspaces-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--workspaces-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--workspaces-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--workspaces-widget-border-width, var(--bar-widget-border-width, 0px));
 }
 
 menubutton.bar-item > button,

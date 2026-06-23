@@ -1,101 +1,8 @@
 use super::{CssValueKind, SettingUiSpec, StyleSettingSpec};
 
-macro_rules! widget_surface_background_setting {
-    ($section:literal, $group:literal, $path_group:literal, $variable_prefix:literal) => {
-        StyleSettingSpec {
-            section: $section,
-            group: $group,
-            key: "widget-background-color",
-            path: &["style", $path_group, "widget-background-color"],
-            setting: Some(SettingUiSpec::Color {
-                label: "Widget background",
-                default: "transparent",
-            }),
-            variable: concat!("--", $variable_prefix, "-widget-background-color"),
-            css_kind: CssValueKind::String { quoted: false },
-        }
-    };
-}
-
-macro_rules! widget_surface_border_color_setting {
-    ($section:literal, $group:literal, $path_group:literal, $variable_prefix:literal) => {
-        StyleSettingSpec {
-            section: $section,
-            group: $group,
-            key: "widget-border-color",
-            path: &["style", $path_group, "widget-border-color"],
-            setting: Some(SettingUiSpec::Color {
-                label: "Widget border color",
-                default: "transparent",
-            }),
-            variable: concat!("--", $variable_prefix, "-widget-border-color"),
-            css_kind: CssValueKind::String { quoted: false },
-        }
-    };
-}
-
-macro_rules! widget_surface_border_width_setting {
-    ($section:literal, $group:literal, $path_group:literal, $variable_prefix:literal) => {
-        StyleSettingSpec {
-            section: $section,
-            group: $group,
-            key: "widget-border-width",
-            path: &["style", $path_group, "widget-border-width"],
-            setting: Some(SettingUiSpec::Number {
-                label: "Widget border width",
-                default: 0,
-                min: 0.0,
-                max: 8.0,
-                step: 1.0,
-            }),
-            variable: concat!("--", $variable_prefix, "-widget-border-width"),
-            css_kind: CssValueKind::Integer { unit: "px" },
-        }
-    };
-}
-
-macro_rules! widget_surface_border_radius_setting {
-    ($section:literal, $group:literal, $path_group:literal, $variable_prefix:literal) => {
-        StyleSettingSpec {
-            section: $section,
-            group: $group,
-            key: "widget-border-radius",
-            path: &["style", $path_group, "widget-border-radius"],
-            setting: Some(SettingUiSpec::Number {
-                label: "Widget border radius",
-                default: 0,
-                min: 0.0,
-                max: 24.0,
-                step: 1.0,
-            }),
-            variable: concat!("--", $variable_prefix, "-widget-border-radius"),
-            css_kind: CssValueKind::Integer { unit: "px" },
-        }
-    };
-}
-
-macro_rules! widget_surface_settings {
-    ($section:literal, $slug:literal) => {
-        widget_surface_settings!($section, $slug, $slug, $slug)
-    };
-    ($section:literal, $group:literal, $path_group:literal, $variable_prefix:literal) => {
-        [
-            widget_surface_background_setting!($section, $group, $path_group, $variable_prefix),
-            widget_surface_border_color_setting!($section, $group, $path_group, $variable_prefix),
-            widget_surface_border_width_setting!($section, $group, $path_group, $variable_prefix),
-            widget_surface_border_radius_setting!($section, $group, $path_group, $variable_prefix),
-        ]
-    };
-}
-
 pub(super) fn style_settings() -> impl Iterator<Item = &'static StyleSettingSpec> {
     BAR_STYLE_SETTINGS
         .iter()
-        .chain(
-            WIDGET_SURFACE_SETTINGS
-                .iter()
-                .flat_map(|settings| settings.iter()),
-        )
         .chain(DETAIL_STYLE_SETTINGS.iter())
 }
 
@@ -229,6 +136,60 @@ const BAR_STYLE_SETTINGS: &[StyleSettingSpec] = &[
     StyleSettingSpec {
         section: "Bar",
         group: "bar",
+        key: "widget-background-color",
+        path: &["style", "bar", "widget-background-color"],
+        setting: Some(SettingUiSpec::Color {
+            label: "Widget background",
+            default: "transparent",
+        }),
+        variable: "--bar-widget-background-color",
+        css_kind: CssValueKind::String { quoted: false },
+    },
+    StyleSettingSpec {
+        section: "Bar",
+        group: "bar",
+        key: "widget-border-color",
+        path: &["style", "bar", "widget-border-color"],
+        setting: Some(SettingUiSpec::Color {
+            label: "Widget border color",
+            default: "transparent",
+        }),
+        variable: "--bar-widget-border-color",
+        css_kind: CssValueKind::String { quoted: false },
+    },
+    StyleSettingSpec {
+        section: "Bar",
+        group: "bar",
+        key: "widget-border-width",
+        path: &["style", "bar", "widget-border-width"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Widget border width",
+            default: 0,
+            min: 0.0,
+            max: 8.0,
+            step: 1.0,
+        }),
+        variable: "--bar-widget-border-width",
+        css_kind: CssValueKind::Integer { unit: "px" },
+    },
+    StyleSettingSpec {
+        section: "Bar",
+        group: "bar",
+        key: "widget-border-radius",
+        path: &["style", "bar", "widget-border-radius"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Widget border radius",
+            default: 0,
+            min: 0.0,
+            max: 24.0,
+            step: 1.0,
+        }),
+        variable: "--bar-widget-border-radius",
+        css_kind: CssValueKind::Integer { unit: "px" },
+    },
+    StyleSettingSpec {
+        section: "Bar",
+        group: "bar",
         key: "widget-padding-x",
         path: &["style", "bar", "widget-padding-x"],
         setting: Some(SettingUiSpec::Number {
@@ -301,19 +262,6 @@ const BAR_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         variable: "--bar-region-border-radius",
         css_kind: CssValueKind::Integer { unit: "px" },
     },
-];
-
-const WIDGET_SURFACE_SETTINGS: &[[StyleSettingSpec; 4]] = &[
-    widget_surface_settings!("Bar", "bar"),
-    widget_surface_settings!("Action menu", "action-menu"),
-    widget_surface_settings!("Battery", "battery"),
-    widget_surface_settings!("Brightness", "brightness"),
-    widget_surface_settings!("Clock", "clock"),
-    widget_surface_settings!("Notifications", "notifications"),
-    widget_surface_settings!("Systray", "systray"),
-    widget_surface_settings!("Updates", "updates"),
-    widget_surface_settings!("Volume", "volume"),
-    widget_surface_settings!("Workspaces", "workspaces"),
 ];
 
 const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
