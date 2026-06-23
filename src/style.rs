@@ -8,8 +8,7 @@ use std::{
 };
 
 use relm4::gtk::{
-    CssProvider, IconTheme, STYLE_PROVIDER_PRIORITY_USER, gdk,
-    style_context_add_provider_for_display,
+    CssProvider, STYLE_PROVIDER_PRIORITY_USER, gdk, style_context_add_provider_for_display,
 };
 
 const DEFAULT_CSS: &str = include_str!("style.css");
@@ -37,8 +36,6 @@ pub(crate) struct StyleHandle {
 
 pub fn apply_initial_css() -> Option<StyleHandle> {
     let display = gdk::Display::default()?;
-    register_app_icons(&display);
-
     let provider = CssProvider::new();
     let css = load_css();
 
@@ -50,11 +47,6 @@ pub fn apply_initial_css() -> Option<StyleHandle> {
         current_css: Rc::new(RefCell::new(css)),
         generated_css: Rc::new(RefCell::new(String::new())),
     })
-}
-
-fn register_app_icons(display: &gdk::Display) {
-    let icon_theme = IconTheme::for_display(display);
-    icon_theme.add_search_path(Path::new(env!("CARGO_MANIFEST_DIR")).join("icons"));
 }
 
 impl StyleHandle {
