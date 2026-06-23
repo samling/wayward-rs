@@ -419,9 +419,25 @@ mod tests {
         assert!(css.contains("--bar-widget-padding-y: 0px;"));
         assert!(css.contains("--bar-widget-margin-x: 0px;"));
         assert!(css.contains("--bar-widget-margin-y: 0px;"));
+        assert!(!css.contains("--bar-background-color:"));
+        assert!(!css.contains("--bar-color:"));
         assert!(!css.contains("--bar-item-content-margin-y"));
         assert!(!css.contains("--bar-item-padding-x"));
         assert!(!css.contains("--bar-item-gap-x"));
+    }
+
+    #[test]
+    fn generated_style_config_includes_material_color_roles() {
+        let css = generated_style_config(&StyleConfig::default());
+
+        assert!(css.contains("--md-sys-color-primary: #89b4fa;"));
+        assert!(css.contains("--md-sys-color-tertiary: #fdd664;"));
+        assert!(css.contains("--md-sys-color-surface: rgba(30, 30, 46, 1);"));
+        assert!(css.contains("--md-sys-color-surface-container: rgba(241, 243, 244, 0.06);"));
+        assert!(
+            css.contains("--md-sys-color-surface-container-highest: rgba(241, 243, 244, 0.12);")
+        );
+        assert!(css.contains("--md-sys-color-outline-variant: rgba(241, 243, 244, 0.08);"));
     }
 
     #[test]

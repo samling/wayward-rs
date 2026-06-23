@@ -160,7 +160,19 @@ fn write_mapped_css_variable(css: &mut String, group: &StyleGroupConfig, spec: &
 }
 
 fn should_write_default(spec: &StyleSettingSpec) -> bool {
-    spec.group == "bar" || !spec.key.starts_with("widget-")
+    if spec.group == "palette" {
+        return true;
+    }
+
+    if spec.group == "bar" && matches!(spec.key, "background-color" | "color") {
+        return false;
+    }
+
+    if spec.group == "bar" {
+        return true;
+    }
+
+    !spec.key.starts_with("widget-") && !matches!(spec.setting, Some(SettingUiSpec::Color { .. }))
 }
 
 fn write_css_variable<T: std::fmt::Display>(css: &mut String, name: &str, value: T, unit: &str) {

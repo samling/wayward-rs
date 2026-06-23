@@ -116,6 +116,14 @@ pub(crate) struct ColorSpec {
     pub(crate) path: &'static [&'static str],
     pub(crate) value: Option<String>,
     pub(crate) default: &'static str,
+    pub(crate) role: ColorSettingRole,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ColorSettingRole {
+    Palette,
+    Default,
+    Override,
 }
 
 impl ColorSpec {
@@ -125,8 +133,44 @@ impl ColorSpec {
             .unwrap_or_else(|| self.default.to_string())
     }
 
+    pub(crate) fn entry_value(&self) -> String {
+        if self.role == ColorSettingRole::Override && self.value.is_none() {
+            String::new()
+        } else {
+            self.display_value()
+        }
+    }
+
+    pub(crate) fn display_label(&self) -> String {
+        match self.role {
+            ColorSettingRole::Palette => self.label.to_string(),
+            ColorSettingRole::Default => append_suffix_once(self.label, "default"),
+            ColorSettingRole::Override => append_suffix_once(self.label, "override"),
+        }
+    }
+
+    pub(crate) fn placeholder(&self) -> Option<&'static str> {
+        (self.role == ColorSettingRole::Override).then_some("Inherited")
+    }
+
+    pub(crate) fn reset_tooltip(&self) -> &'static str {
+        match self.role {
+            ColorSettingRole::Palette => "Reset palette color",
+            ColorSettingRole::Default => "Reset default color",
+            ColorSettingRole::Override => "Remove override",
+        }
+    }
+
     pub(crate) fn value_for_config(&self, value: String) -> ConfigValue {
         ConfigValue::String(value)
+    }
+}
+
+fn append_suffix_once(label: &str, suffix: &str) -> String {
+    if label.to_ascii_lowercase().contains(suffix) {
+        label.to_string()
+    } else {
+        format!("{label} {suffix}")
     }
 }
 

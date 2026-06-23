@@ -212,7 +212,8 @@ pub(crate) fn color_row(
     let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
     row.add_css_class("settings-row");
 
-    let label = gtk::Label::new(Some(setting.label));
+    let label_text = setting.display_label();
+    let label = gtk::Label::new(Some(&label_text));
     label.set_hexpand(true);
     label.set_halign(gtk::Align::Start);
     label.add_css_class("settings-row-label");
@@ -220,7 +221,7 @@ pub(crate) fn color_row(
 
     let color = parse_color(&setting.display_value());
     let dialog = gtk::ColorDialog::builder()
-        .title(setting.label)
+        .title(&label_text)
         .modal(true)
         .with_alpha(true)
         .build();
@@ -229,7 +230,8 @@ pub(crate) fn color_row(
 
     let entry = gtk::Entry::new();
     entry.add_css_class("settings-color-value");
-    entry.set_text(&css_color_value(color));
+    entry.set_placeholder_text(setting.placeholder());
+    entry.set_text(&setting.entry_value());
     entry.set_width_chars(24);
 
     let path = setting.path;
@@ -241,6 +243,7 @@ pub(crate) fn color_row(
     row.append(&button);
     row.append(&entry);
     let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
+    reset_button.set_tooltip_text(Some(setting.reset_tooltip()));
 
     let entry_swatch = swatch.clone();
     let entry_swatch_color = swatch_color.clone();

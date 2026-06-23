@@ -5,7 +5,8 @@ use crate::config::{
 };
 
 use super::super::spec::{
-    ColorSpec, NumberSpec, SettingSpec, SettingsSectionSpec, StringSpec, ToggleSpec,
+    ColorSettingRole, ColorSpec, NumberSpec, SettingSpec, SettingsSectionSpec, StringSpec,
+    ToggleSpec,
 };
 
 pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> SettingsSectionSpec {
@@ -47,6 +48,7 @@ pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> Settin
                     path: spec.path,
                     value: group.and_then(|group| group.string(spec.key)),
                     default,
+                    role: color_setting_role(spec),
                 })),
             }
         })
@@ -55,5 +57,15 @@ pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> Settin
     SettingsSectionSpec {
         title: section_name.to_string(),
         settings,
+    }
+}
+
+fn color_setting_role(spec: &crate::config::variables::StyleSettingSpec) -> ColorSettingRole {
+    if spec.group == "palette" {
+        ColorSettingRole::Palette
+    } else if spec.group == "bar" && spec.key.starts_with("widget-") {
+        ColorSettingRole::Default
+    } else {
+        ColorSettingRole::Override
     }
 }
