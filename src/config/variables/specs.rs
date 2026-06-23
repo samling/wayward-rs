@@ -283,13 +283,13 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
     StyleSettingSpec {
         section: "Workspaces",
         group: "workspaces",
-        key: "content-background-color",
-        path: &["style", "workspaces", "content-background-color"],
+        key: "widget-background-color",
+        path: &["style", "workspaces", "widget-background-color"],
         setting: Some(SettingUiSpec::Color {
-            label: "Content background",
+            label: "Widget background",
             default: "rgba(255, 255, 255, 0.1)",
         }),
-        variable: "--workspaces-content-background-color",
+        variable: "--workspaces-widget-background-color",
         css_kind: CssValueKind::String { quoted: false },
     },
     StyleSettingSpec {
@@ -305,6 +305,33 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
             step: 1.0,
         }),
         variable: "--workspaces-content-border-radius",
+        css_kind: CssValueKind::Integer { unit: "px" },
+    },
+    StyleSettingSpec {
+        section: "Workspaces",
+        group: "workspaces",
+        key: "widget-border-color",
+        path: &["style", "workspaces", "widget-border-color"],
+        setting: Some(SettingUiSpec::Color {
+            label: "Widget border color",
+            default: "transparent",
+        }),
+        variable: "--workspaces-widget-border-color",
+        css_kind: CssValueKind::String { quoted: false },
+    },
+    StyleSettingSpec {
+        section: "Workspaces",
+        group: "workspaces",
+        key: "widget-border-width",
+        path: &["style", "workspaces", "widget-border-width"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Widget border width",
+            default: 0,
+            min: 0.0,
+            max: 8.0,
+            step: 1.0,
+        }),
+        variable: "--workspaces-widget-border-width",
         css_kind: CssValueKind::Integer { unit: "px" },
     },
     StyleSettingSpec {
@@ -628,13 +655,13 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
     StyleSettingSpec {
         section: "Systray",
         group: "systray",
-        key: "content-background-color",
-        path: &["style", "systray", "content-background-color"],
+        key: "widget-background-color",
+        path: &["style", "systray", "widget-background-color"],
         setting: Some(SettingUiSpec::Color {
-            label: "Content background",
+            label: "Widget background",
             default: "rgba(255, 255, 255, 0.1)",
         }),
-        variable: "--systray-content-background-color",
+        variable: "--systray-widget-background-color",
         css_kind: CssValueKind::String { quoted: false },
     },
     StyleSettingSpec {
@@ -650,6 +677,33 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
             step: 1.0,
         }),
         variable: "--systray-content-border-radius",
+        css_kind: CssValueKind::Integer { unit: "px" },
+    },
+    StyleSettingSpec {
+        section: "Systray",
+        group: "systray",
+        key: "widget-border-color",
+        path: &["style", "systray", "widget-border-color"],
+        setting: Some(SettingUiSpec::Color {
+            label: "Widget border color",
+            default: "transparent",
+        }),
+        variable: "--systray-widget-border-color",
+        css_kind: CssValueKind::String { quoted: false },
+    },
+    StyleSettingSpec {
+        section: "Systray",
+        group: "systray",
+        key: "widget-border-width",
+        path: &["style", "systray", "widget-border-width"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Widget border width",
+            default: 0,
+            min: 0.0,
+            max: 8.0,
+            step: 1.0,
+        }),
+        variable: "--systray-widget-border-width",
         css_kind: CssValueKind::Integer { unit: "px" },
     },
     StyleSettingSpec {

@@ -164,7 +164,8 @@ menubutton.bar-item > button:checked {
 }
 
 .workspaces-content {
-    background-color: var(--workspaces-content-background-color, rgba(255, 255, 255, 0.1));
+    background-color: var(--workspaces-widget-background-color, var(--bar-widget-background-color, transparent));
+    border: var(--workspaces-widget-border-width, var(--bar-widget-border-width, 0px)) solid var(--workspaces-widget-border-color, var(--bar-widget-border-color, transparent));
     border-radius: var(--workspaces-content-border-radius, 6px);
     margin-bottom: 0;
     margin-top: 0;
@@ -590,7 +591,8 @@ button.control-toggle.toggle:checked {
 
 /* Systray */
 .systray-content {
-    background-color: var(--systray-content-background-color, rgba(255, 255, 255, 0.1));
+    background-color: var(--systray-widget-background-color, var(--bar-widget-background-color, transparent));
+    border: var(--systray-widget-border-width, var(--bar-widget-border-width, 0px)) solid var(--systray-widget-border-color, var(--bar-widget-border-color, transparent));
     border-radius: var(--systray-content-border-radius, 12px);
     border-spacing: 0.25em;
     padding-left: var(--systray-content-padding-x, 8px);
