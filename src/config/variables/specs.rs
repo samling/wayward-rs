@@ -74,7 +74,32 @@ macro_rules! widget_surface_border_radius_setting {
     };
 }
 
-pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
+macro_rules! widget_surface_settings {
+    ($section:literal, $slug:literal) => {
+        widget_surface_settings!($section, $slug, $slug, $slug)
+    };
+    ($section:literal, $group:literal, $path_group:literal, $variable_prefix:literal) => {
+        [
+            widget_surface_background_setting!($section, $group, $path_group, $variable_prefix),
+            widget_surface_border_color_setting!($section, $group, $path_group, $variable_prefix),
+            widget_surface_border_width_setting!($section, $group, $path_group, $variable_prefix),
+            widget_surface_border_radius_setting!($section, $group, $path_group, $variable_prefix),
+        ]
+    };
+}
+
+pub(super) fn style_settings() -> impl Iterator<Item = &'static StyleSettingSpec> {
+    BAR_STYLE_SETTINGS
+        .iter()
+        .chain(
+            WIDGET_SURFACE_SETTINGS
+                .iter()
+                .flat_map(|settings| settings.iter()),
+        )
+        .chain(DETAIL_STYLE_SETTINGS.iter())
+}
+
+const BAR_STYLE_SETTINGS: &[StyleSettingSpec] = &[
     StyleSettingSpec {
         section: "Bar",
         group: "bar",
@@ -276,81 +301,22 @@ pub(super) const STYLE_SETTINGS: &[StyleSettingSpec] = &[
         variable: "--bar-region-border-radius",
         css_kind: CssValueKind::Integer { unit: "px" },
     },
-    widget_surface_background_setting!("Bar", "bar", "bar", "bar"),
-    widget_surface_border_color_setting!("Bar", "bar", "bar", "bar"),
-    widget_surface_border_width_setting!("Bar", "bar", "bar", "bar"),
-    widget_surface_border_radius_setting!("Bar", "bar", "bar", "bar"),
-    widget_surface_background_setting!("Action menu", "action-menu", "action-menu", "action-menu"),
-    widget_surface_border_color_setting!(
-        "Action menu",
-        "action-menu",
-        "action-menu",
-        "action-menu"
-    ),
-    widget_surface_border_width_setting!(
-        "Action menu",
-        "action-menu",
-        "action-menu",
-        "action-menu"
-    ),
-    widget_surface_border_radius_setting!(
-        "Action menu",
-        "action-menu",
-        "action-menu",
-        "action-menu"
-    ),
-    widget_surface_background_setting!("Battery", "battery", "battery", "battery"),
-    widget_surface_border_color_setting!("Battery", "battery", "battery", "battery"),
-    widget_surface_border_width_setting!("Battery", "battery", "battery", "battery"),
-    widget_surface_border_radius_setting!("Battery", "battery", "battery", "battery"),
-    widget_surface_background_setting!("Brightness", "brightness", "brightness", "brightness"),
-    widget_surface_border_color_setting!("Brightness", "brightness", "brightness", "brightness"),
-    widget_surface_border_width_setting!("Brightness", "brightness", "brightness", "brightness"),
-    widget_surface_border_radius_setting!("Brightness", "brightness", "brightness", "brightness"),
-    widget_surface_background_setting!("Clock", "clock", "clock", "clock"),
-    widget_surface_border_color_setting!("Clock", "clock", "clock", "clock"),
-    widget_surface_border_width_setting!("Clock", "clock", "clock", "clock"),
-    widget_surface_border_radius_setting!("Clock", "clock", "clock", "clock"),
-    widget_surface_background_setting!(
-        "Notifications",
-        "notifications",
-        "notifications",
-        "notifications"
-    ),
-    widget_surface_border_color_setting!(
-        "Notifications",
-        "notifications",
-        "notifications",
-        "notifications"
-    ),
-    widget_surface_border_width_setting!(
-        "Notifications",
-        "notifications",
-        "notifications",
-        "notifications"
-    ),
-    widget_surface_border_radius_setting!(
-        "Notifications",
-        "notifications",
-        "notifications",
-        "notifications"
-    ),
-    widget_surface_background_setting!("Systray", "systray", "systray", "systray"),
-    widget_surface_border_color_setting!("Systray", "systray", "systray", "systray"),
-    widget_surface_border_width_setting!("Systray", "systray", "systray", "systray"),
-    widget_surface_border_radius_setting!("Systray", "systray", "systray", "systray"),
-    widget_surface_background_setting!("Updates", "updates", "updates", "updates"),
-    widget_surface_border_color_setting!("Updates", "updates", "updates", "updates"),
-    widget_surface_border_width_setting!("Updates", "updates", "updates", "updates"),
-    widget_surface_border_radius_setting!("Updates", "updates", "updates", "updates"),
-    widget_surface_background_setting!("Volume", "volume", "volume", "volume"),
-    widget_surface_border_color_setting!("Volume", "volume", "volume", "volume"),
-    widget_surface_border_width_setting!("Volume", "volume", "volume", "volume"),
-    widget_surface_border_radius_setting!("Volume", "volume", "volume", "volume"),
-    widget_surface_background_setting!("Workspaces", "workspaces", "workspaces", "workspaces"),
-    widget_surface_border_color_setting!("Workspaces", "workspaces", "workspaces", "workspaces"),
-    widget_surface_border_width_setting!("Workspaces", "workspaces", "workspaces", "workspaces"),
-    widget_surface_border_radius_setting!("Workspaces", "workspaces", "workspaces", "workspaces"),
+];
+
+const WIDGET_SURFACE_SETTINGS: &[[StyleSettingSpec; 4]] = &[
+    widget_surface_settings!("Bar", "bar"),
+    widget_surface_settings!("Action menu", "action-menu"),
+    widget_surface_settings!("Battery", "battery"),
+    widget_surface_settings!("Brightness", "brightness"),
+    widget_surface_settings!("Clock", "clock"),
+    widget_surface_settings!("Notifications", "notifications"),
+    widget_surface_settings!("Systray", "systray"),
+    widget_surface_settings!("Updates", "updates"),
+    widget_surface_settings!("Volume", "volume"),
+    widget_surface_settings!("Workspaces", "workspaces"),
+];
+
+const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
     StyleSettingSpec {
         section: "Workspaces",
         group: "workspaces",

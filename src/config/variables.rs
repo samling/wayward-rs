@@ -78,7 +78,7 @@ pub(crate) struct StyleSettingSpec {
 
 impl CssVariables for StyleConfig {
     fn write_css_variables(&self, css: &mut String) {
-        for spec in specs::STYLE_SETTINGS {
+        for spec in specs::style_settings() {
             let Some(group) = self.group(spec.group) else {
                 continue;
             };
@@ -91,7 +91,7 @@ impl CssVariables for StyleConfig {
 pub(crate) fn style_setting_sections() -> Vec<&'static str> {
     let mut sections = Vec::new();
 
-    for spec in specs::STYLE_SETTINGS {
+    for spec in specs::style_settings() {
         if spec.setting.is_some() && !sections.contains(&spec.section) {
             sections.push(spec.section);
         }
@@ -103,9 +103,7 @@ pub(crate) fn style_setting_sections() -> Vec<&'static str> {
 pub(crate) fn settings_for_section(
     section: &'static str,
 ) -> impl Iterator<Item = &'static StyleSettingSpec> {
-    specs::STYLE_SETTINGS
-        .iter()
-        .filter(move |spec| spec.section == section && spec.setting.is_some())
+    specs::style_settings().filter(move |spec| spec.section == section && spec.setting.is_some())
 }
 
 fn write_mapped_css_variable(css: &mut String, group: &StyleGroupConfig, spec: &StyleSettingSpec) {
