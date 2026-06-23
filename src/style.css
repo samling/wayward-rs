@@ -92,6 +92,14 @@
     padding: var(--bar-widget-padding-y, 0px) var(--bar-widget-padding-x, 4px);
 }
 
+.bar.horizontal .bar-item-content {
+    min-height: var(--bar-widget-thickness, 16px);
+}
+
+.bar.vertical .bar-item-content {
+    min-width: var(--bar-widget-thickness, 16px);
+}
+
 .bar-item-content label,
 .bar-item-content image {
     margin: 0;
@@ -179,7 +187,12 @@ menubutton.bar-item > button:checked {
     padding: var(--workspace-padding-y, 2px) var(--workspace-padding-x, 8px);
 }
 
+.bar.horizontal .workspace {
+    min-height: var(--bar-widget-thickness, 16px);
+}
+
 .bar.vertical .workspace {
+    min-width: var(--bar-widget-thickness, 16px);
     padding: var(--workspace-vertical-padding-y, 1px) var(--workspace-vertical-padding-x, 4px);
 }
 

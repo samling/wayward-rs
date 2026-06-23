@@ -136,6 +136,21 @@ const BAR_STYLE_SETTINGS: &[StyleSettingSpec] = &[
     StyleSettingSpec {
         section: "Bar",
         group: "bar",
+        key: "widget-thickness",
+        path: &["style", "bar", "widget-thickness"],
+        setting: Some(SettingUiSpec::Number {
+            label: "Widget thickness",
+            default: 16,
+            min: 8.0,
+            max: 80.0,
+            step: 1.0,
+        }),
+        variable: "--bar-widget-thickness",
+        css_kind: CssValueKind::Integer { unit: "px" },
+    },
+    StyleSettingSpec {
+        section: "Bar",
+        group: "bar",
         key: "widget-background-color",
         path: &["style", "bar", "widget-background-color"],
         setting: Some(SettingUiSpec::Color {
