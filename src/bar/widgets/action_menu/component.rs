@@ -48,9 +48,9 @@ impl SimpleComponent for ActionMenuComponent {
                 set_orientation: gtk::Orientation::Horizontal,
 
                 #[name = "bar_icon"]
-                gtk::Label {
+                gtk::Image {
                     add_css_class: "action-menu-bar-icon",
-                    set_text: "\u{f303}",
+                    set_icon_name: Some("arch-linux-svgrepo-com"),
                 },
             },
         }
@@ -78,7 +78,6 @@ impl SimpleComponent for ActionMenuComponent {
 
         let widgets = view_output!();
         crate::bar::style::add_bar_item_content_classes(&widgets.content, "action-menu-content");
-        crate::bar::style::configure_bar_label(&widgets.bar_icon);
 
         root.set_popover(Some(model.dropdown.widget()));
 

@@ -100,6 +100,7 @@
     padding: 0;
 }
 
+.action-menu-bar-icon,
 .battery-icon,
 .brightness-icon,
 .notifications-icon,
@@ -1047,12 +1048,6 @@ levelbar.osd-level block.filled {
     font-family: var(--action-menu-icon-font-family, "Symbols Nerd Font"), "Symbols Nerd Font Mono", "Adwaita Sans";
     font-size: var(--action-menu-icon-font-size, 1.45em);
     font-weight: 400;
-    line-height: 1;
-}
-
-.action-menu-bar-icon {
-    font-family: var(--action-menu-icon-font-family, "Symbols Nerd Font"), "Symbols Nerd Font Mono", "Adwaita Sans";
-    font-size: var(--bar-icon-size, 16px);
     line-height: 1;
 }
 
