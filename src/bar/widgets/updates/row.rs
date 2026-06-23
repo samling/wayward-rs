@@ -24,6 +24,7 @@ impl FactoryComponent for UpdateRow {
             add_css_class?: severity_class(&self.package.severity),
             set_orientation: gtk::Orientation::Horizontal,
             set_spacing: 8,
+            set_hexpand: true,
 
             gtk::Label {
                 add_css_class: "updates-package-name",

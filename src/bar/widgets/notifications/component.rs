@@ -47,9 +47,8 @@ impl SimpleComponent for NotificationsComponent {
             add_css_class: "flat",
 
             #[wrap(Some)]
+            #[name = "content"]
             set_child = &gtk::Box {
-                add_css_class: "bar-item-content",
-                add_css_class: "notifications-content",
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 4,
 
@@ -60,6 +59,7 @@ impl SimpleComponent for NotificationsComponent {
                     set_icon_name: Some("preferences-system-notifications-symbolic"),
                 },
 
+                #[name = "count"]
                 gtk::Label {
                     add_css_class: "notifications-count",
 
@@ -94,6 +94,8 @@ impl SimpleComponent for NotificationsComponent {
         };
 
         let widgets = view_output!();
+        crate::bar::style::add_bar_item_content_classes(&widgets.content, "notifications-content");
+        crate::bar::style::configure_bar_label(&widgets.count);
 
         root.set_popover(Some(model.dropdown.widget()));
 

@@ -14,6 +14,7 @@ use super::dropdown::{
     BrightnessDropdown, BrightnessDropdownInit, BrightnessDropdownInput, BrightnessDropdownOutput,
     BrightnessDropdownSnapshot,
 };
+use super::sunsetr::SunsetrState;
 
 pub(super) struct BrightnessComponent {
     edge: BarEdge,
@@ -23,7 +24,7 @@ pub(super) struct BrightnessComponent {
     dropdown: Controller<BrightnessDropdown>,
     bar_sender: relm4::Sender<BarMsg>,
     config: BrightnessConfig,
-    blue_light_enabled: Option<bool>,
+    sunsetr_state: SunsetrState,
 }
 
 #[derive(Debug)]
@@ -32,9 +33,9 @@ pub(super) enum BrightnessInput {
     SetSnapshot(BrightnessSnapshot),
     SetUnavailable(String),
     SetBrightness(f64),
-    SetBlueLightEnabled(bool),
-    CheckBlueLightState,
-    SetBlueLightState(Option<bool>),
+    SetSunsetrPaused(bool),
+    CheckSunsetrState,
+    SetSunsetrState(SunsetrState),
 }
 
 pub(super) struct BrightnessInit {
@@ -62,9 +63,8 @@ impl SimpleComponent for BrightnessComponent {
             set_tooltip_text: model.tooltip_text().as_deref(),
 
             #[wrap(Some)]
+            #[name = "content"]
             set_child = &gtk::Box {
-                add_css_class: "bar-item-content",
-                add_css_class: "brightness-content",
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 3,
 
@@ -73,6 +73,7 @@ impl SimpleComponent for BrightnessComponent {
                     set_icon_name: Some("display-brightness-symbolic"),
                 },
 
+                #[name = "percent"]
                 gtk::Label {
                     add_css_class: "brightness-percent",
 
@@ -94,12 +95,12 @@ impl SimpleComponent for BrightnessComponent {
                 region: init.region,
             })
             .forward(sender.input_sender(), |output| match output {
-                BrightnessDropdownOutput::Opened => BrightnessInput::CheckBlueLightState,
+                BrightnessDropdownOutput::Opened => BrightnessInput::CheckSunsetrState,
                 BrightnessDropdownOutput::SetBrightness(percent) => {
                     BrightnessInput::SetBrightness(percent)
                 }
-                BrightnessDropdownOutput::SetBlueLightEnabled(enabled) => {
-                    BrightnessInput::SetBlueLightEnabled(enabled)
+                BrightnessDropdownOutput::SetSunsetrPaused(paused) => {
+                    BrightnessInput::SetSunsetrPaused(paused)
                 }
             });
 
@@ -111,14 +112,16 @@ impl SimpleComponent for BrightnessComponent {
             dropdown,
             bar_sender: init.bar_sender,
             config: init.config,
-            blue_light_enabled: None,
+            sunsetr_state: SunsetrState::Unknown("Checking sunsetr".to_string()),
         };
 
         let widgets = view_output!();
+        crate::bar::style::add_bar_item_content_classes(&widgets.content, "brightness-content");
+        crate::bar::style::configure_bar_label(&widgets.percent);
 
         root.set_popover(Some(model.dropdown.widget()));
 
-        model.check_blue_light_state(sender.input_sender().clone());
+        model.check_sunsetr_state(sender.input_sender().clone());
 
         ComponentParts { model, widgets }
     }
@@ -149,23 +152,25 @@ impl SimpleComponent for BrightnessComponent {
                     percent,
                 }));
             }
-            BrightnessInput::SetBlueLightEnabled(enabled) => {
-                if let Some(command) = self.config.blue_light_command_for_state(enabled) {
-                    self.blue_light_enabled = Some(enabled);
-                    self.sync_dropdown_snapshot();
-                    self.send_action(WidgetAction::Brightness(
-                        BrightnessAction::RunBlueLightCommand {
-                            command: command.to_string(),
-                        },
-                    ));
-                    self.check_blue_light_state_delayed(_sender.input_sender().clone());
-                }
+            BrightnessInput::SetSunsetrPaused(paused) => {
+                let preset = if paused {
+                    self.config.sunsetr.paused_preset.clone()
+                } else {
+                    self.config.sunsetr.automatic_preset.clone()
+                };
+
+                self.sunsetr_state = SunsetrState::Unknown("Updating sunsetr".to_string());
+                self.sync_dropdown_snapshot();
+                self.send_action(WidgetAction::Brightness(
+                    BrightnessAction::SetSunsetrPreset { preset },
+                ));
+                self.check_sunsetr_state_delayed(_sender.input_sender().clone());
             }
-            BrightnessInput::CheckBlueLightState => {
-                self.check_blue_light_state(_sender.input_sender().clone());
+            BrightnessInput::CheckSunsetrState => {
+                self.check_sunsetr_state(_sender.input_sender().clone());
             }
-            BrightnessInput::SetBlueLightState(enabled) => {
-                self.blue_light_enabled = enabled;
+            BrightnessInput::SetSunsetrState(state) => {
+                self.sunsetr_state = state;
                 self.sync_dropdown_snapshot();
             }
         }
@@ -193,8 +198,7 @@ impl BrightnessComponent {
     fn dropdown_snapshot(&self, snapshot: &BrightnessSnapshot) -> BrightnessDropdownSnapshot {
         BrightnessDropdownSnapshot {
             percent: snapshot.percent,
-            blue_light_configured: self.config.blue_light_toggle_configured(),
-            blue_light_enabled: self.blue_light_enabled,
+            sunsetr_state: self.sunsetr_state.clone(),
         }
     }
 
@@ -213,31 +217,22 @@ impl BrightnessComponent {
         }));
     }
 
-    fn check_blue_light_state(&self, input_sender: relm4::Sender<BrightnessInput>) {
-        if !self.config.blue_light_toggle_configured() {
-            let _ = input_sender.send(BrightnessInput::SetBlueLightState(None));
-            return;
-        }
-
-        let command = self.config.blue_light_state_command.clone();
+    fn check_sunsetr_state(&self, input_sender: relm4::Sender<BrightnessInput>) {
+        let config = self.config.sunsetr.clone();
 
         relm4::spawn(async move {
-            let enabled = super::service::blue_light_enabled(&command).await;
-            let _ = input_sender.send(BrightnessInput::SetBlueLightState(enabled));
+            let state = super::sunsetr::current_state(config).await;
+            let _ = input_sender.send(BrightnessInput::SetSunsetrState(state));
         });
     }
 
-    fn check_blue_light_state_delayed(&self, input_sender: relm4::Sender<BrightnessInput>) {
-        if !self.config.blue_light_toggle_configured() {
-            return;
-        }
-
-        let command = self.config.blue_light_state_command.clone();
+    fn check_sunsetr_state_delayed(&self, input_sender: relm4::Sender<BrightnessInput>) {
+        let config = self.config.sunsetr.clone();
 
         relm4::spawn(async move {
             relm4::tokio::time::sleep(Duration::from_millis(300)).await;
-            let enabled = super::service::blue_light_enabled(&command).await;
-            let _ = input_sender.send(BrightnessInput::SetBlueLightState(enabled));
+            let state = super::sunsetr::current_state(config).await;
+            let _ = input_sender.send(BrightnessInput::SetSunsetrState(state));
         });
     }
 }

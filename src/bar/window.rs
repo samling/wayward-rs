@@ -4,19 +4,22 @@ use relm4::gtk;
 
 use super::layout::BarEdge;
 
-pub(super) fn apply_size_hint(root: &gtk::ApplicationWindow, edge: BarEdge) {
+pub(super) fn apply_size_hint(root: &gtk::ApplicationWindow, edge: BarEdge, size: i32) {
+    let size = size.max(1);
+
     if edge.is_vertical() {
-        root.set_size_request(1, -1);
-        root.set_default_size(1, -1);
+        root.set_size_request(size, -1);
+        root.set_default_size(size, -1);
     } else {
-        root.set_size_request(-1, 1);
-        root.set_default_size(-1, 1);
+        root.set_size_request(-1, size);
+        root.set_default_size(-1, size);
     }
 }
 
 pub(super) fn configure_window(
     root: &gtk::ApplicationWindow,
     edge: BarEdge,
+    size: i32,
     name: Option<&str>,
     monitor: Option<&gtk::gdk::Monitor>,
 ) {
@@ -30,7 +33,7 @@ pub(super) fn configure_window(
     clear_anchors(root);
     set_edge_anchors(root, edge);
     set_edge_classes(root, edge);
-    apply_size_hint(root, edge);
+    apply_size_hint(root, edge, size);
 
     root.auto_exclusive_zone_enable();
     root.set_keyboard_mode(KeyboardMode::None);

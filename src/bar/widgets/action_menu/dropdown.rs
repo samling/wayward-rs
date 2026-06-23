@@ -71,13 +71,6 @@ fn build_section(
     let section_box = gtk::Box::new(gtk::Orientation::Vertical, layout.row_spacing.max(0));
     section_box.add_css_class("action-menu-section");
 
-    if let Some(title) = &section.title {
-        let title_label = gtk::Label::new(Some(title));
-        title_label.add_css_class("action-menu-section-title");
-        title_label.set_halign(gtk::Align::Start);
-        section_box.append(&title_label);
-    }
-
     let grid = gtk::Grid::new();
     grid.add_css_class("action-menu-actions");
     grid.set_halign(gtk_align(section.align));
@@ -89,9 +82,9 @@ fn build_section(
     let columns = section.columns.unwrap_or(layout.columns).max(1);
 
     for (index, action) in section.actions.iter().enumerate() {
-        let button = build_action_button(action, layout, sender);
+        let control = build_action_control(action, layout, sender);
         grid.attach(
-            &button,
+            &control,
             (index % columns) as i32,
             (index / columns) as i32,
             1,
@@ -99,7 +92,29 @@ fn build_section(
         );
     }
 
-    section_box.append(&grid);
+    if let Some(title) = &section.title {
+        let title_label = gtk::Label::new(Some(title));
+        title_label.add_css_class("action-menu-section-title");
+        title_label.set_halign(gtk::Align::Start);
+
+        if section.align == ActionMenuSectionAlign::End {
+            let header = gtk::Box::new(gtk::Orientation::Horizontal, layout.column_spacing.max(0));
+            header.add_css_class("dropdown-header");
+            header.add_css_class("action-menu-header");
+            header.set_hexpand(true);
+
+            title_label.set_hexpand(true);
+            header.append(&title_label);
+            header.append(&grid);
+            section_box.append(&header);
+        } else {
+            section_box.append(&title_label);
+            section_box.append(&grid);
+        }
+    } else {
+        section_box.append(&grid);
+    }
+
     section_box
 }
 
@@ -121,6 +136,33 @@ fn widget_action(action: &ActionMenuActionConfig) -> Option<WidgetAction> {
         ActionMenuActionKind::OpenSettings => {
             Some(WidgetAction::ActionMenu(ActionMenuAction::OpenSettings))
         }
+    }
+}
+
+fn build_action_control(
+    action: &ActionMenuActionConfig,
+    layout: &ActionMenuLayoutConfig,
+    sender: &ComponentSender<ActionMenuDropdown>,
+) -> gtk::Widget {
+    let button = build_action_button(action, layout, sender);
+
+    if action.show_label && !action.label.is_empty() && action.icon.is_some() {
+        let item = gtk::Box::new(gtk::Orientation::Vertical, 6);
+        item.add_css_class("action-menu-action-item");
+        item.set_halign(gtk::Align::Center);
+        item.set_valign(gtk::Align::Center);
+        item.set_width_request(layout.button_width.unwrap_or(44).max(1));
+
+        let label = gtk::Label::new(Some(&action.label));
+        label.add_css_class("action-menu-action-label");
+        label.set_halign(gtk::Align::Center);
+
+        item.append(&button);
+        item.append(&label);
+
+        item.upcast()
+    } else {
+        button.upcast()
     }
 }
 
@@ -166,7 +208,7 @@ fn build_action_button(
         content.append(&icon_label);
     }
 
-    if action.show_label && !action.label.is_empty() {
+    if action.show_label && !action.label.is_empty() && action.icon.is_none() {
         let label = gtk::Label::new(Some(&action.label));
         label.add_css_class("action-menu-action-label");
         label.set_halign(gtk::Align::Center);

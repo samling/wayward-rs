@@ -41,18 +41,18 @@ impl SettingsConfig {
             return true;
         }
 
-        let ["widgets", widget, key] = path else {
+        let ["widgets", widget, rest @ ..] = path else {
             return false;
         };
 
         match value {
             Some(value) => {
                 let table = self.widgets.entry((*widget).to_string()).or_default();
-                table.insert((*key).to_string(), config_value_to_toml(value));
+                insert_widget_value(table, rest, config_value_to_toml(value));
             }
             None => {
                 if let Some(table) = self.widgets.get_mut(*widget) {
-                    table.remove(*key);
+                    remove_widget_value(table, rest);
                     if table.is_empty() {
                         self.widgets.remove(*widget);
                     }
@@ -62,6 +62,45 @@ impl SettingsConfig {
 
         true
     }
+}
+
+fn insert_widget_value(table: &mut toml::value::Table, path: &[&str], value: toml::Value) {
+    let Some((key, rest)) = path.split_first() else {
+        return;
+    };
+
+    if rest.is_empty() {
+        table.insert((*key).to_string(), value);
+        return;
+    }
+
+    let child = table
+        .entry((*key).to_string())
+        .or_insert_with(|| toml::Value::Table(toml::value::Table::new()));
+
+    if !child.is_table() {
+        *child = toml::Value::Table(toml::value::Table::new());
+    }
+
+    if let Some(child_table) = child.as_table_mut() {
+        insert_widget_value(child_table, rest, value);
+    }
+}
+
+fn remove_widget_value(table: &mut toml::value::Table, path: &[&str]) -> bool {
+    let Some((key, rest)) = path.split_first() else {
+        return table.is_empty();
+    };
+
+    if rest.is_empty() {
+        table.remove(*key);
+    } else if let Some(child) = table.get_mut(*key).and_then(toml::Value::as_table_mut) {
+        if remove_widget_value(child, rest) {
+            table.remove(*key);
+        }
+    }
+
+    table.is_empty()
 }
 
 fn config_value_to_toml(value: &crate::config::ConfigValue) -> toml::Value {
@@ -209,17 +248,17 @@ mod tests {
         };
 
         assert!(config.apply_config_value(
-            &["widgets", "brightness", "blue-light-enable-command"],
-            Some(&ConfigValue::String("sunsetr".to_string())),
+            &["widgets", "example", "label"],
+            Some(&ConfigValue::String("Hello".to_string())),
         ));
 
         let value = config
             .widgets
-            .get("brightness")
-            .and_then(|table| table.get("blue-light-enable-command"))
+            .get("example")
+            .and_then(|table| table.get("label"))
             .and_then(|value| value.as_str());
 
-        assert_eq!(value, Some("sunsetr"));
+        assert_eq!(value, Some("Hello"));
     }
 
     #[test]
@@ -269,5 +308,56 @@ mod tests {
         assert!(config.apply_config_value(&["widgets", "updates", "critical-patterns"], None));
 
         assert!(!config.widgets.contains_key("updates"));
+    }
+
+    #[test]
+    fn settings_config_applies_nested_widget_string_value() {
+        let mut config = SettingsConfig {
+            style: StyleConfig::default(),
+            widgets: BTreeMap::new(),
+            bars: Vec::new(),
+            available_monitors: Vec::new(),
+        };
+
+        assert!(config.apply_config_value(
+            &["widgets", "brightness", "sunsetr", "paused-preset"],
+            Some(&ConfigValue::String("day".to_string())),
+        ));
+
+        let value = config
+            .widgets
+            .get("brightness")
+            .and_then(|table| table.get("sunsetr"))
+            .and_then(toml::Value::as_table)
+            .and_then(|table| table.get("paused-preset"))
+            .and_then(toml::Value::as_str);
+
+        assert_eq!(value, Some("day"));
+    }
+
+    #[test]
+    fn settings_config_removes_empty_nested_widget_table_after_reset() {
+        let mut sunsetr = toml::value::Table::new();
+        sunsetr.insert(
+            "paused-preset".to_string(),
+            toml::Value::String("day".to_string()),
+        );
+
+        let mut brightness = toml::value::Table::new();
+        brightness.insert("sunsetr".to_string(), toml::Value::Table(sunsetr));
+
+        let mut config = SettingsConfig {
+            style: StyleConfig::default(),
+            widgets: BTreeMap::from([("brightness".to_string(), brightness)]),
+            bars: Vec::new(),
+            available_monitors: Vec::new(),
+        };
+
+        assert!(
+            config
+                .apply_config_value(&["widgets", "brightness", "sunsetr", "paused-preset"], None,)
+        );
+
+        assert!(!config.widgets.contains_key("brightness"));
     }
 }

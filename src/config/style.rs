@@ -9,6 +9,10 @@ const WORKSPACES_GROUP: &str = "workspaces";
 const SURFACES_GROUP: &str = "surfaces";
 const DROPDOWNS_GROUP: &str = "dropdowns";
 const BATTERY_GROUP: &str = "battery";
+const BRIGHTNESS_GROUP: &str = "brightness";
+const CLOCK_GROUP: &str = "clock";
+const UPDATES_GROUP: &str = "updates";
+const VOLUME_GROUP: &str = "volume";
 const SYSTRAY_GROUP: &str = "systray";
 const OSD_GROUP: &str = "osd";
 const NOTIFICATIONS_GROUP: &str = "notifications";
@@ -29,6 +33,14 @@ pub struct StyleConfig {
     #[serde(default)]
     pub battery: StyleGroupConfig,
     #[serde(default)]
+    pub brightness: StyleGroupConfig,
+    #[serde(default)]
+    pub clock: StyleGroupConfig,
+    #[serde(default)]
+    pub updates: StyleGroupConfig,
+    #[serde(default)]
+    pub volume: StyleGroupConfig,
+    #[serde(default)]
     pub systray: StyleGroupConfig,
     #[serde(default)]
     pub osd: StyleGroupConfig,
@@ -48,6 +60,10 @@ impl StyleConfig {
             SURFACES_GROUP => Some(&self.surfaces),
             DROPDOWNS_GROUP => Some(&self.dropdowns),
             BATTERY_GROUP => Some(&self.battery),
+            BRIGHTNESS_GROUP => Some(&self.brightness),
+            CLOCK_GROUP => Some(&self.clock),
+            UPDATES_GROUP => Some(&self.updates),
+            VOLUME_GROUP => Some(&self.volume),
             SYSTRAY_GROUP => Some(&self.systray),
             OSD_GROUP => Some(&self.osd),
             NOTIFICATIONS_GROUP => Some(&self.notifications),
@@ -89,6 +105,10 @@ impl StyleConfig {
             SURFACES_GROUP => Some(&mut self.surfaces),
             DROPDOWNS_GROUP => Some(&mut self.dropdowns),
             BATTERY_GROUP => Some(&mut self.battery),
+            BRIGHTNESS_GROUP => Some(&mut self.brightness),
+            CLOCK_GROUP => Some(&mut self.clock),
+            UPDATES_GROUP => Some(&mut self.updates),
+            VOLUME_GROUP => Some(&mut self.volume),
             SYSTRAY_GROUP => Some(&mut self.systray),
             OSD_GROUP => Some(&mut self.osd),
             NOTIFICATIONS_GROUP => Some(&mut self.notifications),

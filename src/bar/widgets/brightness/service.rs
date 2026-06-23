@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use futures::{StreamExt, select};
 use relm4::Sender;
-use relm4::tokio::process::Command as TokioCommand;
 use wayle_brightness::{BrightnessService, Percentage};
 
 use crate::bar::state::{BarItemState, BrightnessSnapshot, BrightnessState};
@@ -38,8 +37,8 @@ pub(super) fn handle_event(event: WidgetEvent, service: Option<Arc<BrightnessSer
                 set_brightness(service, percent).await;
             });
         }
-        WidgetAction::Brightness(BrightnessAction::RunBlueLightCommand { command }) => {
-            run_blue_light_command(&command);
+        WidgetAction::Brightness(BrightnessAction::SetSunsetrPreset { preset }) => {
+            set_sunsetr_preset(&preset);
         }
         _ => {}
     }
@@ -124,36 +123,15 @@ async fn set_brightness(service: Arc<BrightnessService>, percent: f64) {
     }
 }
 
-fn run_blue_light_command(command: &str) {
-    let command = command.trim();
+fn set_sunsetr_preset(preset: &str) {
+    let preset = preset.trim();
 
-    if command.is_empty() {
-        tracing::warn!("No blue-light command configured");
+    if preset.is_empty() {
+        tracing::warn!("No sunsetr preset configured");
         return;
     }
 
-    if let Err(error) = Command::new("sh").arg("-c").arg(command).spawn() {
-        tracing::error!("Failed to run blue-light command: {error}");
-    }
-}
-
-pub(super) async fn blue_light_enabled(command: &str) -> Option<bool> {
-    let command = command.trim();
-
-    if command.is_empty() {
-        return None;
-    }
-
-    match TokioCommand::new("sh")
-        .arg("-c")
-        .arg(command)
-        .status()
-        .await
-    {
-        Ok(status) => Some(status.success()),
-        Err(error) => {
-            tracing::error!("Failed to run blue-light state command: {error}");
-            None
-        }
+    if let Err(error) = Command::new("sunsetr").arg("preset").arg(preset).spawn() {
+        tracing::error!("Failed to set sunsetr preset {preset}: {error}");
     }
 }

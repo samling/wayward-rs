@@ -3,7 +3,7 @@ use gtk4_layer_shell::{Edge, KeyboardMode, Layer, LayerShell};
 use relm4::gtk::{self, glib};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
 use super::card::{
     NOTIFICATION_EXIT_ANIMATION_MS, NotificationCard, NotificationCardCallbacks, toast_card_options,
@@ -14,27 +14,46 @@ use crate::shell::ShellMsg;
 const TOP_MARGIN: i32 = 8;
 const RIGHT_MARGIN: i32 = 12;
 const STACK_SPACING: i32 = 8;
-const NOTIFICATION_ENTER_ANIMATION_MS: u64 = 80;
 
 pub(crate) struct NotificationWindow {
-    monitor: gtk::gdk::Monitor,
+    window: gtk::Window,
+    stack: gtk::Box,
     sender: relm4::Sender<ShellMsg>,
     rows: Rc<RefCell<Vec<NotificationToastRow>>>,
 }
 
 struct NotificationToastRow {
     id: u32,
-    window: gtk::Window,
-    width: i32,
-    height: i32,
+    revealer: gtk::Revealer,
     card: NotificationCard,
     dismissing: Cell<bool>,
 }
 
 impl NotificationWindow {
     pub(crate) fn new(monitor: &gtk::gdk::Monitor, sender: relm4::Sender<ShellMsg>) -> Self {
+        let window = gtk::Window::new();
+        window.init_layer_shell();
+        window.set_layer(Layer::Overlay);
+        window.set_monitor(Some(monitor));
+        window.set_anchor(Edge::Top, true);
+        window.set_anchor(Edge::Right, true);
+        window.set_margin(Edge::Top, TOP_MARGIN);
+        window.set_margin(Edge::Right, RIGHT_MARGIN);
+        window.set_keyboard_mode(KeyboardMode::None);
+        window.set_namespace(Some("wayward-notifications"));
+        window.set_visible(false);
+        window.add_css_class("notification-window");
+
+        let stack = gtk::Box::new(gtk::Orientation::Vertical, STACK_SPACING);
+        stack.add_css_class("notification-stack");
+        stack.set_halign(gtk::Align::End);
+        stack.set_valign(gtk::Align::Start);
+
+        window.set_child(Some(&stack));
+
         Self {
-            monitor: monitor.clone(),
+            window,
+            stack,
             sender,
             rows: Rc::new(RefCell::new(Vec::new())),
         }
@@ -42,7 +61,6 @@ impl NotificationWindow {
 
     pub(crate) fn set_toasts(&self, toasts: &[NotificationToast]) {
         let mut missing_ids = Vec::new();
-        let mut entering_rows = Vec::new();
 
         {
             let rows = self.rows.borrow();
@@ -58,8 +76,6 @@ impl NotificationWindow {
             }
         }
 
-        let mut top_margin = TOP_MARGIN;
-
         for toast in toasts {
             let existing_index = self
                 .rows
@@ -70,45 +86,31 @@ impl NotificationWindow {
             if let Some(index) = existing_index {
                 let rows = self.rows.borrow();
                 let row = &rows[index];
-                row.window.set_margin(Edge::Top, top_margin);
-                row.window.set_margin(Edge::Right, RIGHT_MARGIN);
-                top_margin += row.height + STACK_SPACING;
+                row.revealer.set_reveal_child(true);
             } else {
                 let row = self.toast_row(toast);
-                row.window.set_margin(Edge::Top, top_margin);
-                row.window.set_margin(Edge::Right, -row.width);
-                row.window.set_visible(true);
-
-                entering_rows.push((row.window.clone(), row.width));
-                top_margin += row.height + STACK_SPACING;
+                self.stack.append(&row.revealer);
+                start_toast_enter(&row.card);
                 self.rows.borrow_mut().push(row);
             }
         }
 
-        for (window, width) in entering_rows {
-            start_toast_enter(&window, width);
+        if missing_ids.is_empty() {
+            self.reorder_toasts(toasts);
         }
 
         for id in missing_ids {
             self.start_toast_exit(id);
         }
+
+        self.window
+            .set_visible(!toasts.is_empty() || !self.rows.borrow().is_empty());
     }
 
     fn toast_row(&self, toast: &NotificationToast) -> NotificationToastRow {
         let default_sender = self.sender.clone();
         let action_sender = self.sender.clone();
         let dismiss_sender = self.sender.clone();
-
-        let window = gtk::Window::new();
-        window.init_layer_shell();
-        window.set_layer(Layer::Overlay);
-        window.set_monitor(Some(&self.monitor));
-        window.set_anchor(Edge::Top, true);
-        window.set_anchor(Edge::Right, true);
-        window.set_keyboard_mode(KeyboardMode::None);
-        window.set_namespace(Some("wayward-notifications"));
-        window.set_visible(false);
-        window.add_css_class("notification-window");
 
         let options = toast_card_options();
         let card = NotificationCard::new(
@@ -128,26 +130,47 @@ impl NotificationWindow {
             },
         );
 
-        let width = options.width_request.unwrap_or(320);
-        let (_, height, _, _) = card.root().measure(gtk::Orientation::Vertical, width);
-        window.set_child(Some(card.root()));
+        let revealer = gtk::Revealer::new();
+        revealer.add_css_class("notification-toast-revealer");
+        revealer.set_transition_duration(NOTIFICATION_EXIT_ANIMATION_MS as u32);
+        revealer.set_transition_type(gtk::RevealerTransitionType::SlideUp);
+        revealer.set_reveal_child(true);
+        revealer.set_child(Some(card.root()));
 
         NotificationToastRow {
             id: toast.id,
-            window,
-            width,
-            height,
+            revealer,
             card,
             dismissing: Cell::new(false),
         }
     }
 
+    fn reorder_toasts(&self, toasts: &[NotificationToast]) {
+        let mut previous: Option<gtk::Widget> = None;
+
+        for toast in toasts {
+            let revealer = self
+                .rows
+                .borrow()
+                .iter()
+                .find(|row| row.id == toast.id && !row.dismissing.get())
+                .map(|row| row.revealer.clone().upcast::<gtk::Widget>());
+
+            if let Some(revealer) = revealer {
+                self.stack.reorder_child_after(&revealer, previous.as_ref());
+                previous = Some(revealer);
+            }
+        }
+    }
+
     fn start_toast_exit(&self, id: u32) {
-        let Some(window) = self.mark_toast_exiting(id) else {
+        let Some(revealer) = self.mark_toast_exiting(id) else {
             return;
         };
 
         let rows = self.rows.clone();
+        let stack = self.stack.clone();
+        let window = self.window.clone();
 
         glib::timeout_add_local_once(
             Duration::from_millis(NOTIFICATION_EXIT_ANIMATION_MS),
@@ -160,13 +183,17 @@ impl NotificationWindow {
                 };
 
                 if removed.is_some() {
+                    stack.remove(&revealer);
+                }
+
+                if rows.borrow().is_empty() {
                     window.set_visible(false);
                 }
             },
         );
     }
 
-    fn mark_toast_exiting(&self, id: u32) -> Option<gtk::Window> {
+    fn mark_toast_exiting(&self, id: u32) -> Option<gtk::Revealer> {
         let rows = self.rows.borrow();
         let row = rows.iter().find(|row| row.id == id)?;
 
@@ -175,47 +202,17 @@ impl NotificationWindow {
         }
 
         row.card.set_dismissing(true);
+        row.revealer.set_reveal_child(false);
 
-        Some(row.window.clone())
+        Some(row.revealer.clone())
     }
 }
 
-fn start_toast_enter(window: &gtk::Window, width: i32) {
-    let window = window.clone();
+fn start_toast_enter(card: &NotificationCard) {
+    card.set_entering(true);
 
+    let root = card.root().clone();
     glib::idle_add_local_once(move || {
-        let started_at = Instant::now();
-
-        glib::timeout_add_local(Duration::from_millis(16), move || {
-            let elapsed_ms = started_at.elapsed().as_millis() as f64;
-            let progress = (elapsed_ms / NOTIFICATION_ENTER_ANIMATION_MS as f64).clamp(0.0, 1.0);
-
-            window.set_margin(Edge::Right, enter_animation_right_margin(progress, width));
-
-            if progress >= 1.0 {
-                glib::ControlFlow::Break
-            } else {
-                glib::ControlFlow::Continue
-            }
-        });
+        root.remove_css_class("entering");
     });
-}
-
-fn enter_animation_right_margin(progress: f64, width: i32) -> i32 {
-    let progress = progress.clamp(0.0, 1.0);
-    let start = -width;
-    let end = RIGHT_MARGIN;
-
-    (start as f64 + (end - start) as f64 * progress).round() as i32
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn enter_animation_moves_from_offscreen_right_to_resting_position() {
-        assert_eq!(enter_animation_right_margin(0.0, 320), -320);
-        assert_eq!(enter_animation_right_margin(1.0, 320), RIGHT_MARGIN);
-    }
 }

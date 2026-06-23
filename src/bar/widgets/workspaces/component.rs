@@ -67,17 +67,12 @@ impl SimpleComponent for WorkspacesComponent {
         crate::bar::style::add_bar_item_classes(&root, super::ID, init.instance_class.as_deref());
 
         let overlay = gtk::Overlay::new();
-        overlay.add_css_class("workspaces-overlay");
+        crate::bar::style::add_bar_item_content_classes(&overlay, "workspaces-content");
         root.append(&overlay);
-
-        let base = gtk::Box::new(orientation, 0);
-        base.add_css_class("workspaces-base");
-        overlay.set_child(Some(&base));
 
         let indicator_layer = gtk::Fixed::new();
         indicator_layer.add_css_class("workspaces-indicator-layer");
-        overlay.add_overlay(&indicator_layer);
-        overlay.set_measure_overlay(&indicator_layer, false);
+        overlay.set_child(Some(&indicator_layer));
 
         let indicator = gtk::Box::new(orientation, 0);
         indicator.add_css_class("workspace-indicator");
@@ -86,8 +81,7 @@ impl SimpleComponent for WorkspacesComponent {
         indicator_layer.put(&indicator, 0.0, 0.0);
 
         let content = gtk::Box::new(orientation, 4);
-        content.add_css_class("bar-item-content");
-        content.add_css_class("workspaces-content");
+        content.add_css_class("workspaces-items");
         overlay.add_overlay(&content);
         overlay.set_measure_overlay(&content, true);
 

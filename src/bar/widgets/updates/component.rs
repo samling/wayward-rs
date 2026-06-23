@@ -56,9 +56,8 @@ impl SimpleComponent for UpdatesComponent {
             set_tooltip_text: model.tooltip_text().as_deref(),
 
             #[wrap(Some)]
+            #[name = "content"]
             set_child = &gtk::Box {
-                add_css_class: "bar-item-content",
-                add_css_class: "updates-content",
                 set_orientation: gtk::Orientation::Horizontal,
                 set_spacing: 4,
 
@@ -80,6 +79,7 @@ impl SimpleComponent for UpdatesComponent {
                     set_spinning: model.is_refreshing(),
                 },
 
+                #[name = "count"]
                 gtk::Label {
                     add_css_class: "updates-count",
 
@@ -118,6 +118,8 @@ impl SimpleComponent for UpdatesComponent {
             super::service::start(model.bar_sender.clone(), model.config.clone());
 
         let widgets = view_output!();
+        crate::bar::style::add_bar_item_content_classes(&widgets.content, "updates-content");
+        crate::bar::style::configure_bar_label(&widgets.count);
 
         root.set_popover(Some(model.dropdown.widget()));
 

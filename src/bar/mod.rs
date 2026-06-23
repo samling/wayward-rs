@@ -8,6 +8,7 @@ pub(crate) mod state;
 pub(crate) mod widget;
 pub(crate) mod widgets;
 
+use crate::config::style::StyleGroupExt;
 use crate::shell::ShellMsg;
 use layout::{BarEdge, BarLayout};
 use state::BarItemState;
@@ -24,9 +25,35 @@ pub struct BarInit {
     pub(crate) name: Option<String>,
     pub(crate) layout: BarLayout,
     pub(crate) edge: BarEdge,
+    pub(crate) style: BarStyle,
     pub(crate) monitor: Option<gtk::gdk::Monitor>,
     pub(crate) monitor_connector: Option<String>,
     pub(crate) services: crate::services::ShellServices,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct BarStyle {
+    pub(crate) size: i32,
+    pub(crate) widget_gap: i32,
+}
+
+impl BarStyle {
+    pub(crate) fn from_config(app_config: &crate::config::AppConfig) -> Self {
+        Self {
+            size: app_config
+                .style
+                .bar
+                .integer("size")
+                .map(i32::from)
+                .unwrap_or(24),
+            widget_gap: app_config
+                .style
+                .bar
+                .integer("widget-gap")
+                .map(i32::from)
+                .unwrap_or(4),
+        }
+    }
 }
 
 impl BarInit {
@@ -43,6 +70,7 @@ impl BarInit {
             name: config.and_then(|bar| bar.name.clone()),
             layout: BarLayout::from_config(app_config, config),
             edge: BarEdge::from_config(config.and_then(|bar| bar.edge.as_deref())),
+            style: BarStyle::from_config(app_config),
             monitor,
             monitor_connector,
             services,
@@ -55,7 +83,7 @@ pub enum BarMsg {
     LayoutChanged { layout: BarLayout, edge: BarEdge },
     ItemStateChanged(BarItemState),
     WidgetEvent(WidgetEvent),
-    StyleChanged,
+    StyleChanged(BarStyle),
 }
 
 struct MountedWidget {
@@ -87,6 +115,7 @@ pub(crate) struct Bar {
     layout: BarLayout,
     mounted_layout: MountedLayout,
     edge: BarEdge,
+    style: BarStyle,
     monitor: Option<gtk::gdk::Monitor>,
     monitor_connector: Option<String>,
     input_sender: relm4::Sender<BarMsg>,
@@ -157,6 +186,7 @@ impl Bar {
             layout: init.layout,
             mounted_layout: MountedLayout::default(),
             edge: init.edge,
+            style: init.style,
             monitor: init.monitor,
             monitor_connector: init.monitor_connector,
             input_sender,
@@ -318,7 +348,8 @@ impl Component for Bar {
                     gtk::Box {
                         #[watch]
                         set_orientation: model.edge.orientation(),
-                        set_spacing: 4,
+                        #[watch]
+                        set_spacing: model.style.widget_gap,
                     }
                 },
 
@@ -344,7 +375,8 @@ impl Component for Bar {
                     gtk::Box {
                         #[watch]
                         set_orientation: model.edge.orientation(),
-                        set_spacing: 4,
+                        #[watch]
+                        set_spacing: model.style.widget_gap,
                     }
                 },
 
@@ -362,7 +394,8 @@ impl Component for Bar {
                     gtk::Box {
                         #[watch]
                         set_orientation: model.edge.orientation(),
-                        set_spacing: 4,
+                        #[watch]
+                        set_spacing: model.style.widget_gap,
                     }
                 }
             }
@@ -383,6 +416,7 @@ impl Component for Bar {
         window::configure_window(
             &root,
             model.edge,
+            model.style.size,
             model.name.as_deref(),
             model.monitor.as_ref(),
         );
@@ -418,6 +452,7 @@ impl Component for Bar {
                     window::configure_window(
                         root,
                         self.edge,
+                        self.style.size,
                         self.name.as_deref(),
                         self.monitor.as_ref(),
                     );
@@ -432,8 +467,14 @@ impl Component for Bar {
                 self.apply_context_to_mounted_widgets();
                 self.apply_all_states_to_mounted_widgets();
             }
-            BarMsg::StyleChanged => {
-                window::apply_size_hint(root, self.edge);
+            BarMsg::StyleChanged(style) => {
+                self.style = style;
+
+                widgets.start_items.set_spacing(self.style.widget_gap);
+                widgets.center_items.set_spacing(self.style.widget_gap);
+                widgets.end_items.set_spacing(self.style.widget_gap);
+
+                window::apply_size_hint(root, self.edge, self.style.size);
                 root.queue_resize();
                 root.queue_draw();
             }
