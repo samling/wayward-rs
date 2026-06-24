@@ -111,6 +111,15 @@ fn parse_string_list(value: &str) -> Vec<String> {
 }
 
 #[derive(Clone, Debug)]
+#[allow(dead_code)]
+pub(crate) struct PaletteOption {
+    pub(crate) token: &'static str,
+    pub(crate) label: String,
+    pub(crate) hex: String,
+}
+
+#[derive(Clone, Debug)]
+#[allow(dead_code)]
 pub(crate) struct ColorSpec {
     pub(crate) label: &'static str,
     pub(crate) path: &'static [&'static str],
@@ -118,6 +127,11 @@ pub(crate) struct ColorSpec {
     pub(crate) default: String,
     pub(crate) inherited: Option<String>,
     pub(crate) role: ColorSettingRole,
+    pub(crate) opacity: Option<u16>,
+    pub(crate) opacity_default: u16,
+    pub(crate) opacity_path: Vec<String>,
+    pub(crate) is_palette_ref: bool,
+    pub(crate) palette_options: Vec<PaletteOption>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -128,6 +142,11 @@ pub(crate) enum ColorSettingRole {
 }
 
 impl ColorSpec {
+    #[allow(dead_code)]
+    pub(crate) fn display_opacity(&self) -> u16 {
+        self.opacity.unwrap_or(self.opacity_default)
+    }
+
     pub(crate) fn display_value(&self) -> String {
         self.value
             .clone()
