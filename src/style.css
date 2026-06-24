@@ -290,7 +290,7 @@ menubutton.bar-item > button:checked {
 /* Dropdowns */
 popover.dropdown contents {
     background-color: var(--md-sys-color-surface, rgba(30, 30, 46, 1));
-    border: 1px solid var(--md-sys-color-outline, rgba(241, 243, 244, 0.14));
+    border: 1px solid rgba(241, 243, 244, 0.14);
     border-radius: 6px;
     color: var(--md-sys-color-on-surface, #f1f3f4);
     box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
@@ -556,7 +556,7 @@ button.volume-mute-button.toggle {
 }
 
 .control-scale trough {
-    background-color: var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.16));
+    background-color: rgba(241, 243, 244, 0.16);
     border-radius: 999px;
     margin: 0;
     min-height: 8px;
@@ -593,7 +593,7 @@ button.control-toggle,
 button.control-toggle.toggle {
     background: transparent;
     background-image: none;
-    border: 1px solid var(--md-sys-color-outline, rgba(241, 243, 244, 0.14));
+    border: 1px solid rgba(241, 243, 244, 0.14);
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -617,7 +617,7 @@ button.control-toggle.icon-toggle.toggle {
 .control-toggle:hover,
 button.control-toggle:hover,
 button.control-toggle.toggle:hover {
-    background: var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.08));
+    background: rgba(241, 243, 244, 0.08);
     background-image: none;
     border-color: var(--md-sys-color-primary, rgba(137, 180, 250, 0.55));
     box-shadow: none;
@@ -626,7 +626,7 @@ button.control-toggle.toggle:hover {
 .control-toggle:checked,
 button.control-toggle:checked,
 button.control-toggle.toggle:checked {
-    background: var(--md-sys-color-primary-container, rgba(137, 180, 250, 0.22));
+    background: rgba(137, 180, 250, 0.22);
     background-image: none;
     border-color: var(--md-sys-color-primary, rgba(137, 180, 250, 0.75));
     box-shadow: none;
@@ -1296,7 +1296,7 @@ levelbar.osd-level block.filled {
 .updates-refresh-button.flat {
   background: transparent;
   background-image: none;
-  border: 1px solid var(--md-sys-color-outline, rgba(241, 243, 244, 0.14));
+  border: 1px solid rgba(241, 243, 244, 0.14);
   border-radius: 6px;
   color: inherit;
   min-height: 1.8em;
@@ -1306,7 +1306,7 @@ levelbar.osd-level block.filled {
 
 .updates-refresh-button:hover,
 .updates-refresh-button.flat:hover {
-  background: var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.08));
+  background: rgba(241, 243, 244, 0.08);
   border-color: var(--md-sys-color-primary, rgba(137, 180, 250, 0.65));
 }
 
@@ -1317,22 +1317,22 @@ levelbar.osd-level block.filled {
 
 .updates-row {
   padding: 0.45em 0.6em;
-  border: 1px solid var(--md-sys-color-outline, rgba(241, 243, 244, 0.12));
+  border: 1px solid rgba(241, 243, 244, 0.12);
   border-radius: 6px;
   box-shadow: inset var(--updates-indicator-border-width, 4px) 0 0 0 transparent;
-  background-color: var(--md-sys-color-surface-container, rgba(241, 243, 244, 0.05));
+  background-color: rgba(241, 243, 244, 0.05);
 }
 
 .updates-row.warning {
   border-color: var(--md-sys-color-tertiary, rgba(253, 214, 100, 0.65));
   box-shadow: inset var(--updates-indicator-border-width, 4px) 0 0 0 var(--md-sys-color-tertiary, rgba(253, 214, 100, 0.75));
-  background-color: var(--md-sys-color-tertiary-container, rgba(253, 214, 100, 0.08));
+  background-color: rgba(253, 214, 100, 0.08);
 }
 
 .updates-row.critical {
   border-color: var(--md-sys-color-error, rgba(242, 139, 130, 0.8));
   box-shadow: inset var(--updates-indicator-border-width, 4px) 0 0 0 var(--md-sys-color-error, rgba(242, 139, 130, 0.85));
-  background-color: var(--md-sys-color-error-container, rgba(242, 139, 130, 0.1));
+  background-color: rgba(242, 139, 130, 0.1);
 }
 
 .updates-package-name {
