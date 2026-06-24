@@ -1,6 +1,7 @@
 use serde::Deserialize;
 use std::{collections::BTreeMap, fs, io, path::PathBuf};
 
+pub(crate) mod color;
 pub(crate) mod style;
 pub(crate) mod variables;
 pub(crate) use style::StyleConfig;
