@@ -237,8 +237,25 @@ impl Component for SettingsWindow {
             }
             SettingsInput::SetValueOwned { path, value } => {
                 let path_refs: Vec<&str> = path.iter().map(String::as_str).collect();
+                let value_for_model = value.clone();
+
                 if let Err(error) = crate::config::set_config_value(&path_refs, value) {
                     tracing::error!(?path, "Failed to save setting: {error}")
+                } else if self
+                    .config
+                    .apply_config_value(&path_refs, value_for_model.as_ref())
+                {
+                    if value_for_model.is_none() {
+                        self.save_scroll(widgets);
+                        render_current_page(
+                            &widgets.page_content,
+                            &widgets.page_title,
+                            self.active_item,
+                            &self.config,
+                            &sender,
+                        );
+                        self.restore_scroll(widgets);
+                    }
                 }
             }
             SettingsInput::SetBarRegion {

@@ -515,6 +515,7 @@ fn consumer_color_row(
     let entry_reset = reset_button.clone();
     let entry_writer = color_writer.clone();
     let entry_updating2 = entry_updating.clone();
+    let entry_saved_setting = setting.clone();
 
     custom_entry.connect_changed(move |entry| {
         if entry_updating2.get() {
@@ -535,7 +536,7 @@ fn consumer_color_row(
         set_swatch_color(&entry_swatch, &entry_swatch_color, color);
         entry_updating2.set(false);
 
-        entry_writer.send_debounced(ConfigValue::String(solid_hex(color)));
+        entry_writer.send_debounced(entry_saved_setting.value_for_config(solid_hex(color)));
     });
 
     // --- custom button wiring ---
@@ -545,6 +546,7 @@ fn consumer_color_row(
     let btn_swatch = custom_swatch.clone();
     let btn_swatch_color = custom_swatch_color.clone();
     let btn_writer = color_writer.clone();
+    let btn_saved_setting = setting.clone();
 
     custom_button.connect_clicked(move |button| {
         let initial = btn_swatch_color.borrow().to_owned();
@@ -558,6 +560,7 @@ fn consumer_color_row(
         let btn_swatch = btn_swatch.clone();
         let btn_swatch_color = btn_swatch_color.clone();
         let btn_writer = btn_writer.clone();
+        let btn_saved_setting = btn_saved_setting.clone();
 
         custom_dialog.choose_rgba(
             parent.as_ref(),
@@ -576,12 +579,13 @@ fn consumer_color_row(
                 btn_updating.set(false);
 
                 btn_reset.set_sensitive(true);
-                btn_writer.send_now(Some(ConfigValue::String(value)));
+                btn_writer.send_now(Some(btn_saved_setting.value_for_config(value)));
             },
         );
     });
 
     // --- opacity wiring ---
+    debug_assert!(!setting.opacity_path.is_empty(), "consumer color {:?} has empty opacity_path", setting.path);
     let opacity_reset = reset_button.clone();
     let opacity_writer2 = opacity_writer.clone();
     opacity_scale.connect_value_changed(move |scale| {
