@@ -159,9 +159,13 @@ pub(crate) fn render_current_page(
         }
         SettingsPage::Widgets => {
             appearance_subpages.set_visible(false);
-            let page = super::pages::widgets::page(&config.widgets);
-            title.set_label(&page.title);
-            render_page(container, page, sender);
+            title.set_label(SettingsPage::Widgets.title());
+            // Superseded by the nav model in the next task.
+            render_page(
+                container,
+                SettingsPageSpec { title: "Widgets".to_string(), sections: Vec::new() },
+                sender,
+            );
         }
         SettingsPage::BarLayout => {
             appearance_subpages.set_visible(false);
@@ -279,10 +283,65 @@ fn render_section(
     container.append(&section_box);
 }
 
+#[allow(dead_code)]
+pub(crate) fn build_page(
+    item: &super::nav::NavItem,
+    config: &SettingsConfig,
+) -> Option<SettingsPageSpec> {
+    use super::nav::NavContent;
+
+    match &item.content {
+        NavContent::StyleSection(section) => Some(SettingsPageSpec {
+            title: item.title.to_string(),
+            sections: vec![super::pages::style_sections::section(section, &config.style)],
+        }),
+        NavContent::Widget { section, config_key } => {
+            let mut sections = super::pages::widgets::config_sections(config_key, &config.widgets);
+            let mut style = super::pages::style_sections::section(section, &config.style);
+            style.title = "Style".to_string();
+            sections.push(style);
+            Some(SettingsPageSpec {
+                title: item.title.to_string(),
+                sections,
+            })
+        }
+        NavContent::BarLayout => None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::config::ConfigValue;
+
+    #[test]
+    fn build_page_for_updates_widget_has_config_then_style() {
+        let item = crate::settings::nav::find_item("updates").unwrap();
+        let config = SettingsConfig {
+            style: StyleConfig::default(),
+            widgets: BTreeMap::new(),
+            bars: Vec::new(),
+            available_monitors: Vec::new(),
+        };
+        let page = build_page(item, &config).unwrap();
+        assert_eq!(page.title, "Updates");
+        assert_eq!(page.sections.first().unwrap().title, "Config");
+        assert_eq!(page.sections.last().unwrap().title, "Style");
+    }
+
+    #[test]
+    fn build_page_for_clock_widget_has_only_style() {
+        let item = crate::settings::nav::find_item("clock").unwrap();
+        let config = SettingsConfig {
+            style: StyleConfig::default(),
+            widgets: BTreeMap::new(),
+            bars: Vec::new(),
+            available_monitors: Vec::new(),
+        };
+        let page = build_page(item, &config).unwrap();
+        assert_eq!(page.sections.len(), 1);
+        assert_eq!(page.sections[0].title, "Style");
+    }
 
     #[test]
     fn settings_config_applies_widget_string_value() {
