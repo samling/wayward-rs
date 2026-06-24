@@ -10,7 +10,6 @@ use super::super::spec::{
 };
 
 pub(crate) fn palette_options(style: &StyleConfig) -> Vec<PaletteOption> {
-    use crate::config::variables::settings_for_section;
     settings_for_section("Palette")
         .filter_map(|spec| {
             if spec.group != "palette" {
@@ -39,6 +38,7 @@ fn opacity_path_for(spec: &crate::config::variables::StyleSettingSpec) -> Vec<St
 }
 
 pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> SettingsSectionSpec {
+    let all_palette_options = palette_options(style);
     let settings = settings_for_section(section_name)
         .filter_map(|spec| {
             let group = style.group(spec.group);
@@ -93,7 +93,7 @@ pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> Settin
                         opacity_default,
                         opacity_path: opacity_path_for(spec),
                         is_palette_ref,
-                        palette_options: palette_options(style),
+                        palette_options: all_palette_options.clone(),
                     }))
                 }
             }

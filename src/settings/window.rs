@@ -29,6 +29,10 @@ pub(crate) enum SettingsInput {
         path: &'static [&'static str],
         value: Option<crate::config::ConfigValue>,
     },
+    SetValueOwned {
+        path: Vec<String>,
+        value: Option<crate::config::ConfigValue>,
+    },
     SetBarRegion {
         bar_name: String,
         region: BarRegionKey,
@@ -229,6 +233,12 @@ impl Component for SettingsWindow {
                         );
                         self.restore_scroll(widgets);
                     }
+                }
+            }
+            SettingsInput::SetValueOwned { path, value } => {
+                let path_refs: Vec<&str> = path.iter().map(String::as_str).collect();
+                if let Err(error) = crate::config::set_config_value(&path_refs, value) {
+                    tracing::error!(?path, "Failed to save setting: {error}")
                 }
             }
             SettingsInput::SetBarRegion {
