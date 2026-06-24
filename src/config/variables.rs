@@ -131,18 +131,6 @@ impl CssVariables for StyleConfig {
     }
 }
 
-pub(crate) fn style_setting_sections() -> Vec<&'static str> {
-    let mut sections = Vec::new();
-
-    for spec in specs::style_settings() {
-        if spec.setting.is_some() && !sections.contains(&spec.section) {
-            sections.push(spec.section);
-        }
-    }
-
-    sections
-}
-
 pub(crate) fn settings_for_section(
     section: &'static str,
 ) -> impl Iterator<Item = &'static StyleSettingSpec> {
@@ -224,7 +212,17 @@ fn write_css_variable<T: std::fmt::Display>(css: &mut String, name: &str, value:
 
 #[cfg(test)]
 mod tests {
-    use super::{settings_for_section, style_setting_sections};
+    use super::settings_for_section;
+
+    fn style_setting_sections() -> Vec<&'static str> {
+        let mut sections = Vec::new();
+        for spec in super::specs::style_settings() {
+            if spec.setting.is_some() && !sections.contains(&spec.section) {
+                sections.push(spec.section);
+            }
+        }
+        sections
+    }
 
     #[test]
     fn floating_surfaces_section_is_removed() {

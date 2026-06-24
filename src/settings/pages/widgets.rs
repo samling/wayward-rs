@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 
 use super::super::spec::{SettingSpec, SettingsSectionSpec, StringListSpec, StringSpec};
 
-#[allow(dead_code)]
 pub(crate) fn config_sections(
     config_key: &str,
     widgets: &BTreeMap<String, toml::value::Table>,

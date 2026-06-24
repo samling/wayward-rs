@@ -1,17 +1,14 @@
-#[allow(dead_code)]
 pub(crate) struct NavGroup {
     pub(crate) title: &'static str,
     pub(crate) items: &'static [NavItem],
 }
 
-#[allow(dead_code)]
 pub(crate) struct NavItem {
     pub(crate) key: &'static str,
     pub(crate) title: &'static str,
     pub(crate) content: NavContent,
 }
 
-#[allow(dead_code)]
 pub(crate) enum NavContent {
     StyleSection(&'static str),
     Widget {
@@ -21,10 +18,8 @@ pub(crate) enum NavContent {
     BarLayout,
 }
 
-#[allow(dead_code)]
 pub(crate) const DEFAULT_ITEM: &str = "palette";
 
-#[allow(dead_code)]
 pub(crate) fn nav() -> &'static [NavGroup] {
     use NavContent::{BarLayout, StyleSection, Widget};
 
@@ -108,7 +103,6 @@ pub(crate) fn nav() -> &'static [NavGroup] {
     ]
 }
 
-#[allow(dead_code)]
 pub(crate) fn find_item(key: &str) -> Option<&'static NavItem> {
     nav()
         .iter()

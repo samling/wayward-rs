@@ -117,59 +117,26 @@ fn config_value_to_toml(value: &crate::config::ConfigValue) -> toml::Value {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum SettingsPage {
-    Appearance,
-    Widgets,
-    BarLayout,
-}
-
-impl SettingsPage {
-    pub(crate) fn title(self) -> &'static str {
-        match self {
-            Self::Appearance => "Appearance",
-            Self::Widgets => "Widgets",
-            Self::BarLayout => "Bar Layout",
-        }
-    }
-}
-
 pub(crate) fn render_current_page(
     container: &gtk::Box,
-    appearance_subpages: &gtk::Box,
     title: &gtk::Label,
-    active_page: SettingsPage,
-    active_appearance_section: &'static str,
+    active_item: &'static str,
     config: &SettingsConfig,
     sender: &ComponentSender<SettingsWindow>,
 ) {
     clear_container(container);
-    clear_container(appearance_subpages);
 
-    match active_page {
-        SettingsPage::Appearance => {
-            appearance_subpages.set_visible(true);
-            render_appearance_subpages(appearance_subpages, active_appearance_section, sender);
-            title.set_label(SettingsPage::Appearance.title());
-            render_section(
-                container,
-                super::pages::notifications::section_spec(active_appearance_section, &config.style),
-                sender,
-            );
+    let Some(item) = super::nav::find_item(active_item) else {
+        return;
+    };
+
+    match build_page(item, config) {
+        Some(page) => {
+            title.set_label(&page.title);
+            render_page(container, page, sender);
         }
-        SettingsPage::Widgets => {
-            appearance_subpages.set_visible(false);
-            title.set_label(SettingsPage::Widgets.title());
-            // Superseded by the nav model in the next task.
-            render_page(
-                container,
-                SettingsPageSpec { title: "Widgets".to_string(), sections: Vec::new() },
-                sender,
-            );
-        }
-        SettingsPage::BarLayout => {
-            appearance_subpages.set_visible(false);
-            title.set_label(SettingsPage::BarLayout.title());
+        None => {
+            title.set_label(item.title);
             super::pages::bar_layout::render(
                 container,
                 &config.bars,
@@ -177,59 +144,49 @@ pub(crate) fn render_current_page(
                 sender,
             );
         }
-    };
+    }
 }
 
-pub(crate) fn default_appearance_section() -> &'static str {
-    super::pages::notifications::sections()
-        .into_iter()
-        .next()
-        .unwrap_or("Palette")
-}
+pub(crate) fn render_sidebar(
+    container: &gtk::Box,
+    active_item: &str,
+    sender: &ComponentSender<SettingsWindow>,
+) {
+    clear_container(container);
 
-pub(crate) fn sidebar_button_classes(
-    active_page: SettingsPage,
-    page: SettingsPage,
-) -> Vec<&'static str> {
-    if active_page == page {
-        vec!["settings-sidebar-item", "active"]
-    } else {
-        vec!["settings-sidebar-item"]
+    for group in super::nav::nav() {
+        let header = gtk::Label::new(Some(group.title));
+        header.set_halign(gtk::Align::Start);
+        header.add_css_class("settings-sidebar-group");
+        container.append(&header);
+
+        for item in group.items {
+            let button = gtk::Button::new();
+            let classes: &[&str] = if item.key == active_item {
+                &["settings-sidebar-item", "active"]
+            } else {
+                &["settings-sidebar-item"]
+            };
+            button.set_css_classes(classes);
+
+            let label = gtk::Label::new(Some(item.title));
+            label.set_halign(gtk::Align::Start);
+            button.set_child(Some(&label));
+
+            let key = item.key;
+            let input_sender = sender.input_sender().clone();
+            button.connect_clicked(move |_| {
+                let _ = input_sender.send(SettingsInput::SelectNavItem(key));
+            });
+
+            container.append(&button);
+        }
     }
 }
 
 fn clear_container(container: &gtk::Box) {
     while let Some(child) = container.first_child() {
         container.remove(&child);
-    }
-}
-
-fn render_appearance_subpages(
-    container: &gtk::Box,
-    active_section: &'static str,
-    sender: &ComponentSender<SettingsWindow>,
-) {
-    for section in super::pages::notifications::sections() {
-        let button = gtk::Button::with_label(section);
-        button.set_css_classes(&appearance_subpage_button_classes(active_section, section));
-
-        let input_sender = sender.input_sender().clone();
-        button.connect_clicked(move |_| {
-            let _ = input_sender.send(SettingsInput::SetAppearanceSection(section));
-        });
-
-        container.append(&button);
-    }
-}
-
-fn appearance_subpage_button_classes(
-    active_section: &'static str,
-    section: &'static str,
-) -> Vec<&'static str> {
-    if active_section == section {
-        vec!["settings-subpage-button", "active"]
-    } else {
-        vec!["settings-subpage-button"]
     }
 }
 
@@ -283,7 +240,6 @@ fn render_section(
     container.append(&section_box);
 }
 
-#[allow(dead_code)]
 pub(crate) fn build_page(
     item: &super::nav::NavItem,
     config: &SettingsConfig,
