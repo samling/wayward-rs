@@ -83,7 +83,7 @@
 
 .bar-item-content {
     background-color: var(--bar-widget-background-color, transparent);
-    border: var(--bar-widget-border-width, 0px) solid var(--bar-widget-border-color, transparent);
+    border: var(--bar-widget-border-width, 0px) solid var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08)));
     border-radius: var(--bar-widget-border-radius, 0px);
     color: inherit;
     margin: var(--bar-widget-margin-y, 0px) var(--bar-widget-margin-x, 0px);
@@ -98,6 +98,55 @@
 
 .bar.vertical .bar-item-content {
     min-width: var(--bar-widget-thickness, 16px);
+}
+
+.action-menu-content {
+    background-color: var(--action-menu-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
+    border-color: var(--action-menu-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+}
+
+.battery-content {
+    background-color: var(--battery-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
+    border-color: var(--battery-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+}
+
+.brightness-content {
+    background-color: var(--brightness-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
+    border-color: var(--brightness-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+}
+
+.clock-content {
+    background-color: var(--clock-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
+    border-color: var(--clock-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+}
+
+.notifications-content {
+    background-color: var(--notifications-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
+    border-color: var(--notifications-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+}
+
+.systray-content {
+    background-color: var(--systray-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
+    border-color: var(--systray-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+}
+
+.updates-content {
+    background-color: var(--updates-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
+    border-color: var(--updates-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+}
+
+.volume-content {
+    background-color: var(--volume-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
+    border-color: var(--volume-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+}
+
+.workspaces-content {
+    background-color: var(--workspaces-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
+    border-color: var(--workspaces-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+    /* The active indicator is hosted in this container; padding here would inset
+       it from the border. Move widget padding onto .workspaces-items instead so
+       the indicator fills to the container's inner edge. */
+    padding: 0;
 }
 
 .bar-item-content label,
@@ -163,38 +212,26 @@ menubutton.bar-item > button:checked {
     padding: 0;
 }
 
-.workspaces-content {
-    background-color: var(--workspaces-widget-background-color, var(--bar-widget-background-color, transparent));
-    border: var(--workspaces-widget-border-width, var(--bar-widget-border-width, 0px)) solid var(--workspaces-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--workspaces-content-border-radius, 6px);
-    margin-bottom: 0;
-    margin-top: 0;
-    padding: 0;
-}
-
 .workspaces-items {
     border-spacing: var(--workspaces-gap, 5px);
-    padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x, 4px));
+    padding: var(--bar-widget-padding-y, 0px) var(--bar-widget-padding-x, 4px);
 }
 
 .bar.vertical .workspaces-items {
     border-spacing: var(--workspaces-vertical-gap, 2px);
 }
 
+/* Pills carry no cross-axis padding: that would exceed the shared
+   --bar-widget-thickness and make the widget taller than its peers. */
 .workspace {
     background-color: transparent;
     border-radius: var(--workspace-border-radius, 6px);
     color: inherit;
-    padding: var(--workspace-padding-y, 2px) var(--workspace-padding-x, 8px);
-}
-
-.bar.horizontal .workspace {
-    min-height: var(--bar-widget-thickness, 16px);
+    padding: 0 var(--workspace-padding-x, 8px);
 }
 
 .bar.vertical .workspace {
-    min-width: var(--bar-widget-thickness, 16px);
-    padding: var(--workspace-vertical-padding-y, 1px) var(--workspace-vertical-padding-x, 4px);
+    padding: var(--workspace-vertical-padding-y, 1px) 0;
 }
 
 .workspace-label {
@@ -591,12 +628,7 @@ button.control-toggle.toggle:checked {
 
 /* Systray */
 .systray-content {
-    background-color: var(--systray-widget-background-color, var(--bar-widget-background-color, transparent));
-    border: var(--systray-widget-border-width, var(--bar-widget-border-width, 0px)) solid var(--systray-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--systray-content-border-radius, 12px);
     border-spacing: 0.25em;
-    padding-left: var(--systray-content-padding-x, 8px);
-    padding-right: var(--systray-content-padding-x, 8px);
 }
 
 .systray-item {

@@ -299,11 +299,8 @@ mod tests {
             .expect("workspaces items rule should exist");
 
         assert!(rule.contains("border-spacing: var(--workspaces-gap, 5px);"));
-        assert!(
-            rule.contains(
-                "padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x"
-            )
-        );
+        assert!(rule
+            .contains("padding: var(--bar-widget-padding-y, 0px) var(--bar-widget-padding-x, 4px);"));
         assert!(!rule.contains("em"));
     }
 
@@ -324,13 +321,15 @@ mod tests {
             .expect("workspace rule should exist");
 
         assert!(content_rule.contains("padding: 0;"));
+        assert!(!content_rule.contains("border-radius:"));
         assert!(!content_rule.contains("border-spacing:"));
-        assert!(
-            workspace_rule.contains(
-                "padding: var(--workspace-padding-y, 2px) var(--workspace-padding-x, 8px);"
-            )
-        );
+        assert!(workspace_rule.contains("padding: 0 var(--workspace-padding-x, 8px);"));
         assert!(!workspace_rule.contains("em"));
+        // Pills must not force their own thickness; the shared
+        // .bar-item-content rule governs widget size uniformly.
+        assert!(!workspace_rule.contains("min-height:"));
+        assert!(!workspace_rule.contains("min-width:"));
+        assert!(!DEFAULT_CSS.contains(".bar.horizontal .workspace {"));
     }
 
     #[test]
@@ -458,7 +457,7 @@ mod tests {
     }
 
     #[test]
-    fn generated_style_config_ignores_per_widget_surface_controls() {
+    fn generated_style_config_includes_per_widget_surface_color_controls_only() {
         let mut style = StyleConfig::default();
         style.brightness.insert(
             "widget-background-color".to_string(),
@@ -470,7 +469,7 @@ mod tests {
 
         let css = generated_style_config(&style);
 
-        assert!(!css.contains("--brightness-widget-background-color"));
+        assert!(css.contains("--brightness-widget-background-color: rgba(137, 180, 250, 0.2);"));
         assert!(!css.contains("--brightness-widget-border-radius"));
     }
 

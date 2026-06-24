@@ -106,7 +106,7 @@ impl SystrayComponent {
         for item in items {
             let key = logical_item_key(item);
             if !desired_keys.insert(key.clone()) {
-                tracing::info!(
+                tracing::debug!(
                     id = %item.id,
                     bus_name = %item.bus_name,
                     key = %key,

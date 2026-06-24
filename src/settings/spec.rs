@@ -115,7 +115,7 @@ pub(crate) struct ColorSpec {
     pub(crate) label: &'static str,
     pub(crate) path: &'static [&'static str],
     pub(crate) value: Option<String>,
-    pub(crate) default: &'static str,
+    pub(crate) default: String,
     pub(crate) inherited: Option<String>,
     pub(crate) role: ColorSettingRole,
 }
@@ -132,7 +132,7 @@ impl ColorSpec {
         self.value
             .clone()
             .or_else(|| self.inherited.clone())
-            .unwrap_or_else(|| self.default.to_string())
+            .unwrap_or_else(|| self.default.clone())
     }
 
     pub(crate) fn entry_value(&self) -> String {

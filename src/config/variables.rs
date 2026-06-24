@@ -39,8 +39,34 @@ pub(crate) enum SettingUiSpec {
     },
     Color {
         label: &'static str,
-        default: &'static str,
+        default: ColorDefault,
     },
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum ColorDefault {
+    Literal(&'static str),
+    Palette(&'static str),
+}
+
+impl ColorDefault {
+    pub(crate) fn resolve(self, style: &StyleConfig) -> String {
+        match self {
+            Self::Literal(value) => value.to_string(),
+            Self::Palette(key) => style
+                .group("palette")
+                .and_then(|group| group.string(key))
+                .or_else(|| palette_color_default(key).map(str::to_string))
+                .unwrap_or_default(),
+        }
+    }
+
+    fn literal(self) -> Option<&'static str> {
+        match self {
+            Self::Literal(value) => Some(value),
+            Self::Palette(_) => None,
+        }
+    }
 }
 
 impl SettingUiSpec {
@@ -60,7 +86,8 @@ impl SettingUiSpec {
 
     fn string_default(self) -> Option<&'static str> {
         match self {
-            Self::String { default, .. } | Self::Color { default, .. } => Some(default),
+            Self::String { default, .. } => Some(default),
+            Self::Color { default, .. } => default.literal(),
             _ => None,
         }
     }
@@ -76,82 +103,6 @@ pub(crate) struct StyleSettingSpec {
     css_kind: CssValueKind,
 }
 
-impl StyleSettingSpec {
-    pub(crate) fn palette_fallback_key(&self) -> Option<&'static str> {
-        match self.variable {
-            "--bar-background-color" => Some("surface"),
-            "--bar-color" => Some("on-surface"),
-            "--workspace-active-color" => Some("on-surface"),
-            "--workspace-focused-color" => Some("primary"),
-            "--workspace-urgent-color" => Some("error"),
-            "--workspace-indicator-background-color" => Some("primary-container"),
-            "--workspace-status-color" => Some("tertiary"),
-            "--surface-background-color" => Some("surface"),
-            "--surface-border-color" => Some("outline"),
-            "--surface-color" => Some("on-surface"),
-            "--dropdown-header-background-color" => Some("surface-container-low"),
-            "--dropdown-header-border-color" => Some("outline-variant"),
-            "--dropdown-empty-background-color" => Some("surface-container-low"),
-            "--dropdown-empty-border-color" => Some("outline-variant"),
-            "--battery-meter-fill-color" => Some("primary"),
-            "--battery-detail-background-color" => Some("surface-container"),
-            "--battery-detail-border-color" => Some("outline-variant"),
-            "--battery-profile-border-color" => Some("outline"),
-            "--battery-profile-hover-background-color" => Some("surface-container-high"),
-            "--battery-profile-hover-border-color" => Some("primary"),
-            "--battery-profile-active-background-color" => Some("primary-container"),
-            "--battery-profile-active-border-color" => Some("primary"),
-            "--systray-menu-hover-background-color" => Some("surface-container-high"),
-            "--osd-level-track-color" => Some("surface-container-high"),
-            "--osd-level-fill-color" => Some("primary"),
-            "--osd-brightness-level-fill-color" => Some("tertiary"),
-            "--osd-volume-level-fill-color" => Some("primary"),
-            "--osd-muted-level-fill-color" => Some("error"),
-            "--notification-row-background-color" => Some("surface-container"),
-            "--notification-row-hover-background-color" => Some("surface-container-high"),
-            "--notification-row-border-color" => Some("outline"),
-            "--notification-row-hover-border-color" => Some("outline"),
-            "--notification-row-low-border-color" => Some("outline"),
-            "--notification-row-normal-border-color" => Some("primary"),
-            "--notification-row-critical-border-color" => Some("error"),
-            "--notification-toast-border-color" => Some("outline"),
-            "--notification-list-action-border-color" => Some("outline"),
-            "--notification-action-border-color" => Some("outline"),
-            "--notification-clear-all-border-color" => Some("outline"),
-            "--notification-clear-all-hover-border-color" => Some("error"),
-            "--notification-list-action-hover-background-color" => Some("surface-container-high"),
-            "--notification-list-action-hover-border-color" => Some("primary"),
-            "--notification-toast-critical-border-color" => Some("error"),
-            "--notification-button-border-color" => Some("outline"),
-            "--notification-button-hover-background-color" => Some("surface-container-high"),
-            "--notification-button-hover-border-color" => Some("primary"),
-            "--action-menu-section-background-color" => Some("surface-container-low"),
-            "--action-menu-section-border-color" => Some("outline-variant"),
-            "--dropdown-section-title-color" => Some("on-surface-variant"),
-            "--action-menu-button-background-color" => Some("secondary-container"),
-            "--action-menu-button-border-color" => Some("outline-variant"),
-            "--action-menu-button-hover-background-color" => Some("surface-container-high"),
-            "--action-menu-button-hover-border-color" => Some("secondary"),
-            "--settings-background-color" => Some("surface-container-lowest"),
-            "--settings-color" => Some("on-surface"),
-            "--settings-titlebar-background-color" => Some("surface-container"),
-            "--settings-titlebar-border-color" => Some("outline-variant"),
-            "--settings-sidebar-background-color" => Some("surface-container-low"),
-            "--settings-sidebar-active-background-color" => Some("secondary-container"),
-            "--settings-group-background-color" => Some("surface-container"),
-            "--settings-row-label-color" => Some("on-surface"),
-            "--settings-row-value-color" => Some("on-surface-variant"),
-            "--settings-color-error" => Some("error"),
-            "--settings-token-background-color" => Some("surface-container-high"),
-            "--settings-token-drop-border-color" => Some("primary"),
-            "--settings-token-invalid-color" => Some("on-error-container"),
-            "--settings-token-invalid-border-color" => Some("error"),
-            "--settings-token-drop-background-color" => Some("primary-container"),
-            _ => None,
-        }
-    }
-}
-
 pub(crate) fn palette_color_default(key: &str) -> Option<&'static str> {
     specs::style_settings().find_map(|spec| {
         if spec.group != "palette" || spec.key != key {
@@ -159,7 +110,10 @@ pub(crate) fn palette_color_default(key: &str) -> Option<&'static str> {
         }
 
         match spec.setting {
-            Some(SettingUiSpec::Color { default, .. }) => Some(default),
+            Some(SettingUiSpec::Color {
+                default: ColorDefault::Literal(default),
+                ..
+            }) => Some(default),
             _ => None,
         }
     })
