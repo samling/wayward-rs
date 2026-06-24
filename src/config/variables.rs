@@ -209,3 +209,24 @@ fn should_write_default(spec: &StyleSettingSpec) -> bool {
 fn write_css_variable<T: std::fmt::Display>(css: &mut String, name: &str, value: T, unit: &str) {
     css.push_str(&format!("  {name}: {value}{unit};\n"));
 }
+
+#[cfg(test)]
+mod golden {
+    use super::CssVariables;
+    use crate::config::StyleConfig;
+
+    #[test]
+    fn default_css_variables_match_golden() {
+        let mut css = String::new();
+        StyleConfig::default().write_css_variables(&mut css);
+
+        let path = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/golden-css-variables.txt");
+        if std::path::Path::new(path).exists() {
+            let expected = std::fs::read_to_string(path).unwrap();
+            assert_eq!(css, expected, "emitted CSS variables changed vs golden");
+        } else {
+            std::fs::write(path, &css).unwrap();
+            panic!("wrote golden snapshot; re-run to assert");
+        }
+    }
+}
