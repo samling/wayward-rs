@@ -83,7 +83,7 @@
 
 .bar-item-content {
     background-color: var(--bar-widget-background-color, transparent);
-    border: var(--bar-widget-border-width, 0px) solid var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08)));
+    border: var(--bar-widget-border-width, 0px) solid var(--bar-widget-border-color, rgba(241, 243, 244, 0.08));
     border-radius: var(--bar-widget-border-radius, 0px);
     color: inherit;
     margin: var(--bar-widget-margin-y, 0px) var(--bar-widget-margin-x, 0px);
@@ -101,48 +101,48 @@
 }
 
 .action-menu-content {
-    background-color: var(--action-menu-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
-    border-color: var(--action-menu-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+    background-color: var(--action-menu-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--action-menu-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
 }
 
 .battery-content {
-    background-color: var(--battery-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
-    border-color: var(--battery-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+    background-color: var(--battery-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--battery-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
 }
 
 .brightness-content {
-    background-color: var(--brightness-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
-    border-color: var(--brightness-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+    background-color: var(--brightness-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--brightness-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
 }
 
 .clock-content {
-    background-color: var(--clock-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
-    border-color: var(--clock-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+    background-color: var(--clock-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--clock-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
 }
 
 .notifications-content {
-    background-color: var(--notifications-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
-    border-color: var(--notifications-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+    background-color: var(--notifications-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--notifications-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
 }
 
 .systray-content {
-    background-color: var(--systray-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
-    border-color: var(--systray-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+    background-color: var(--systray-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--systray-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
 }
 
 .updates-content {
-    background-color: var(--updates-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
-    border-color: var(--updates-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+    background-color: var(--updates-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--updates-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
 }
 
 .volume-content {
-    background-color: var(--volume-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
-    border-color: var(--volume-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+    background-color: var(--volume-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--volume-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
 }
 
 .workspaces-content {
-    background-color: var(--workspaces-widget-background-color, var(--bar-widget-background-color, var(--md-sys-color-surface-container-highest, rgba(241, 243, 244, 0.12))));
-    border-color: var(--workspaces-widget-border-color, var(--bar-widget-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08))));
+    background-color: var(--workspaces-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--workspaces-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
     /* The active indicator is hosted in this container; padding here would inset
        it from the border. Move widget padding onto .workspaces-items instead so
        the indicator fills to the container's inner edge. */
@@ -259,7 +259,7 @@ menubutton.bar-item > button:checked {
 }
 
 .workspace-indicator {
-    background-color: var(--workspace-indicator-background-color, var(--md-sys-color-primary-container, rgba(137, 180, 250, 0.5)));
+    background-color: var(--workspace-indicator-background-color, rgba(137, 180, 250, 0.22));
     border-radius: var(--workspace-indicator-border-radius, 6px);
     padding: 0;
 }
@@ -271,14 +271,14 @@ menubutton.bar-item > button:checked {
 /* Floating surfaces */
 .osd {
     background-color: var(--osd-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
-    border: 1px solid var(--osd-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.14)));
+    border: 1px solid var(--osd-border-color, rgba(241, 243, 244, 0.14));
     border-radius: var(--osd-border-radius, 6px);
     color: var(--osd-color, var(--md-sys-color-on-surface, #f1f3f4));
 }
 
 .notification-toast {
     background-color: var(--notification-toast-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
-    border: 1px solid var(--notification-toast-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.14)));
+    border: 1px solid var(--notification-toast-border-color, rgba(241, 243, 244, 0.14));
     border-radius: var(--notification-toast-border-radius, 6px);
     color: var(--notification-toast-color, var(--md-sys-color-on-surface, #f1f3f4));
     box-shadow: var(--notification-toast-shadow, 0 8px 28px rgba(0, 0, 0, 0.28));
@@ -318,15 +318,15 @@ popover.dropdown arrow {
 }
 
 .dropdown-header {
-    background-color: var(--dropdown-header-background-color, var(--md-sys-color-surface-container-low, rgba(241, 243, 244, 0.045)));
-    border: 1px solid var(--dropdown-header-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08)));
+    background-color: var(--dropdown-header-background-color, rgba(241, 243, 244, 0.045));
+    border: 1px solid var(--dropdown-header-border-color, rgba(241, 243, 244, 0.08));
     border-radius: var(--dropdown-header-border-radius, 7px);
     padding: 0.65em 0.75em;
 }
 
 .dropdown-empty {
-    background-color: var(--dropdown-empty-background-color, var(--md-sys-color-surface-container-low, rgba(241, 243, 244, 0.045)));
-    border: 1px solid var(--dropdown-empty-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.09)));
+    background-color: var(--dropdown-empty-background-color, rgba(241, 243, 244, 0.045));
+    border: 1px solid var(--dropdown-empty-border-color, rgba(241, 243, 244, 0.08));
     border-radius: var(--dropdown-empty-border-radius, 7px);
     color: inherit;
     margin-top: 0.1em;
@@ -435,8 +435,8 @@ levelbar.battery-meter block.filled {
 }
 
 .battery-detail {
-    background-color: var(--battery-detail-background-color, var(--md-sys-color-surface-container, rgba(241, 243, 244, 0.06)));
-    border: 1px solid var(--battery-detail-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.08)));
+    background-color: var(--battery-detail-background-color, rgba(241, 243, 244, 0.06));
+    border: 1px solid var(--battery-detail-border-color, rgba(241, 243, 244, 0.08));
     border-radius: 6px;
     border-spacing: 0.2em;
     padding: 0.55em 0.65em;
@@ -459,7 +459,7 @@ button.profile-button,
 button.profile-button.toggle {
     background: transparent;
     background-image: none;
-    border: 1px solid var(--battery-profile-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.16)));
+    border: 1px solid var(--battery-profile-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 0;
     box-shadow: none;
     color: inherit;
@@ -471,7 +471,7 @@ button.profile-button.toggle {
 .profile-button:hover,
 button.profile-button:hover,
 button.profile-button.toggle:hover {
-    background: var(--battery-profile-hover-background-color, var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.08)));
+    background: var(--battery-profile-hover-background-color, rgba(241, 243, 244, 0.08));
     background-image: none;
     border-color: var(--battery-profile-hover-border-color, var(--md-sys-color-primary, rgba(137, 180, 250, 0.45)));
     box-shadow: none;
@@ -486,7 +486,7 @@ button.profile-button.toggle:focus,
 button.profile-button.toggle:focus-visible {
     background: transparent;
     background-image: none;
-    border-color: var(--battery-profile-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.16)));
+    border-color: var(--battery-profile-border-color, rgba(241, 243, 244, 0.14));
     box-shadow: none;
     outline: none;
 }
@@ -494,7 +494,7 @@ button.profile-button.toggle:focus-visible {
 .profile-button:checked,
 button.profile-button:checked,
 button.profile-button.toggle:checked {
-    background: var(--battery-profile-active-background-color, var(--md-sys-color-primary-container, rgba(137, 180, 250, 0.22)));
+    background: var(--battery-profile-active-background-color, rgba(137, 180, 250, 0.22));
     background-image: none;
     border-color: var(--battery-profile-active-border-color, var(--md-sys-color-primary, rgba(137, 180, 250, 0.75)));
     box-shadow: none;
@@ -663,7 +663,7 @@ popover.systray-menu modelbutton.flat:focus-visible,
 popover.systray-menu button:hover,
 popover.systray-menu button:focus,
 popover.systray-menu button:focus-visible {
-    background: var(--systray-menu-hover-background-color, var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.08)));
+    background: var(--systray-menu-hover-background-color, rgba(241, 243, 244, 0.08));
     background-image: none;
     border: none;
     box-shadow: none;
@@ -700,7 +700,7 @@ popover.systray-menu button:focus-visible {
 }
 
 levelbar.osd-level trough {
-    background-color: var(--osd-level-track-color, var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.16)));
+    background-color: var(--osd-level-track-color, rgba(241, 243, 244, 0.08));
     border-radius: 999px;
     min-height: 2px;
     padding: 0;
@@ -796,9 +796,9 @@ levelbar.osd-level block.filled {
 }
 
 .notification-card {
-    background-color: var(--notification-row-background-color, var(--md-sys-color-surface-container, rgba(241, 243, 244, 0.055)));
+    background-color: var(--notification-row-background-color, rgba(241, 243, 244, 0.06));
     background-image: none;
-    border: 1px solid var(--notification-row-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.12)));
+    border: 1px solid var(--notification-row-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
     box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 transparent;
     color: inherit;
@@ -813,10 +813,10 @@ levelbar.osd-level block.filled {
 }
 
 .notification-card:hover {
-    background-color: var(--notification-row-hover-background-color, var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.085)));
-    border-top-color: var(--notification-row-hover-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.18)));
-    border-right-color: var(--notification-row-hover-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.18)));
-    border-bottom-color: var(--notification-row-hover-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.18)));
+    background-color: var(--notification-row-hover-background-color, rgba(241, 243, 244, 0.08));
+    border-top-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.14));
+    border-right-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.14));
+    border-bottom-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.14));
 }
 
 .notification-card.dismissing,
@@ -831,7 +831,7 @@ levelbar.osd-level block.filled {
 }
 
 .notification-card.low {
-    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-low-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.28)));
+    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-low-border-color, rgba(241, 243, 244, 0.14));
 }
 
 .notification-card.normal {
@@ -883,7 +883,7 @@ levelbar.osd-level block.filled {
 .notification-card-action {
     background: transparent;
     background-image: none;
-    border: 1px solid var(--notification-list-action-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.16)));
+    border: 1px solid var(--notification-list-action-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -892,7 +892,7 @@ levelbar.osd-level block.filled {
 }
 
 .notification-card-action:hover {
-    background: var(--notification-list-action-hover-background-color, var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.08)));
+    background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
     border-color: var(--notification-list-action-hover-border-color, var(--md-sys-color-primary, rgba(137, 180, 250, 0.65)));
 }
 
@@ -923,7 +923,7 @@ levelbar.osd-level block.filled {
 
 .notification-card-dismiss:hover,
 .notification-card-dismiss.flat:hover {
-    background: var(--notification-list-action-hover-background-color, var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.08)));
+    background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
     opacity: 1;
 }
 
@@ -931,7 +931,7 @@ levelbar.osd-level block.filled {
 .notification-clear-all.flat {
     background: transparent;
     background-image: none;
-    border: 1px solid var(--notification-clear-all-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.14)));
+    border: 1px solid var(--notification-clear-all-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -941,7 +941,7 @@ levelbar.osd-level block.filled {
 
 .notification-clear-all:hover,
 .notification-clear-all.flat:hover {
-    background: var(--notification-list-action-hover-background-color, var(--md-sys-color-surface-container-high, rgba(241, 243, 244, 0.08)));
+    background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
     border-color: var(--notification-clear-all-hover-border-color, var(--md-sys-color-error, rgba(242, 139, 130, 0.55)));
 }
 
@@ -951,13 +951,13 @@ levelbar.osd-level block.filled {
 
 .notification-toast.notification-card {
     background-color: var(--notification-toast-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
-    border: 1px solid var(--notification-row-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.12)));
+    border: 1px solid var(--notification-row-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
     padding: 0.85em 0.7em;
 }
 
 .notification-toast.notification-card:hover {
-    background-color: var(--notification-toast-hover-background-color, var(--md-sys-color-surface-container-high, rgba(38, 38, 54, 1)));
+    background-color: var(--notification-toast-hover-background-color, rgba(241, 243, 244, 0.08));
 }
 
 .action-menu-dropdown-content {
@@ -974,8 +974,8 @@ levelbar.osd-level block.filled {
 }
 
 .action-menu-card-section {
-    background-color: var(--action-menu-section-background-color, var(--md-sys-color-surface-container-low, rgba(241, 243, 244, 0.045)));
-    border: 1px solid var(--action-menu-section-border-color, var(--md-sys-color-outline-variant, rgba(241, 243, 244, 0.07)));
+    background-color: var(--action-menu-section-background-color, rgba(241, 243, 244, 0.045));
+    border: 1px solid var(--action-menu-section-border-color, rgba(241, 243, 244, 0.08));
     border-radius: var(--action-menu-section-border-radius, 7px);
     padding: var(--action-menu-section-padding, 0.9em 0.95em);
 }
@@ -986,7 +986,7 @@ levelbar.osd-level block.filled {
 }
 
 .action-menu-section > .action-menu-section-title {
-    color: var(--dropdown-section-title-color, var(--md-sys-color-on-surface-variant, rgba(241, 243, 244, 0.72)));
+    color: var(--dropdown-section-title-color, rgba(241, 243, 244, 0.72));
     font-size: 0.86em;
     font-weight: 600;
     margin-bottom: 0.15em;
@@ -1001,9 +1001,9 @@ levelbar.osd-level block.filled {
 .action-menu-action.flat,
 .action-menu-screenshot-action,
 .action-menu-screenshot-action.flat {
-    background: var(--action-menu-button-background-color, var(--md-sys-color-secondary-container, rgba(205, 164, 249, 0.18)));
+    background: var(--action-menu-button-background-color, rgba(203, 166, 247, 0.18));
     background-image: none;
-    border: 1px solid var(--action-menu-button-border-color, var(--md-sys-color-outline-variant, rgba(205, 164, 249, 0.24)));
+    border: 1px solid var(--action-menu-button-border-color, rgba(241, 243, 244, 0.08));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -1048,7 +1048,7 @@ levelbar.osd-level block.filled {
 .action-menu-action.flat:hover,
 .action-menu-screenshot-action:hover,
 .action-menu-screenshot-action.flat:hover {
-    background: var(--action-menu-button-hover-background-color, var(--md-sys-color-surface-container-high, rgba(205, 164, 249, 0.28)));
+    background: var(--action-menu-button-hover-background-color, rgba(241, 243, 244, 0.08));
     border-color: var(--action-menu-button-hover-border-color, var(--md-sys-color-secondary, rgba(205, 164, 249, 0.5)));
 }
 
@@ -1101,15 +1101,15 @@ levelbar.osd-level block.filled {
 
 /* Settings */
 .settings-window {
-  background-color: var(--settings-background-color, var(--md-sys-color-surface-container-lowest, rgba(20, 20, 24, 0.96)));
+  background-color: var(--settings-background-color, rgba(30, 30, 46, 0.96));
   color: var(--settings-color, var(--md-sys-color-on-surface, rgba(245, 245, 245, 0.95)));
   font-family: var(--settings-font-family, "Adwaita Sans");
   font-size: var(--settings-font-size, 14px);
 }
 
 .settings-titlebar {
-  background-color: var(--settings-titlebar-background-color, var(--md-sys-color-surface-container, rgba(255, 255, 255, 0.08)));
-  border-bottom: 1px solid var(--settings-titlebar-border-color, var(--md-sys-color-outline-variant, rgba(255, 255, 255, 0.08)));
+  background-color: var(--settings-titlebar-background-color, rgba(241, 243, 244, 0.06));
+  border-bottom: 1px solid var(--settings-titlebar-border-color, rgba(241, 243, 244, 0.08));
   min-height: 30px;
   padding: 0 6px 0 12px;
 }
@@ -1128,7 +1128,7 @@ levelbar.osd-level block.filled {
 }
 
 .settings-sidebar {
-  background-color: var(--settings-sidebar-background-color, var(--md-sys-color-surface-container-low, rgba(255, 255, 255, 0.06)));
+  background-color: var(--settings-sidebar-background-color, rgba(241, 243, 244, 0.045));
   padding: 16px 12px;
 }
 
@@ -1149,7 +1149,7 @@ levelbar.osd-level block.filled {
 }
 
 .settings-sidebar-item.active {
-  background-color: var(--settings-sidebar-active-background-color, var(--md-sys-color-secondary-container, rgba(255, 255, 255, 0.12)));
+  background-color: var(--settings-sidebar-active-background-color, rgba(203, 166, 247, 0.18));
 }
 
 .settings-page-title {
@@ -1159,7 +1159,7 @@ levelbar.osd-level block.filled {
 }
 
 .settings-sidebar-group {
-  color: var(--settings-row-value-color, var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.58)));
+  color: var(--settings-row-value-color, rgba(241, 243, 244, 0.72));
   font-size: 0.78em;
   font-weight: 700;
   margin: 14px 12px 4px;
@@ -1181,7 +1181,7 @@ levelbar.osd-level block.filled {
 .settings-group {
   padding: 12px;
   border-radius: 8px;
-  background-color: var(--settings-group-background-color, var(--md-sys-color-surface-container, rgba(255, 255, 255, 0.07)));
+  background-color: var(--settings-group-background-color, rgba(241, 243, 244, 0.06));
 }
 
 .settings-row {
@@ -1194,7 +1194,7 @@ levelbar.osd-level block.filled {
 }
 
 .settings-row-value {
-  color: var(--settings-row-value-color, var(--md-sys-color-on-surface-variant, rgba(255, 255, 255, 0.58)));
+  color: var(--settings-row-value-color, rgba(241, 243, 244, 0.72));
 }
 
 .settings-toggle-button {
@@ -1203,7 +1203,7 @@ levelbar.osd-level block.filled {
 }
 
 .settings-toggle-button:checked {
-  background-color: var(--settings-sidebar-active-background-color, var(--md-sys-color-secondary-container, rgba(255, 255, 255, 0.12)));
+  background-color: var(--settings-sidebar-active-background-color, rgba(203, 166, 247, 0.18));
 }
 
 .settings-color-value {
@@ -1242,7 +1242,7 @@ levelbar.osd-level block.filled {
   padding: 4px 6px;
   border: 1px solid transparent;
   border-radius: 6px;
-  background-color: var(--settings-token-background-color, var(--md-sys-color-surface-container-high, rgba(255, 255, 255, 0.1)));
+  background-color: var(--settings-token-background-color, rgba(241, 243, 244, 0.08));
 }
 
 .bar-widget-token-label {
@@ -1272,7 +1272,7 @@ levelbar.osd-level block.filled {
 
 .bar-widget-token.drop-target {
   border-color: var(--settings-token-drop-border-color, var(--md-sys-color-primary, rgba(125, 200, 255, 0.95)));
-  background-color: var(--settings-token-drop-background-color, var(--md-sys-color-primary-container, rgba(125, 200, 255, 0.18)));
+  background-color: var(--settings-token-drop-background-color, rgba(137, 180, 250, 0.22));
 }
 
 .updates-content {
