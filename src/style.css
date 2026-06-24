@@ -1136,6 +1136,16 @@ levelbar.osd-level block.filled {
   padding: 8px 10px;
   border-radius: 6px;
   background-color: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.settings-sidebar-item:focus,
+.settings-sidebar-item:focus-visible {
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
 
 .settings-sidebar-item.active {
