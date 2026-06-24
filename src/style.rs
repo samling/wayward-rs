@@ -431,12 +431,10 @@ mod tests {
 
         assert!(css.contains("--md-sys-color-primary: #89b4fa;"));
         assert!(css.contains("--md-sys-color-tertiary: #fdd664;"));
-        assert!(css.contains("--md-sys-color-surface: rgba(30, 30, 46, 1);"));
-        assert!(css.contains("--md-sys-color-surface-container: rgba(241, 243, 244, 0.06);"));
-        assert!(
-            css.contains("--md-sys-color-surface-container-highest: rgba(241, 243, 244, 0.12);")
-        );
-        assert!(css.contains("--md-sys-color-outline-variant: rgba(241, 243, 244, 0.08);"));
+        assert!(css.contains("--md-sys-color-surface: #1e1e2e;"));
+        assert!(css.contains("--md-sys-color-surface-container: #f1f3f4;"));
+        assert!(css.contains("--md-sys-color-surface-container-highest: #f1f3f4;"));
+        assert!(css.contains("--md-sys-color-outline-variant: #f1f3f4;"));
     }
 
     #[test]
@@ -452,7 +450,7 @@ mod tests {
 
         let css = generated_style_config(&style);
 
-        assert!(css.contains("--bar-widget-background-color: rgba(255, 255, 255, 0.1);"));
+        assert!(css.contains("--bar-widget-background-color: rgba(255, 255, 255, 0.100);"));
         assert!(css.contains("--bar-widget-border-width: 1px;"));
     }
 
@@ -469,7 +467,7 @@ mod tests {
 
         let css = generated_style_config(&style);
 
-        assert!(css.contains("--brightness-widget-background-color: rgba(137, 180, 250, 0.2);"));
+        assert!(css.contains("--brightness-widget-background-color: rgba(137, 180, 250, 0.200);"));
         assert!(!css.contains("--brightness-widget-border-radius"));
     }
 
@@ -477,8 +475,8 @@ mod tests {
     fn generated_style_config_only_emits_shared_widget_surface_defaults() {
         let css = generated_style_config(&StyleConfig::default());
 
-        assert!(css.contains("--bar-widget-background-color: transparent;"));
-        assert!(!css.contains("--brightness-widget-background-color: transparent;"));
+        assert!(!css.contains("--bar-widget-background-color:"));
+        assert!(!css.contains("--brightness-widget-background-color:"));
         assert!(!css.contains("--volume-widget-border-width: 0px;"));
     }
 

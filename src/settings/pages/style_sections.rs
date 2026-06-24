@@ -43,7 +43,7 @@ pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> Settin
                     value: group.and_then(|group| group.string(spec.key)),
                     default,
                 })),
-                SettingUiSpec::Color { label, default } => Some(SettingSpec::Color(ColorSpec {
+                SettingUiSpec::Color { label, default, .. } => Some(SettingSpec::Color(ColorSpec {
                     label,
                     path: spec.path,
                     value: group.and_then(|group| group.string(spec.key)),

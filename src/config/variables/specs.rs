@@ -20,6 +20,7 @@ macro_rules! widget_surface_color_settings {
                 setting: Some(SettingUiSpec::Color {
                     label: "Widget background",
                     default: ColorDefault::Palette("surface-container-highest"),
+                    opacity_default: 12,
                 }),
                 variable: concat!("--", $variable, "-widget-background-color"),
                 css_kind: CssValueKind::String { quoted: false },
@@ -32,6 +33,7 @@ macro_rules! widget_surface_color_settings {
                 setting: Some(SettingUiSpec::Color {
                     label: "Widget border color",
                     default: ColorDefault::Palette("outline-variant"),
+                    opacity_default: 8,
                 }),
                 variable: concat!("--", $variable, "-widget-border-color"),
                 css_kind: CssValueKind::String { quoted: false },
@@ -49,6 +51,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Primary",
             default: ColorDefault::Literal("#89b4fa"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-primary",
         css_kind: CssValueKind::String { quoted: false },
@@ -61,6 +64,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "On primary",
             default: ColorDefault::Literal("#1e1e2e"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-on-primary",
         css_kind: CssValueKind::String { quoted: false },
@@ -72,7 +76,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "primary-container"],
         setting: Some(SettingUiSpec::Color {
             label: "Primary container",
-            default: ColorDefault::Literal("rgba(137, 180, 250, 0.22)"),
+            default: ColorDefault::Literal("#89b4fa"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-primary-container",
         css_kind: CssValueKind::String { quoted: false },
@@ -85,6 +90,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "On primary container",
             default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-on-primary-container",
         css_kind: CssValueKind::String { quoted: false },
@@ -97,6 +103,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Secondary",
             default: ColorDefault::Literal("#cba6f7"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-secondary",
         css_kind: CssValueKind::String { quoted: false },
@@ -109,6 +116,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "On secondary",
             default: ColorDefault::Literal("#1e1e2e"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-on-secondary",
         css_kind: CssValueKind::String { quoted: false },
@@ -120,7 +128,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "secondary-container"],
         setting: Some(SettingUiSpec::Color {
             label: "Secondary container",
-            default: ColorDefault::Literal("rgba(203, 166, 247, 0.18)"),
+            default: ColorDefault::Literal("#cba6f7"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-secondary-container",
         css_kind: CssValueKind::String { quoted: false },
@@ -133,6 +142,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "On secondary container",
             default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-on-secondary-container",
         css_kind: CssValueKind::String { quoted: false },
@@ -145,6 +155,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Tertiary",
             default: ColorDefault::Literal("#fdd664"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-tertiary",
         css_kind: CssValueKind::String { quoted: false },
@@ -157,6 +168,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "On tertiary",
             default: ColorDefault::Literal("#1e1e2e"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-on-tertiary",
         css_kind: CssValueKind::String { quoted: false },
@@ -168,7 +180,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "tertiary-container"],
         setting: Some(SettingUiSpec::Color {
             label: "Tertiary container",
-            default: ColorDefault::Literal("rgba(253, 214, 100, 0.18)"),
+            default: ColorDefault::Literal("#fdd664"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-tertiary-container",
         css_kind: CssValueKind::String { quoted: false },
@@ -181,6 +194,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "On tertiary container",
             default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-on-tertiary-container",
         css_kind: CssValueKind::String { quoted: false },
@@ -192,7 +206,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "surface"],
         setting: Some(SettingUiSpec::Color {
             label: "Surface",
-            default: ColorDefault::Literal("rgba(30, 30, 46, 1)"),
+            default: ColorDefault::Literal("#1e1e2e"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-surface",
         css_kind: CssValueKind::String { quoted: false },
@@ -205,6 +220,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "On surface",
             default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-on-surface",
         css_kind: CssValueKind::String { quoted: false },
@@ -216,7 +232,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "on-surface-variant"],
         setting: Some(SettingUiSpec::Color {
             label: "On surface variant",
-            default: ColorDefault::Literal("rgba(241, 243, 244, 0.72)"),
+            default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-on-surface-variant",
         css_kind: CssValueKind::String { quoted: false },
@@ -228,7 +245,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "surface-container-lowest"],
         setting: Some(SettingUiSpec::Color {
             label: "Surface container lowest",
-            default: ColorDefault::Literal("rgba(30, 30, 46, 0.96)"),
+            default: ColorDefault::Literal("#1e1e2e"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-surface-container-lowest",
         css_kind: CssValueKind::String { quoted: false },
@@ -240,7 +258,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "surface-container-low"],
         setting: Some(SettingUiSpec::Color {
             label: "Surface container low",
-            default: ColorDefault::Literal("rgba(241, 243, 244, 0.045)"),
+            default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-surface-container-low",
         css_kind: CssValueKind::String { quoted: false },
@@ -252,7 +271,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "surface-container"],
         setting: Some(SettingUiSpec::Color {
             label: "Surface container",
-            default: ColorDefault::Literal("rgba(241, 243, 244, 0.06)"),
+            default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-surface-container",
         css_kind: CssValueKind::String { quoted: false },
@@ -264,7 +284,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "surface-container-high"],
         setting: Some(SettingUiSpec::Color {
             label: "Surface container high",
-            default: ColorDefault::Literal("rgba(241, 243, 244, 0.08)"),
+            default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-surface-container-high",
         css_kind: CssValueKind::String { quoted: false },
@@ -276,7 +297,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "surface-container-highest"],
         setting: Some(SettingUiSpec::Color {
             label: "Surface container highest",
-            default: ColorDefault::Literal("rgba(241, 243, 244, 0.12)"),
+            default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-surface-container-highest",
         css_kind: CssValueKind::String { quoted: false },
@@ -288,7 +310,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "outline"],
         setting: Some(SettingUiSpec::Color {
             label: "Outline",
-            default: ColorDefault::Literal("rgba(241, 243, 244, 0.14)"),
+            default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-outline",
         css_kind: CssValueKind::String { quoted: false },
@@ -300,7 +323,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "outline-variant"],
         setting: Some(SettingUiSpec::Color {
             label: "Outline variant",
-            default: ColorDefault::Literal("rgba(241, 243, 244, 0.08)"),
+            default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-outline-variant",
         css_kind: CssValueKind::String { quoted: false },
@@ -313,6 +337,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Error",
             default: ColorDefault::Literal("#f28b82"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-error",
         css_kind: CssValueKind::String { quoted: false },
@@ -325,6 +350,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "On error",
             default: ColorDefault::Literal("#1e1e2e"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-on-error",
         css_kind: CssValueKind::String { quoted: false },
@@ -336,7 +362,8 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         path: &["style", "palette", "error-container"],
         setting: Some(SettingUiSpec::Color {
             label: "Error container",
-            default: ColorDefault::Literal("rgba(242, 139, 130, 0.18)"),
+            default: ColorDefault::Literal("#f28b82"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-error-container",
         css_kind: CssValueKind::String { quoted: false },
@@ -349,6 +376,7 @@ const PALETTE_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "On error container",
             default: ColorDefault::Literal("#f1f3f4"),
+            opacity_default: 100,
         }),
         variable: "--md-sys-color-on-error-container",
         css_kind: CssValueKind::String { quoted: false },
@@ -364,6 +392,7 @@ const BAR_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Background color",
             default: ColorDefault::Palette("surface"),
+            opacity_default: 100,
         }),
         variable: "--bar-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -376,6 +405,7 @@ const BAR_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Text color",
             default: ColorDefault::Palette("on-surface"),
+            opacity_default: 100,
         }),
         variable: "--bar-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -505,6 +535,7 @@ const BAR_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Widget background",
             default: ColorDefault::Literal("transparent"),
+            opacity_default: 100,
         }),
         variable: "--bar-widget-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -517,6 +548,7 @@ const BAR_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Widget border color",
             default: ColorDefault::Palette("outline-variant"),
+            opacity_default: 100,
         }),
         variable: "--bar-widget-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -664,6 +696,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Active color",
             default: ColorDefault::Palette("on-surface"),
+            opacity_default: 100,
         }),
         variable: "--workspace-active-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -676,6 +709,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Focused color",
             default: ColorDefault::Palette("primary"),
+            opacity_default: 100,
         }),
         variable: "--workspace-focused-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -688,6 +722,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Urgent color",
             default: ColorDefault::Palette("error"),
+            opacity_default: 100,
         }),
         variable: "--workspace-urgent-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -700,6 +735,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Indicator background",
             default: ColorDefault::Palette("primary-container"),
+            opacity_default: 100,
         }),
         variable: "--workspace-indicator-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -727,6 +763,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Status color",
             default: ColorDefault::Palette("tertiary"),
+            opacity_default: 100,
         }),
         variable: "--workspace-status-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -775,6 +812,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Meter fill color",
             default: ColorDefault::Palette("primary"),
+            opacity_default: 100,
         }),
         variable: "--battery-meter-fill-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -787,6 +825,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Detail background",
             default: ColorDefault::Palette("surface-container"),
+            opacity_default: 100,
         }),
         variable: "--battery-detail-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -799,6 +838,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Detail border",
             default: ColorDefault::Palette("outline-variant"),
+            opacity_default: 100,
         }),
         variable: "--battery-detail-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -811,6 +851,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Profile border",
             default: ColorDefault::Palette("outline"),
+            opacity_default: 100,
         }),
         variable: "--battery-profile-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -823,6 +864,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Profile hover background",
             default: ColorDefault::Palette("surface-container-high"),
+            opacity_default: 100,
         }),
         variable: "--battery-profile-hover-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -835,6 +877,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Profile hover border",
             default: ColorDefault::Palette("primary"),
+            opacity_default: 100,
         }),
         variable: "--battery-profile-hover-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -847,6 +890,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Profile active background",
             default: ColorDefault::Palette("primary-container"),
+            opacity_default: 100,
         }),
         variable: "--battery-profile-active-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -859,6 +903,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Profile active border",
             default: ColorDefault::Palette("primary"),
+            opacity_default: 100,
         }),
         variable: "--battery-profile-active-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -871,6 +916,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Menu hover background",
             default: ColorDefault::Palette("surface-container-high"),
+            opacity_default: 100,
         }),
         variable: "--systray-menu-hover-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -883,6 +929,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Background",
             default: ColorDefault::Palette("surface"),
+            opacity_default: 100,
         }),
         variable: "--osd-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -895,6 +942,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Border color",
             default: ColorDefault::Palette("outline"),
+            opacity_default: 100,
         }),
         variable: "--osd-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -922,6 +970,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Foreground",
             default: ColorDefault::Palette("on-surface"),
+            opacity_default: 100,
         }),
         variable: "--osd-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -976,6 +1025,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Level track override",
             default: ColorDefault::Palette("surface-container-high"),
+            opacity_default: 100,
         }),
         variable: "--osd-level-track-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -997,6 +1047,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Brightness fill override",
             default: ColorDefault::Palette("tertiary"),
+            opacity_default: 100,
         }),
         variable: "--osd-brightness-level-fill-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1009,6 +1060,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Volume fill override",
             default: ColorDefault::Palette("primary"),
+            opacity_default: 100,
         }),
         variable: "--osd-volume-level-fill-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1021,6 +1073,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Muted fill override",
             default: ColorDefault::Palette("error"),
+            opacity_default: 100,
         }),
         variable: "--osd-muted-level-fill-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1135,6 +1188,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Row background",
             default: ColorDefault::Palette("surface-container"),
+            opacity_default: 100,
         }),
         variable: "--notification-row-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1147,6 +1201,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Row hover background",
             default: ColorDefault::Palette("surface-container-high"),
+            opacity_default: 100,
         }),
         variable: "--notification-row-hover-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1159,6 +1214,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Row border",
             default: ColorDefault::Palette("outline"),
+            opacity_default: 100,
         }),
         variable: "--notification-row-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1171,6 +1227,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Row hover border",
             default: ColorDefault::Palette("outline"),
+            opacity_default: 100,
         }),
         variable: "--notification-row-hover-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1183,6 +1240,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Low urgency border",
             default: ColorDefault::Palette("outline"),
+            opacity_default: 100,
         }),
         variable: "--notification-row-low-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1195,6 +1253,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Normal urgency border",
             default: ColorDefault::Palette("primary"),
+            opacity_default: 100,
         }),
         variable: "--notification-row-normal-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1207,6 +1266,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Critical urgency border",
             default: ColorDefault::Palette("error"),
+            opacity_default: 100,
         }),
         variable: "--notification-row-critical-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1219,6 +1279,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Toast border",
             default: ColorDefault::Palette("outline"),
+            opacity_default: 100,
         }),
         variable: "--notification-toast-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1231,6 +1292,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Toast background",
             default: ColorDefault::Palette("surface"),
+            opacity_default: 100,
         }),
         variable: "--notification-toast-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1258,6 +1320,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Toast foreground",
             default: ColorDefault::Palette("on-surface"),
+            opacity_default: 100,
         }),
         variable: "--notification-toast-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1282,6 +1345,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Action border",
             default: ColorDefault::Palette("outline"),
+            opacity_default: 100,
         }),
         variable: "--notification-list-action-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1294,6 +1358,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Toast action border",
             default: ColorDefault::Palette("outline"),
+            opacity_default: 100,
         }),
         variable: "--notification-action-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1306,6 +1371,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Clear all border",
             default: ColorDefault::Palette("outline"),
+            opacity_default: 100,
         }),
         variable: "--notification-clear-all-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1318,6 +1384,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Clear all hover border",
             default: ColorDefault::Palette("error"),
+            opacity_default: 100,
         }),
         variable: "--notification-clear-all-hover-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1334,6 +1401,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Action hover background",
             default: ColorDefault::Palette("surface-container-high"),
+            opacity_default: 100,
         }),
         variable: "--notification-list-action-hover-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1346,6 +1414,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Action hover border",
             default: ColorDefault::Palette("primary"),
+            opacity_default: 100,
         }),
         variable: "--notification-list-action-hover-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1358,6 +1427,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Critical toast border",
             default: ColorDefault::Palette("error"),
+            opacity_default: 100,
         }),
         variable: "--notification-toast-critical-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1370,6 +1440,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Button border",
             default: ColorDefault::Palette("outline-variant"),
+            opacity_default: 100,
         }),
         variable: "--action-menu-button-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1382,6 +1453,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Button hover background",
             default: ColorDefault::Palette("surface-container-high"),
+            opacity_default: 100,
         }),
         variable: "--action-menu-button-hover-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1394,6 +1466,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Button hover border",
             default: ColorDefault::Palette("secondary"),
+            opacity_default: 100,
         }),
         variable: "--action-menu-button-hover-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1430,6 +1503,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Background color",
             default: ColorDefault::Palette("surface-container-lowest"),
+            opacity_default: 100,
         }),
         variable: "--settings-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1442,6 +1516,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Text color",
             default: ColorDefault::Palette("on-surface"),
+            opacity_default: 100,
         }),
         variable: "--settings-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1481,6 +1556,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Sidebar background",
             default: ColorDefault::Palette("surface-container-low"),
+            opacity_default: 100,
         }),
         variable: "--settings-sidebar-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1493,6 +1569,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Sidebar active background",
             default: ColorDefault::Palette("secondary-container"),
+            opacity_default: 100,
         }),
         variable: "--settings-sidebar-active-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1505,6 +1582,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Group background",
             default: ColorDefault::Palette("surface-container"),
+            opacity_default: 100,
         }),
         variable: "--settings-group-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1517,6 +1595,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Row label color",
             default: ColorDefault::Palette("on-surface"),
+            opacity_default: 100,
         }),
         variable: "--settings-row-label-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1529,6 +1608,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Row value color",
             default: ColorDefault::Palette("on-surface-variant"),
+            opacity_default: 100,
         }),
         variable: "--settings-row-value-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1541,6 +1621,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Error color",
             default: ColorDefault::Palette("error"),
+            opacity_default: 100,
         }),
         variable: "--settings-color-error",
         css_kind: CssValueKind::String { quoted: false },
@@ -1553,6 +1634,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Widget token background",
             default: ColorDefault::Palette("surface-container-high"),
+            opacity_default: 100,
         }),
         variable: "--settings-token-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1565,6 +1647,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Drop target border",
             default: ColorDefault::Palette("primary"),
+            opacity_default: 100,
         }),
         variable: "--settings-token-drop-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1577,6 +1660,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Invalid token color",
             default: ColorDefault::Palette("on-error-container"),
+            opacity_default: 100,
         }),
         variable: "--settings-token-invalid-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1589,6 +1673,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Invalid token border",
             default: ColorDefault::Palette("error"),
+            opacity_default: 100,
         }),
         variable: "--settings-token-invalid-border-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -1601,6 +1686,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Drop target background",
             default: ColorDefault::Palette("primary-container"),
+            opacity_default: 100,
         }),
         variable: "--settings-token-drop-background-color",
         css_kind: CssValueKind::String { quoted: false },

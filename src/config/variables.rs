@@ -40,6 +40,7 @@ pub(crate) enum SettingUiSpec {
     Color {
         label: &'static str,
         default: ColorDefault,
+        opacity_default: u16,
     },
 }
 
@@ -126,7 +127,7 @@ impl CssVariables for StyleConfig {
                 continue;
             };
 
-            write_mapped_css_variable(css, group, spec);
+            write_mapped_css_variable(css, self, group, spec);
         }
     }
 }
@@ -137,7 +138,80 @@ pub(crate) fn settings_for_section(
     specs::style_settings().filter(move |spec| spec.section == section && spec.setting.is_some())
 }
 
-fn write_mapped_css_variable(css: &mut String, group: &StyleGroupConfig, spec: &StyleSettingSpec) {
+pub(crate) fn opacity_key(color_key: &str) -> String {
+    match color_key.strip_suffix("color") {
+        Some(prefix) => format!("{prefix}opacity"),
+        None => format!("{color_key}-opacity"),
+    }
+}
+
+fn resolve_token(token: &str, style: &StyleConfig) -> String {
+    style
+        .group("palette")
+        .and_then(|group| group.string(token))
+        .or_else(|| palette_color_default(token).map(str::to_string))
+        .unwrap_or_else(|| token.to_string())
+}
+
+fn opacity_default_of(setting: SettingUiSpec) -> Option<u16> {
+    match setting {
+        SettingUiSpec::Color { opacity_default, .. } => Some(opacity_default),
+        _ => None,
+    }
+}
+
+fn write_mapped_css_variable(
+    css: &mut String,
+    style: &StyleConfig,
+    group: &StyleGroupConfig,
+    spec: &StyleSettingSpec,
+) {
+    if matches!(spec.setting, Some(SettingUiSpec::Color { .. })) {
+        // Resolve a stored value (palette token name or literal) to a solid color string.
+        let resolve = |raw: String, style: &StyleConfig| -> String {
+            if super::color::parse_rgb(&raw).is_some() || raw.trim() == "transparent" {
+                raw
+            } else {
+                resolve_token(&raw, style)
+            }
+        };
+
+        if spec.group == "palette" {
+            // Palette tokens always emit a solid color (configured value or default).
+            let raw = group
+                .string(spec.key)
+                .or_else(|| spec.setting.and_then(SettingUiSpec::string_default).map(str::to_string));
+            let Some(raw) = raw else { return };
+            let resolved = resolve(raw, style);
+            let value = super::color::solid_hex(&resolved).unwrap_or(resolved);
+            write_css_variable(css, spec.variable, value, "");
+            return;
+        }
+
+        let configured_color = group.string(spec.key);
+        let configured_opacity = group.integer(&opacity_key(spec.key));
+        // Preserve current behavior: no override -> rely on the CSS fallback.
+        if configured_color.is_none() && configured_opacity.is_none() {
+            return;
+        }
+
+        let raw = match configured_color {
+            Some(ref value) => value.clone(),
+            None => match spec.setting {
+                Some(SettingUiSpec::Color { default, .. }) => default.resolve(style),
+                _ => return,
+            },
+        };
+        let resolved = resolve(raw.clone(), style);
+        // If no explicit opacity key, extract alpha from a user-supplied rgba color.
+        let opacity = configured_opacity
+            .or_else(|| configured_color.as_deref().map(super::color::alpha_percent))
+            .or_else(|| spec.setting.and_then(opacity_default_of))
+            .unwrap_or(100);
+        write_css_variable(css, spec.variable, super::color::compose(&resolved, opacity), "");
+        return;
+    }
+
     let should_write_default = should_write_default(spec);
 
     match spec.css_kind {
