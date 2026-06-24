@@ -269,21 +269,30 @@ menubutton.bar-item > button:checked {
 }
 
 /* Floating surfaces */
-popover.dropdown contents,
-.notification-toast,
 .osd {
-    background-color: var(--surface-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
-    border: 1px solid var(--surface-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.14)));
-    border-radius: var(--surface-border-radius, 6px);
-    color: var(--surface-color, var(--md-sys-color-on-surface, #f1f3f4));
+    background-color: var(--osd-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
+    border: 1px solid var(--osd-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.14)));
+    border-radius: var(--osd-border-radius, 6px);
+    color: var(--osd-color, var(--md-sys-color-on-surface, #f1f3f4));
 }
 
-popover.dropdown contents,
 .notification-toast {
+    background-color: var(--notification-toast-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
+    border: 1px solid var(--notification-toast-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.14)));
+    border-radius: var(--notification-toast-border-radius, 6px);
+    color: var(--notification-toast-color, var(--md-sys-color-on-surface, #f1f3f4));
+    box-shadow: var(--notification-toast-shadow, 0 8px 28px rgba(0, 0, 0, 0.28));
     font-family: var(--dropdown-font-family, "Adwaita Sans");
     font-size: var(--dropdown-font-size, 12px);
     font-weight: var(--dropdown-font-weight, 500);
-    box-shadow: var(--surface-shadow, 0 8px 28px rgba(0, 0, 0, 0.28));
+}
+
+popover.dropdown contents {
+    background-color: var(--md-sys-color-surface, rgba(30, 30, 46, 1));
+    border: 1px solid var(--md-sys-color-outline, rgba(241, 243, 244, 0.14));
+    border-radius: 6px;
+    color: var(--md-sys-color-on-surface, #f1f3f4);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
 }
 
 /* Dropdowns */
@@ -587,7 +596,7 @@ button.control-toggle,
 button.control-toggle.toggle {
     background: transparent;
     background-image: none;
-    border: 1px solid var(--surface-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.14)));
+    border: 1px solid var(--md-sys-color-outline, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -944,7 +953,7 @@ levelbar.osd-level block.filled {
 }
 
 .notification-toast.notification-card {
-    background-color: var(--notification-toast-background-color, var(--surface-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1))));
+    background-color: var(--notification-toast-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
     border: 1px solid var(--notification-row-border-color, var(--md-sys-color-outline, rgba(241, 243, 244, 0.12)));
     border-radius: 6px;
     padding: 0.85em 0.7em;

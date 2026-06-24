@@ -221,3 +221,30 @@ fn should_write_default(spec: &StyleSettingSpec) -> bool {
 fn write_css_variable<T: std::fmt::Display>(css: &mut String, name: &str, value: T, unit: &str) {
     css.push_str(&format!("  {name}: {value}{unit};\n"));
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{settings_for_section, style_setting_sections};
+
+    #[test]
+    fn floating_surfaces_section_is_removed() {
+        assert!(!style_setting_sections().contains(&"Floating surfaces"));
+    }
+
+    #[test]
+    fn osd_section_exposes_surface_settings() {
+        let keys: Vec<&str> = settings_for_section("OSD").map(|spec| spec.key).collect();
+        for key in ["background-color", "border-color", "border-radius", "color"] {
+            assert!(keys.contains(&key), "OSD missing {key}");
+        }
+    }
+
+    #[test]
+    fn notification_cards_section_exposes_toast_surface_settings() {
+        let keys: Vec<&str> =
+            settings_for_section("Notification cards").map(|spec| spec.key).collect();
+        for key in ["toast-background-color", "toast-border-radius", "toast-color", "toast-shadow"] {
+            assert!(keys.contains(&key), "Notification cards missing {key}");
+        }
+    }
+}
