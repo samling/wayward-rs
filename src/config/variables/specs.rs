@@ -735,7 +735,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Indicator background",
             default: ColorDefault::Palette("primary-container"),
-            opacity_default: 100,
+            opacity_default: 22,
         }),
         variable: "--workspace-indicator-background-color",
         css_kind: CssValueKind::String { quoted: false },
@@ -942,7 +942,7 @@ const DETAIL_STYLE_SETTINGS: &[StyleSettingSpec] = &[
         setting: Some(SettingUiSpec::Color {
             label: "Border color",
             default: ColorDefault::Palette("outline"),
-            opacity_default: 100,
+            opacity_default: 14,
         }),
         variable: "--osd-border-color",
         css_kind: CssValueKind::String { quoted: false },

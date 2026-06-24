@@ -190,10 +190,6 @@ fn write_mapped_css_variable(
 
         let configured_color = group.string(spec.key);
         let configured_opacity = group.integer(&opacity_key(spec.key));
-        // Preserve current behavior: no override -> rely on the CSS fallback.
-        if configured_color.is_none() && configured_opacity.is_none() {
-            return;
-        }
 
         let raw = match configured_color {
             Some(ref value) => value.clone(),
@@ -302,5 +298,32 @@ mod golden {
             std::fs::write(path, &css).unwrap();
             panic!("wrote golden snapshot; re-run to assert");
         }
+    }
+
+    #[test]
+    fn consumer_colors_always_emit_composed_defaults() {
+        let mut css = String::new();
+        StyleConfig::default().write_css_variables(&mut css);
+
+        // outline at 14% opacity - preserves old rgba(241,243,244,0.14)
+        assert!(
+            css.contains("  --osd-border-color: rgba(241, 243, 244, 0.140);"),
+            "osd-border-color should emit composed default"
+        );
+        // primary-container at 22% opacity - preserves old rgba(137,180,250,0.22)
+        assert!(
+            css.contains("  --workspace-indicator-background-color: rgba(137, 180, 250, 0.220);"),
+            "workspace-indicator-background-color should emit composed default"
+        );
+        // transparent literal stays transparent
+        assert!(
+            css.contains("  --bar-widget-background-color: transparent;"),
+            "bar-widget-background-color should emit transparent"
+        );
+        // opaque palette token stays as solid hex
+        assert!(
+            css.contains("  --workspace-focused-color: #89b4fa;"),
+            "workspace-focused-color should emit solid hex"
+        );
     }
 }

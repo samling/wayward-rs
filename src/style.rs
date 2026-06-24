@@ -418,8 +418,8 @@ mod tests {
         assert!(css.contains("--bar-widget-padding-y: 0px;"));
         assert!(css.contains("--bar-widget-margin-x: 0px;"));
         assert!(css.contains("--bar-widget-margin-y: 0px;"));
-        assert!(!css.contains("--bar-background-color:"));
-        assert!(!css.contains("--bar-color:"));
+        assert!(css.contains("--bar-background-color: #1e1e2e;"));
+        assert!(css.contains("--bar-color: #f1f3f4;"));
         assert!(!css.contains("--bar-item-content-margin-y"));
         assert!(!css.contains("--bar-item-padding-x"));
         assert!(!css.contains("--bar-item-gap-x"));
@@ -475,8 +475,8 @@ mod tests {
     fn generated_style_config_only_emits_shared_widget_surface_defaults() {
         let css = generated_style_config(&StyleConfig::default());
 
-        assert!(!css.contains("--bar-widget-background-color:"));
-        assert!(!css.contains("--brightness-widget-background-color:"));
+        assert!(css.contains("--bar-widget-background-color: transparent;"));
+        assert!(css.contains("--brightness-widget-background-color: rgba(241, 243, 244, 0.120);"));
         assert!(!css.contains("--volume-widget-border-width: 0px;"));
     }
 
