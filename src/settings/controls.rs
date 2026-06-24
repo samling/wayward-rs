@@ -414,10 +414,12 @@ fn consumer_color_row(
     let dropdown = gtk::DropDown::new(Some(string_list), None::<gtk::Expression>);
     dropdown.set_width_request(150);
 
-    let current_token = setting.value.clone().unwrap_or_default();
-    let selected_idx = palette_options
-        .iter()
-        .position(|o| o.token == current_token)
+    let effective_token = setting
+        .value
+        .clone()
+        .or_else(|| setting.default_token.map(str::to_string));
+    let selected_idx = effective_token
+        .and_then(|tok| palette_options.iter().position(|o| o.token == tok))
         .unwrap_or(0) as u32;
     dropdown.set_selected(selected_idx);
 

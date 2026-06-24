@@ -15,15 +15,14 @@ pub(crate) fn palette_options(style: &StyleConfig) -> Vec<PaletteOption> {
             if spec.group != "palette" {
                 return None;
             }
-            let resolved = style
+            // Ensure the token has a resolvable color (filters out misconfigured entries).
+            let _resolved = style
                 .group("palette")
                 .and_then(|g| g.string(spec.key))
                 .or_else(|| crate::config::variables::palette_color_default(spec.key).map(str::to_string))?;
-            let hex = crate::config::color::solid_hex(&resolved).unwrap_or(resolved);
             Some(PaletteOption {
                 token: spec.key,
                 label: spec.key.replace('-', " "),
-                hex,
             })
         })
         .collect()
@@ -79,6 +78,10 @@ pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> Settin
                         // No stored value - palette default counts as a palette reference.
                         None => matches!(default, crate::config::variables::ColorDefault::Palette(_)),
                     };
+                    let default_token = match default {
+                        crate::config::variables::ColorDefault::Palette(tok) => Some(tok),
+                        crate::config::variables::ColorDefault::Literal(_) => None,
+                    };
                     let opacity = group.and_then(|g| {
                         g.integer(&crate::config::variables::opacity_key(spec.key))
                     });
@@ -87,6 +90,7 @@ pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> Settin
                         path: spec.path,
                         value: raw,
                         default: default.resolve(style),
+                        default_token,
                         inherited: inherited_color(spec, style, default),
                         role: color_setting_role(spec),
                         opacity,
@@ -145,13 +149,10 @@ mod tests {
     use super::super::super::spec::SettingSpec;
 
     #[test]
-    fn palette_options_are_solid_and_nonempty() {
+    fn palette_options_are_nonempty_and_contain_primary() {
         let options = super::palette_options(&StyleConfig::default());
         assert!(!options.is_empty());
         assert!(options.iter().any(|o| o.token == "primary"));
-        for option in &options {
-            assert!(option.hex.starts_with('#'), "{} not solid: {}", option.token, option.hex);
-        }
     }
 
     #[test]
@@ -168,5 +169,32 @@ mod tests {
         assert_eq!(spec.opacity_default, 8);
         assert!(spec.is_palette_ref);
         assert_eq!(spec.opacity_path, vec!["style", "bar", "widget-border-opacity"]);
+    }
+
+    #[test]
+    fn consumer_color_spec_carries_default_token() {
+        let section = section("Bar", &StyleConfig::default());
+
+        // palette-defaulted: widget-border-color should have a default_token
+        let border_spec = section
+            .settings
+            .iter()
+            .find_map(|s| match s {
+                SettingSpec::Color(c) if c.path == ["style", "bar", "widget-border-color"] => Some(c),
+                _ => None,
+            })
+            .expect("widget-border-color color spec");
+        assert_eq!(border_spec.default_token, Some("outline-variant"));
+
+        // literal-defaulted: widget-background-color should have no default_token
+        let bg_spec = section
+            .settings
+            .iter()
+            .find_map(|s| match s {
+                SettingSpec::Color(c) if c.path == ["style", "bar", "widget-background-color"] => Some(c),
+                _ => None,
+            })
+            .expect("widget-background-color color spec");
+        assert_eq!(bg_spec.default_token, None);
     }
 }
