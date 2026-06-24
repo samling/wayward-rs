@@ -200,8 +200,15 @@ fn write_mapped_css_variable(
         };
         let resolved = resolve(raw.clone(), style);
         // If no explicit opacity key, extract alpha from a user-supplied rgba color.
+        // Only extract embedded alpha when the configured value is actually rgba; solid
+        // hex or token strings must fall through to opacity_default.
         let opacity = configured_opacity
-            .or_else(|| configured_color.as_deref().map(super::color::alpha_percent))
+            .or_else(|| {
+                configured_color
+                    .as_deref()
+                    .filter(|c| c.trim_start().starts_with("rgba("))
+                    .map(super::color::alpha_percent)
+            })
             .or_else(|| spec.setting.and_then(opacity_default_of))
             .unwrap_or(100);
         write_css_variable(css, spec.variable, super::color::compose(&resolved, opacity), "");
@@ -273,7 +280,7 @@ fn should_write_default(spec: &StyleSettingSpec) -> bool {
         return true;
     }
 
-    !spec.key.starts_with("widget-") && !matches!(spec.setting, Some(SettingUiSpec::Color { .. }))
+    !spec.key.starts_with("widget-")
 }
 
 fn write_css_variable<T: std::fmt::Display>(css: &mut String, name: &str, value: T, unit: &str) {
@@ -297,6 +304,41 @@ mod golden {
         } else {
             std::fs::write(path, &css).unwrap();
             panic!("wrote golden snapshot; re-run to assert");
+        }
+    }
+
+    #[test]
+    fn consumer_opacity_defaults_preserve_token_alpha() {
+        use super::super::color::alpha_percent;
+        // Pre-migration alpha-bearing palette token values.
+        const OLD: &[(&str, &str)] = &[
+            ("primary-container", "rgba(137, 180, 250, 0.22)"),
+            ("secondary-container", "rgba(203, 166, 247, 0.18)"),
+            ("tertiary-container", "rgba(253, 214, 100, 0.18)"),
+            ("on-surface-variant", "rgba(241, 243, 244, 0.72)"),
+            ("surface-container-lowest", "rgba(30, 30, 46, 0.96)"),
+            ("surface-container-low", "rgba(241, 243, 244, 0.045)"),
+            ("surface-container", "rgba(241, 243, 244, 0.06)"),
+            ("surface-container-high", "rgba(241, 243, 244, 0.08)"),
+            ("surface-container-highest", "rgba(241, 243, 244, 0.12)"),
+            ("outline", "rgba(241, 243, 244, 0.14)"),
+            ("outline-variant", "rgba(241, 243, 244, 0.08)"),
+            ("error-container", "rgba(242, 139, 130, 0.18)"),
+        ];
+        let expected = |tok: &str| -> u16 {
+            OLD.iter().find(|(t, _)| *t == tok).map(|(_, v)| alpha_percent(v)).unwrap_or(100)
+        };
+        for spec in super::specs::style_settings() {
+            if spec.group == "palette" {
+                continue;
+            }
+            if let Some(super::SettingUiSpec::Color { default: super::ColorDefault::Palette(tok), opacity_default, .. }) = spec.setting {
+                assert_eq!(
+                    opacity_default, expected(tok),
+                    "{}/{} (-> {}) opacity_default {} != expected {}",
+                    spec.group, spec.key, tok, opacity_default, expected(tok)
+                );
+            }
         }
     }
 
