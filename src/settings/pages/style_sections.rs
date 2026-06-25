@@ -16,13 +16,14 @@ pub(crate) fn palette_options(style: &StyleConfig) -> Vec<PaletteOption> {
                 return None;
             }
             // Ensure the token has a resolvable color (filters out misconfigured entries).
-            let _resolved = style
+            let resolved = style
                 .group("palette")
                 .and_then(|g| g.string(spec.key))
                 .or_else(|| crate::config::variables::palette_color_default(spec.key).map(str::to_string))?;
             Some(PaletteOption {
                 token: spec.key,
                 label: spec.key.replace('-', " "),
+                color: resolved,
             })
         })
         .collect()

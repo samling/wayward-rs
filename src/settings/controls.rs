@@ -103,6 +103,28 @@ impl OwnedSettingWriter {
     }
 }
 
+/// Builds a settings row with a leading label and a controls box that shares a
+/// width column (via `align`) so clusters line up across rows. Append value
+/// widgets to the returned controls box, then the reset button to the row.
+fn row_with_label(label_text: &str, align: &gtk::SizeGroup) -> (gtk::Box, gtk::Box) {
+    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    row.add_css_class("settings-row");
+
+    let label = gtk::Label::new(Some(label_text));
+    label.set_hexpand(true);
+    label.set_halign(gtk::Align::Start);
+    label.add_css_class("settings-row-label");
+    row.append(&label);
+
+    let controls = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    controls.set_halign(gtk::Align::Start);
+    controls.set_valign(gtk::Align::Center);
+    align.add_widget(&controls);
+    row.append(&controls);
+
+    (row, controls)
+}
+
 fn append_reset_button(row: &gtk::Box, is_configured: bool, writer: SettingWriter) -> gtk::Button {
     let button = gtk::Button::with_label("Reset");
     button.add_css_class("settings-reset-button");
@@ -120,15 +142,9 @@ fn append_reset_button(row: &gtk::Box, is_configured: bool, writer: SettingWrite
 pub(crate) fn number_row(
     setting: NumberSpec,
     sender: &ComponentSender<super::window::SettingsWindow>,
+    align: &gtk::SizeGroup,
 ) -> gtk::Box {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    row.add_css_class("settings-row");
-
-    let label = gtk::Label::new(Some(setting.label));
-    label.set_hexpand(true);
-    label.set_halign(gtk::Align::Start);
-    label.add_css_class("settings-row-label");
-    row.append(&label);
+    let (row, controls) = row_with_label(setting.label, align);
 
     let spin = gtk::SpinButton::with_range(setting.min, setting.max, setting.step);
     spin.set_value(setting.display_value());
@@ -139,7 +155,7 @@ pub(crate) fn number_row(
     let writer = SettingWriter::new(path, sender.input_sender().clone());
     let change_writer = writer.clone();
 
-    row.append(&spin);
+    controls.append(&spin);
     let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
 
     spin.connect_value_changed(move |spin| {
@@ -152,15 +168,9 @@ pub(crate) fn number_row(
 pub(crate) fn toggle_row(
     setting: ToggleSpec,
     sender: &ComponentSender<super::window::SettingsWindow>,
+    align: &gtk::SizeGroup,
 ) -> gtk::Box {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    row.add_css_class("settings-row");
-
-    let label = gtk::Label::new(Some(setting.label));
-    label.set_hexpand(true);
-    label.set_halign(gtk::Align::Start);
-    label.add_css_class("settings-row-label");
-    row.append(&label);
+    let (row, controls) = row_with_label(setting.label, align);
 
     let toggle = gtk::ToggleButton::with_label(toggle_label(setting.display_value()));
     toggle.add_css_class("settings-toggle-button");
@@ -172,7 +182,7 @@ pub(crate) fn toggle_row(
     let writer = SettingWriter::new(path, sender.input_sender().clone());
     let change_writer = writer.clone();
 
-    row.append(&toggle);
+    controls.append(&toggle);
     let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
 
     toggle.connect_toggled(move |toggle| {
@@ -187,15 +197,9 @@ pub(crate) fn toggle_row(
 pub(crate) fn string_row(
     setting: StringSpec,
     sender: &ComponentSender<super::window::SettingsWindow>,
+    align: &gtk::SizeGroup,
 ) -> gtk::Box {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    row.add_css_class("settings-row");
-
-    let label = gtk::Label::new(Some(setting.label));
-    label.set_hexpand(true);
-    label.set_halign(gtk::Align::Start);
-    label.add_css_class("settings-row-label");
-    row.append(&label);
+    let (row, controls) = row_with_label(setting.label, align);
 
     let entry = gtk::Entry::new();
     entry.set_text(&setting.display_value());
@@ -206,7 +210,7 @@ pub(crate) fn string_row(
     let writer = SettingWriter::new(path, sender.input_sender().clone());
     let change_writer = writer.clone();
 
-    row.append(&entry);
+    controls.append(&entry);
     let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
 
     entry.connect_changed(move |entry| {
@@ -219,15 +223,9 @@ pub(crate) fn string_row(
 pub(crate) fn string_list_row(
     setting: StringListSpec,
     sender: &ComponentSender<super::window::SettingsWindow>,
+    align: &gtk::SizeGroup,
 ) -> gtk::Box {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    row.add_css_class("settings-row");
-
-    let label = gtk::Label::new(Some(setting.label));
-    label.set_hexpand(true);
-    label.set_halign(gtk::Align::Start);
-    label.add_css_class("settings-row-label");
-    row.append(&label);
+    let (row, controls) = row_with_label(setting.label, align);
 
     let entry = gtk::Entry::new();
     entry.set_text(&setting.display_value());
@@ -239,7 +237,7 @@ pub(crate) fn string_list_row(
     let writer = SettingWriter::new(path, sender.input_sender().clone());
     let change_writer = writer.clone();
 
-    row.append(&entry);
+    controls.append(&entry);
     let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
 
     entry.connect_changed(move |entry| {
@@ -252,26 +250,22 @@ pub(crate) fn string_list_row(
 pub(crate) fn color_row(
     setting: ColorSpec,
     sender: &ComponentSender<super::window::SettingsWindow>,
+    align: &gtk::SizeGroup,
+    value_align: &gtk::SizeGroup,
 ) -> gtk::Box {
     if setting.role == ColorSettingRole::Palette {
-        return palette_color_row(setting, sender);
+        return palette_color_row(setting, sender, align);
     }
-    consumer_color_row(setting, sender)
+    consumer_color_row(setting, sender, align, value_align)
 }
 
 fn palette_color_row(
     setting: ColorSpec,
     sender: &ComponentSender<super::window::SettingsWindow>,
+    align: &gtk::SizeGroup,
 ) -> gtk::Box {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    row.add_css_class("settings-row");
-
     let label_text = setting.display_label();
-    let label = gtk::Label::new(Some(&label_text));
-    label.set_hexpand(true);
-    label.set_halign(gtk::Align::Start);
-    label.add_css_class("settings-row-label");
-    row.append(&label);
+    let (row, controls) = row_with_label(&label_text, align);
 
     let color = parse_color(&setting.display_value());
     let dialog = gtk::ColorDialog::builder()
@@ -296,8 +290,8 @@ fn palette_color_row(
     let change_writer = writer.clone();
     let updating = Rc::new(Cell::new(false));
 
-    row.append(&button);
-    row.append(&entry);
+    controls.append(&button);
+    controls.append(&entry);
     let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
     reset_button.set_tooltip_text(Some(setting.reset_tooltip()));
 
@@ -381,16 +375,11 @@ fn palette_color_row(
 fn consumer_color_row(
     setting: ColorSpec,
     sender: &ComponentSender<super::window::SettingsWindow>,
+    align: &gtk::SizeGroup,
+    value_align: &gtk::SizeGroup,
 ) -> gtk::Box {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    row.add_css_class("settings-row");
-
     let label_text = setting.display_label();
-    let label = gtk::Label::new(Some(&label_text));
-    label.set_hexpand(true);
-    label.set_halign(gtk::Align::Start);
-    label.add_css_class("settings-row-label");
-    row.append(&label);
+    let (row, controls) = row_with_label(&label_text, align);
 
     // --- toggle ---
     let palette_toggle = gtk::ToggleButton::with_label("Palette");
@@ -427,7 +416,17 @@ fn consumer_color_row(
     palette_box.append(&dropdown);
 
     // --- custom page ---
-    let custom_color = parse_color(&setting.display_value());
+    // In palette mode the custom box should mirror the currently-selected token's
+    // color, so toggling to Custom shows the live color rather than the inherited one.
+    let initial_custom = if setting.is_palette_ref {
+        palette_options
+            .get(selected_idx as usize)
+            .map(|o| o.color.clone())
+            .unwrap_or_else(|| setting.display_value())
+    } else {
+        setting.display_value()
+    };
+    let custom_color = parse_color(&initial_custom);
     let custom_dialog = gtk::ColorDialog::builder()
         .title(&label_text)
         .modal(true)
@@ -440,7 +439,7 @@ fn consumer_color_row(
     custom_entry.add_css_class("settings-color-value");
     custom_entry.set_placeholder_text(setting.placeholder());
     let entry_text = if setting.is_palette_ref {
-        String::new()
+        solid_hex(custom_color)
     } else {
         setting.entry_value()
     };
@@ -448,7 +447,6 @@ fn consumer_color_row(
     custom_entry.set_width_chars(18);
 
     let custom_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
-    custom_box.append(&custom_button);
     custom_box.append(&custom_entry);
 
     // --- stack ---
@@ -456,13 +454,15 @@ fn consumer_color_row(
     stack.add_named(&palette_box, Some("palette"));
     stack.add_named(&custom_box, Some("custom"));
     stack.set_visible_child_name(if setting.is_palette_ref { "palette" } else { "custom" });
+    value_align.add_widget(&stack);
 
-    // --- opacity slider ---
-    let opacity_scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 100.0, 1.0);
+    // --- opacity field ---
+    let opacity_scale = gtk::SpinButton::with_range(0.0, 100.0, 1.0);
+    opacity_scale.set_digits(0);
+    opacity_scale.set_numeric(true);
     opacity_scale.set_value(setting.display_opacity() as f64);
-    opacity_scale.set_width_request(100);
     opacity_scale.set_valign(gtk::Align::Center);
-    opacity_scale.set_tooltip_text(Some("Opacity"));
+    opacity_scale.set_tooltip_text(Some("Opacity (%)"));
 
     // --- writers ---
     let color_writer = SettingWriter::new(setting.path, sender.input_sender().clone());
@@ -471,9 +471,15 @@ fn consumer_color_row(
         sender.input_sender().clone(),
     );
 
-    row.append(&toggle_box);
-    row.append(&stack);
-    row.append(&opacity_scale);
+    let opacity_label = gtk::Label::new(Some("Opacity"));
+    opacity_label.add_css_class("settings-opacity-label");
+    opacity_label.set_valign(gtk::Align::Center);
+
+    controls.append(&toggle_box);
+    controls.append(&custom_button);
+    controls.append(&stack);
+    controls.append(&opacity_label);
+    controls.append(&opacity_scale);
 
     let is_configured = setting.value.is_some() || setting.opacity.is_some();
     let reset_color_writer = color_writer.clone();
@@ -498,20 +504,34 @@ fn consumer_color_row(
         }
     });
 
+    // Guards swatch/entry writes so programmatic updates don't echo back to config.
+    let entry_updating = Rc::new(Cell::new(false));
+
     // --- dropdown wiring ---
     let dd_options = palette_options.clone();
     let dd_writer = color_writer.clone();
     let dd_reset = reset_button.clone();
+    let dd_swatch = custom_swatch.clone();
+    let dd_swatch_color = custom_swatch_color.clone();
+    let dd_entry = custom_entry.clone();
+    let dd_updating = entry_updating.clone();
     dropdown.connect_selected_notify(move |dd| {
         let idx = dd.selected() as usize;
         if let Some(opt) = dd_options.get(idx) {
             dd_reset.set_sensitive(true);
             dd_writer.send_now(Some(ConfigValue::String(opt.token.to_string())));
+
+            // Mirror the selected token's color into the custom box so switching
+            // to Custom shows the live color, not the build-time inherited one.
+            let color = parse_color(&opt.color);
+            dd_updating.set(true);
+            set_swatch_color(&dd_swatch, &dd_swatch_color, color);
+            dd_entry.set_text(&solid_hex(color));
+            dd_updating.set(false);
         }
     });
 
     // --- custom entry wiring ---
-    let entry_updating = Rc::new(Cell::new(false));
     let entry_swatch = custom_swatch.clone();
     let entry_swatch_color = custom_swatch_color.clone();
     let entry_reset = reset_button.clone();
@@ -549,6 +569,7 @@ fn consumer_color_row(
     let btn_swatch_color = custom_swatch_color.clone();
     let btn_writer = color_writer.clone();
     let btn_saved_setting = setting.clone();
+    let btn_custom_toggle = custom_toggle.clone();
 
     custom_button.connect_clicked(move |button| {
         let initial = btn_swatch_color.borrow().to_owned();
@@ -563,6 +584,7 @@ fn consumer_color_row(
         let btn_swatch_color = btn_swatch_color.clone();
         let btn_writer = btn_writer.clone();
         let btn_saved_setting = btn_saved_setting.clone();
+        let btn_custom_toggle = btn_custom_toggle.clone();
 
         custom_dialog.choose_rgba(
             parent.as_ref(),
@@ -581,6 +603,8 @@ fn consumer_color_row(
                 btn_updating.set(false);
 
                 btn_reset.set_sensitive(true);
+                // Picking a literal color makes this a custom value, not a palette ref.
+                btn_custom_toggle.set_active(true);
                 btn_writer.send_now(Some(btn_saved_setting.value_for_config(value)));
             },
         );

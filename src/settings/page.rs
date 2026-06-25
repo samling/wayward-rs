@@ -216,22 +216,28 @@ fn render_section(
     let group = gtk::Box::new(gtk::Orientation::Vertical, 12);
     group.add_css_class("settings-group");
 
+    // Shared column so every row's control cluster has the same width and aligns.
+    let controls_group = gtk::SizeGroup::new(gtk::SizeGroupMode::Horizontal);
+    // Shared width for the color value control, so the opacity column past it
+    // does not shift with the selected palette name's length.
+    let color_value_group = gtk::SizeGroup::new(gtk::SizeGroupMode::Horizontal);
+
     for setting in section.settings {
         match setting {
             SettingSpec::Number(setting) => {
-                group.append(&number_row(setting, sender));
+                group.append(&number_row(setting, sender, &controls_group));
             }
             SettingSpec::Toggle(setting) => {
-                group.append(&toggle_row(setting, sender));
+                group.append(&toggle_row(setting, sender, &controls_group));
             }
             SettingSpec::String(setting) => {
-                group.append(&string_row(setting, sender));
+                group.append(&string_row(setting, sender, &controls_group));
             }
             SettingSpec::StringList(setting) => {
-                group.append(&string_list_row(setting, sender));
+                group.append(&string_list_row(setting, sender, &controls_group));
             }
             SettingSpec::Color(setting) => {
-                group.append(&color_row(setting, sender));
+                group.append(&color_row(setting, sender, &controls_group, &color_value_group));
             }
         }
     }

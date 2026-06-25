@@ -114,6 +114,7 @@ fn parse_string_list(value: &str) -> Vec<String> {
 pub(crate) struct PaletteOption {
     pub(crate) token: &'static str,
     pub(crate) label: String,
+    pub(crate) color: String,
 }
 
 #[derive(Clone, Debug)]
