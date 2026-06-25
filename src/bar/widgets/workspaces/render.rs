@@ -131,8 +131,8 @@ fn render_workspaces(
             None => {
                 let root = gtk::Box::new(gtk::Orientation::Horizontal, 0);
                 root.add_css_class("workspace");
-                root.set_halign(gtk::Align::Center);
-                root.set_valign(gtk::Align::Center);
+                root.set_halign(gtk::Align::Fill);
+                root.set_valign(gtk::Align::Fill);
                 root.set_cursor_from_name(Some("pointer"));
 
                 let label = gtk::Label::new(None);

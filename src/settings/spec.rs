@@ -111,18 +111,77 @@ fn parse_string_list(value: &str) -> Vec<String> {
 }
 
 #[derive(Clone, Debug)]
+pub(crate) struct PaletteOption {
+    pub(crate) token: &'static str,
+    pub(crate) label: String,
+    pub(crate) color: String,
+}
+
+#[derive(Clone, Debug)]
 pub(crate) struct ColorSpec {
     pub(crate) label: &'static str,
     pub(crate) path: &'static [&'static str],
     pub(crate) value: Option<String>,
-    pub(crate) default: &'static str,
+    pub(crate) default: String,
+    pub(crate) default_token: Option<&'static str>,
+    pub(crate) inherited: Option<String>,
+    pub(crate) role: ColorSettingRole,
+    pub(crate) opacity: Option<u16>,
+    pub(crate) opacity_default: u16,
+    pub(crate) opacity_path: Vec<String>,
+    pub(crate) is_palette_ref: bool,
+    pub(crate) palette_options: Vec<PaletteOption>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ColorSettingRole {
+    Palette,
+    Default,
+    Override,
 }
 
 impl ColorSpec {
+    pub(crate) fn display_opacity(&self) -> u16 {
+        self.opacity.unwrap_or(self.opacity_default)
+    }
+
     pub(crate) fn display_value(&self) -> String {
         self.value
             .clone()
-            .unwrap_or_else(|| self.default.to_string())
+            .or_else(|| self.inherited.clone())
+            .unwrap_or_else(|| self.default.clone())
+    }
+
+    pub(crate) fn entry_value(&self) -> String {
+        if self.is_inherited() {
+            String::new()
+        } else {
+            self.display_value()
+        }
+    }
+
+    pub(crate) fn display_label(&self) -> String {
+        self.label.to_string()
+    }
+
+    pub(crate) fn placeholder(&self) -> Option<&'static str> {
+        self.is_inherited().then_some("Inherited")
+    }
+
+    pub(crate) fn is_inherited(&self) -> bool {
+        self.role == ColorSettingRole::Override && self.value.is_none()
+    }
+
+    pub(crate) fn is_custom(&self) -> bool {
+        self.value.is_some()
+    }
+
+    pub(crate) fn reset_tooltip(&self) -> &'static str {
+        match self.role {
+            ColorSettingRole::Palette => "Reset palette color",
+            ColorSettingRole::Default => "Reset default color",
+            ColorSettingRole::Override => "Remove override",
+        }
     }
 
     pub(crate) fn value_for_config(&self, value: String) -> ConfigValue {
@@ -131,33 +190,5 @@ impl ColorSpec {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn string_list_spec_displays_values_as_comma_separated_text() {
-        let setting = StringListSpec {
-            label: "Critical patterns",
-            path: &["widgets", "updates", "critical-patterns"],
-            value: Some(vec!["linux-*".to_string(), "pacman".to_string()]),
-            default: &[],
-        };
-
-        assert_eq!(setting.display_value(), "linux-*, pacman");
-    }
-
-    #[test]
-    fn string_list_spec_parses_comma_separated_text_for_config() {
-        let setting = StringListSpec {
-            label: "Critical patterns",
-            path: &["widgets", "updates", "critical-patterns"],
-            value: None,
-            default: &[],
-        };
-
-        assert_eq!(
-            setting.value_for_config(" linux-* , pacman,, ".to_string()),
-            ConfigValue::StringList(vec!["linux-*".to_string(), "pacman".to_string()])
-        );
-    }
-}
+#[path = "spec_test.rs"]
+mod tests;

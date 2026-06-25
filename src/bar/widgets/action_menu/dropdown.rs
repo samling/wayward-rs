@@ -10,6 +10,8 @@ use super::config::{
     ActionMenuSectionAlign, ActionMenuSectionConfig,
 };
 
+const TOOLBAR_COLUMN_SPACING: i32 = 8;
+
 pub(super) struct ActionMenuDropdown {
     edge: BarEdge,
     region: BarRegion,
@@ -70,13 +72,24 @@ fn build_section(
 ) -> gtk::Box {
     let section_box = gtk::Box::new(gtk::Orientation::Vertical, layout.row_spacing.max(0));
     section_box.add_css_class("action-menu-section");
+    if section.align == ActionMenuSectionAlign::End {
+        section_box.add_css_class("action-menu-toolbar-section");
+    } else {
+        section_box.add_css_class("action-menu-card-section");
+    }
 
     let grid = gtk::Grid::new();
     grid.add_css_class("action-menu-actions");
     grid.set_halign(gtk_align(section.align));
     grid.set_hexpand(matches!(section.align, ActionMenuSectionAlign::Fill));
     grid.set_column_homogeneous(true);
-    grid.set_column_spacing(layout.column_spacing.max(0) as u32);
+    // Toolbar icon buttons sit together; the wide layout spacing is for labeled cards.
+    let column_spacing = if section.align == ActionMenuSectionAlign::End {
+        TOOLBAR_COLUMN_SPACING
+    } else {
+        layout.column_spacing.max(0)
+    };
+    grid.set_column_spacing(column_spacing as u32);
     grid.set_row_spacing(layout.row_spacing.max(0) as u32);
 
     let columns = section.columns.unwrap_or(layout.columns).max(1);
@@ -122,7 +135,7 @@ fn widget_action(action: &ActionMenuActionConfig) -> Option<WidgetAction> {
     match action.action {
         ActionMenuActionKind::Command => {
             let Some(program) = action.command.clone() else {
-                tracing::error!("Ignoring acdtion menu command without a program");
+                tracing::error!("Ignoring action menu command without a program");
                 return None;
             };
 

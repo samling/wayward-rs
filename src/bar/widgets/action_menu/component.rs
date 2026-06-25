@@ -1,7 +1,8 @@
 use relm4::gtk;
 use relm4::gtk::prelude::*;
-use relm4::prelude::*;
-use relm4::{ComponentController, Controller};
+use relm4::{
+    Component, ComponentController, ComponentParts, ComponentSender, Controller, SimpleComponent,
+};
 
 use crate::bar::BarMsg;
 use crate::bar::layout::BarEdge;
@@ -28,32 +29,17 @@ pub(super) struct ActionMenuInit {
     pub(super) config: ActionMenuConfig,
 }
 
-#[relm4::component(pub(super))]
+pub(super) struct ActionMenuWidgets;
+
 impl SimpleComponent for ActionMenuComponent {
     type Init = ActionMenuInit;
     type Input = ActionMenuInput;
     type Output = ();
+    type Root = gtk::MenuButton;
+    type Widgets = ActionMenuWidgets;
 
-    view! {
-        gtk::MenuButton {
-            set_always_show_arrow: false,
-            set_cursor_from_name: Some("pointer"),
-            add_css_class: "bar-item",
-            add_css_class: "action-menu",
-            add_css_class: "flat",
-
-            #[wrap(Some)]
-            #[name = "content"]
-            set_child = &gtk::Box {
-                set_orientation: gtk::Orientation::Horizontal,
-
-                #[name = "bar_icon"]
-                gtk::Label {
-                    add_css_class: "action-menu-bar-icon",
-                    set_text: "\u{f303}",
-                },
-            },
-        }
+    fn init_root() -> Self::Root {
+        gtk::MenuButton::new()
     }
 
     fn init(
@@ -76,13 +62,25 @@ impl SimpleComponent for ActionMenuComponent {
             dropdown,
         };
 
-        let widgets = view_output!();
-        crate::bar::style::add_bar_item_content_classes(&widgets.content, "action-menu-content");
-        crate::bar::style::configure_bar_label(&widgets.bar_icon);
+        let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        crate::bar::style::add_bar_item_content_classes(&content, "action-menu-content");
 
+        let bar_icon = gtk::Label::new(Some("\u{f303}"));
+        bar_icon.add_css_class("action-menu-bar-icon");
+        crate::bar::style::configure_bar_label(&bar_icon);
+        content.append(&bar_icon);
+
+        root.set_always_show_arrow(false);
+        root.set_cursor_from_name(Some("pointer"));
+        crate::bar::style::add_bar_item_classes(&root, "action-menu", None);
+        root.add_css_class("flat");
+        root.set_child(Some(&content));
         root.set_popover(Some(model.dropdown.widget()));
 
-        ComponentParts { model, widgets }
+        ComponentParts {
+            model,
+            widgets: ActionMenuWidgets,
+        }
     }
 
     fn update(&mut self, msg: Self::Input, _sender: ComponentSender<Self>) {

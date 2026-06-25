@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 
 pub(crate) type StyleGroupConfig = BTreeMap<String, StyleValue>;
 
+const PALETTE_GROUP: &str = "palette";
 const BAR_GROUP: &str = "bar";
 const WORKSPACES_GROUP: &str = "workspaces";
 const SURFACES_GROUP: &str = "surfaces";
@@ -22,6 +23,8 @@ const SETTINGS_GROUP: &str = "settings";
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct StyleConfig {
+    #[serde(default)]
+    pub palette: StyleGroupConfig,
     #[serde(default)]
     pub bar: StyleGroupConfig,
     #[serde(default)]
@@ -55,6 +58,7 @@ pub struct StyleConfig {
 impl StyleConfig {
     pub(crate) fn group(&self, group: &str) -> Option<&StyleGroupConfig> {
         match group {
+            PALETTE_GROUP => Some(&self.palette),
             BAR_GROUP => Some(&self.bar),
             WORKSPACES_GROUP => Some(&self.workspaces),
             SURFACES_GROUP => Some(&self.surfaces),
@@ -100,6 +104,7 @@ impl StyleConfig {
 
     fn group_mut(&mut self, group: &str) -> Option<&mut StyleGroupConfig> {
         match group {
+            PALETTE_GROUP => Some(&mut self.palette),
             BAR_GROUP => Some(&mut self.bar),
             WORKSPACES_GROUP => Some(&mut self.workspaces),
             SURFACES_GROUP => Some(&mut self.surfaces),

@@ -15,7 +15,7 @@ impl Default for ActionMenuConfig {
             layout: ActionMenuLayoutConfig::default(),
             sections: vec![
                 ActionMenuSectionConfig {
-                    title: Some("Actions".to_string()),
+                    title: Some("Dashboard".to_string()),
                     columns: Some(2),
                     align: ActionMenuSectionAlign::End,
                     actions: vec![
@@ -89,7 +89,7 @@ pub(super) struct ActionMenuPanelConfig {
 impl Default for ActionMenuPanelConfig {
     fn default() -> Self {
         Self {
-            width: None,
+            width: Some(268),
             max_height: None,
         }
     }
@@ -109,10 +109,10 @@ impl Default for ActionMenuLayoutConfig {
     fn default() -> Self {
         Self {
             columns: 3,
-            button_width: None,
-            button_height: None,
-            row_spacing: 8,
-            column_spacing: 8,
+            button_width: Some(40),
+            button_height: Some(40),
+            row_spacing: 12,
+            column_spacing: 34,
         }
     }
 }

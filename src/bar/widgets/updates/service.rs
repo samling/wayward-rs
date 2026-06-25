@@ -4,7 +4,7 @@ use std::time::Duration;
 
 use relm4::Sender;
 use relm4::tokio::process::Command;
-use relm4::tokio::sync::broadcast;
+use relm4::tokio::sync::{Mutex, broadcast};
 use relm4::tokio::time;
 
 use serde::Deserialize;
@@ -17,6 +17,9 @@ use super::model::{
 };
 
 static REFRESH_REQUESTS: OnceLock<broadcast::Sender<()>> = OnceLock::new();
+
+// Serializes checkupdates so overlapping refreshes don't collide on its DB lock.
+static CHECKUPDATES_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
@@ -119,11 +122,18 @@ async fn refresh_updates(
 }
 
 async fn load_updates(config: &UpdatesServiceConfig) -> Result<UpdatesSnapshot, String> {
-    let output = Command::new("checkupdates")
-        .stdin(Stdio::null())
-        .output()
-        .await
-        .map_err(|error| format!("failed to run checkupdates: {error}"))?;
+    let output = {
+        // Held across the call so a second refresh waits rather than running concurrently.
+        let _guard = CHECKUPDATES_LOCK
+            .get_or_init(|| Mutex::new(()))
+            .lock()
+            .await;
+        Command::new("checkupdates")
+            .stdin(Stdio::null())
+            .output()
+            .await
+            .map_err(|error| format!("failed to run checkupdates: {error}"))?
+    };
 
     if !output.status.success() && output.status.code() != Some(2) {
         return Err(format!(
@@ -179,26 +189,5 @@ fn command_output_message(output: &Output) -> String {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::super::model::{UpdatePackage, UpdateSeverity};
-    use super::*;
-
-    #[test]
-    fn refreshing_snapshot_preserves_latest_packages() {
-        let latest = UpdatesSnapshot {
-            packages: vec![UpdatePackage {
-                name: "linux".to_string(),
-                old_version: "6.9.1.arch1-1".to_string(),
-                new_version: "6.9.2.arch1-1".to_string(),
-                severity: UpdateSeverity::Critical,
-            }],
-            last_error: None,
-            refreshing: false,
-        };
-
-        let snapshot = refreshing_snapshot(Some(&latest));
-
-        assert!(snapshot.refreshing);
-        assert_eq!(snapshot.packages, latest.packages);
-    }
-}
+#[path = "service_test.rs"]
+mod tests;

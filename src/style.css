@@ -1,7 +1,8 @@
 /* Base */
 .bar {
-    background-color: var(--bar-background-color, rgba(30, 30, 46, 0.7));
-    color: var(--bar-color, #f1f3f4);
+    --bar-icon-size: 16px;
+    background-color: var(--bar-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 0.7)));
+    color: var(--bar-color, var(--md-sys-color-on-surface, #f1f3f4));
     font-family: var(--bar-font-family, "Adwaita Sans"), "Symbols Nerd Font", "Symbols Nerd Font Mono", "JetBrainsMono Nerd Font";
     font-size: var(--bar-font-size, 12px);
     font-weight: var(--bar-font-weight, 100);
@@ -82,7 +83,7 @@
 
 .bar-item-content {
     background-color: var(--bar-widget-background-color, transparent);
-    border: var(--bar-widget-border-width, 0px) solid var(--bar-widget-border-color, transparent);
+    border: var(--bar-widget-border-width, 0px) solid var(--bar-widget-border-color, rgba(241, 243, 244, 0.08));
     border-radius: var(--bar-widget-border-radius, 0px);
     color: inherit;
     margin: var(--bar-widget-margin-y, 0px) var(--bar-widget-margin-x, 0px);
@@ -91,75 +92,86 @@
     padding: var(--bar-widget-padding-y, 0px) var(--bar-widget-padding-x, 4px);
 }
 
-.bar-item-content label,
-.bar-item-content image {
-    margin: 0;
-    min-height: 0;
-    min-width: 0;
+.bar.horizontal .bar-item-content {
+    min-height: var(--bar-widget-thickness, 16px);
+}
+
+.bar.vertical .bar-item-content {
+    min-width: var(--bar-widget-thickness, 16px);
+}
+
+.action-menu-content {
+    background-color: var(--action-menu-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--action-menu-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
+}
+
+.battery-content {
+    background-color: var(--battery-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--battery-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
+}
+
+.brightness-content {
+    background-color: var(--brightness-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--brightness-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
+}
+
+.clock-content {
+    background-color: var(--clock-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--clock-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
+}
+
+.notifications-content {
+    background-color: var(--notifications-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--notifications-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
+}
+
+.systray-content {
+    background-color: var(--systray-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--systray-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
+}
+
+.updates-content {
+    background-color: var(--updates-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--updates-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
+}
+
+.volume-content {
+    background-color: var(--volume-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--volume-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
+}
+
+.workspaces-content {
+    background-color: var(--workspaces-widget-background-color, var(--bar-widget-background-color, rgba(241, 243, 244, 0.12)));
+    border-color: var(--workspaces-widget-border-color, var(--bar-widget-border-color, rgba(241, 243, 244, 0.08)));
+    /* The active indicator is hosted in this container; padding here would inset
+       it from the border. Move widget padding onto .workspaces-items instead so
+       the indicator fills to the container's inner edge. */
     padding: 0;
 }
 
-.action-menu .bar-item-content {
-    background-color: var(--action-menu-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--action-menu-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--action-menu-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--action-menu-widget-border-width, var(--bar-widget-border-width, 0px));
+.bar-item-content label,
+.bar-item-content image {
+    margin: 0;
+    padding: 0;
 }
 
-.battery .bar-item-content {
-    background-color: var(--battery-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--battery-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--battery-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--battery-widget-border-width, var(--bar-widget-border-width, 0px));
+.battery-icon,
+.brightness-icon,
+.notifications-icon,
+.updates-icon,
+.volume-icon {
+    -gtk-icon-size: var(--bar-icon-size, 16px);
 }
 
-.brightness .bar-item-content {
-    background-color: var(--brightness-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--brightness-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--brightness-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--brightness-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.clock .bar-item-content {
-    background-color: var(--clock-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--clock-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--clock-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--clock-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.notifications .bar-item-content {
-    background-color: var(--notifications-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--notifications-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--notifications-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--notifications-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.systray .bar-item-content {
-    background-color: var(--systray-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--systray-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--systray-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--systray-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.updates .bar-item-content {
-    background-color: var(--updates-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--updates-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--updates-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--updates-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.volume .bar-item-content {
-    background-color: var(--volume-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--volume-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--volume-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--volume-widget-border-width, var(--bar-widget-border-width, 0px));
-}
-
-.workspaces .bar-item-content {
-    background-color: var(--workspaces-widget-background-color, var(--bar-widget-background-color, transparent));
-    border-color: var(--workspaces-widget-border-color, var(--bar-widget-border-color, transparent));
-    border-radius: var(--workspaces-widget-border-radius, var(--bar-widget-border-radius, 0px));
-    border-width: var(--workspaces-widget-border-width, var(--bar-widget-border-width, 0px));
+.action-menu-bar-icon,
+.battery-icon,
+.brightness-icon,
+.notifications-icon,
+.updates-icon,
+.updates-spinner,
+.volume-icon {
+    min-height: var(--bar-icon-size, 16px);
+    min-width: var(--bar-icon-size, 16px);
 }
 
 menubutton.bar-item > button,
@@ -200,87 +212,88 @@ menubutton.bar-item > button:checked {
     padding: 0;
 }
 
-.workspaces-content {
-    background-color: var(--workspaces-content-background-color, rgba(255, 255, 255, 0.1));
-    border-radius: var(--workspaces-content-border-radius, 6px);
-    margin-bottom: 0;
-    margin-top: 0;
-    padding: 0;
-}
-
 .workspaces-items {
-    border-spacing: 0.4em;
-    padding: 0 var(--workspaces-content-padding, var(--bar-widget-padding-x, 4px));
+    border-spacing: var(--workspaces-gap, 5px);
+    padding: var(--bar-widget-padding-y, 0px) var(--bar-widget-padding-x, 4px);
 }
 
 .bar.vertical .workspaces-items {
-    border-spacing: 0.2em;
+    border-spacing: var(--workspaces-vertical-gap, 2px);
 }
 
+/* Pills carry no cross-axis padding: that would exceed the shared
+   --bar-widget-thickness and make the widget taller than its peers. */
 .workspace {
     background-color: transparent;
     border-radius: var(--workspace-border-radius, 6px);
     color: inherit;
-    padding: var(--bar-widget-padding-y, 0px) 0.65em;
+    padding: 0 var(--workspace-padding-x, 8px);
 }
 
 .bar.vertical .workspace {
-    padding: 0.1em 0.3em;
+    padding: var(--workspace-vertical-padding-y, 1px) 0;
 }
 
 .workspace-label {
     background: transparent;
+    min-height: var(--workspace-label-min-height, 12px);
     padding: 0;
 }
 
 .workspace.active {
-    color: var(--workspace-active-color, #f1f3f4);
+    color: var(--workspace-active-color, var(--md-sys-color-on-surface, #f1f3f4));
 }
 
 .workspace.focused,
 .clock-calendar-day.today {
-    color: var(--workspace-focused-color, #89b4fa);
+    color: var(--workspace-focused-color, var(--md-sys-color-primary, #89b4fa));
 }
 
 .workspace.active,
 .workspace.active.focused {
-    color: var(--workspace-active-color, #f1f3f4);
+    color: var(--workspace-active-color, var(--md-sys-color-on-surface, #f1f3f4));
 }
 
 .workspace.urgent {
-    color: var(--workspace-urgent-color, #f28b82);
+    color: var(--workspace-urgent-color, var(--md-sys-color-error, #f28b82));
 }
 
 .workspace-indicator {
-    background-color: var(--workspace-indicator-background-color, rgba(137, 180, 250, 0.5));
+    background-color: var(--workspace-indicator-background-color, rgba(137, 180, 250, 0.22));
     border-radius: var(--workspace-indicator-border-radius, 6px);
     padding: 0;
 }
 
 .status {
-    color: var(--workspace-status-color, #fdd664);
+    color: var(--workspace-status-color, var(--md-sys-color-tertiary, #fdd664));
 }
 
 /* Floating surfaces */
-popover.dropdown contents,
-.notification-toast,
 .osd {
-    background-color: var(--surface-background-color, rgba(30, 30, 46, 1));
-    border: 1px solid var(--surface-border-color, rgba(241, 243, 244, 0.14));
-    border-radius: var(--surface-border-radius, 6px);
-    color: var(--surface-color, #f1f3f4);
+    background-color: var(--osd-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
+    border: 1px solid var(--osd-border-color, rgba(241, 243, 244, 0.14));
+    border-radius: var(--osd-border-radius, 6px);
+    color: var(--osd-color, var(--md-sys-color-on-surface, #f1f3f4));
 }
 
-popover.dropdown contents,
 .notification-toast {
+    background-color: var(--notification-toast-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
+    border: 1px solid var(--notification-toast-border-color, rgba(241, 243, 244, 0.14));
+    border-radius: var(--notification-toast-border-radius, 6px);
+    color: var(--notification-toast-color, var(--md-sys-color-on-surface, #f1f3f4));
+    box-shadow: var(--notification-toast-shadow, 0 8px 28px rgba(0, 0, 0, 0.28));
     font-family: var(--dropdown-font-family, "Adwaita Sans");
     font-size: var(--dropdown-font-size, 12px);
     font-weight: var(--dropdown-font-weight, 500);
-    box-shadow: var(--surface-shadow, 0 8px 28px rgba(0, 0, 0, 0.28));
 }
 
 /* Dropdowns */
 popover.dropdown contents {
+    background-color: var(--md-sys-color-surface, rgba(30, 30, 46, 1));
+    border: 1px solid rgba(241, 243, 244, 0.14);
+    border-radius: 6px;
+    color: var(--md-sys-color-on-surface, #f1f3f4);
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
     font-family: var(--dropdown-font-family, "Adwaita Sans");
     font-size: var(--dropdown-font-size, 12px);
     font-weight: var(--dropdown-font-weight, 500);
@@ -313,7 +326,7 @@ popover.dropdown arrow {
 
 .dropdown-empty {
     background-color: var(--dropdown-empty-background-color, rgba(241, 243, 244, 0.045));
-    border: 1px solid var(--dropdown-empty-border-color, rgba(241, 243, 244, 0.09));
+    border: 1px solid var(--dropdown-empty-border-color, rgba(241, 243, 244, 0.08));
     border-radius: var(--dropdown-empty-border-radius, 7px);
     color: inherit;
     margin-top: 0.1em;
@@ -384,11 +397,6 @@ popover.dropdown arrow {
     min-height: 0;
 }
 
-.battery-icon {
-    -gtk-icon-size: 1em;
-    min-width: 1em;
-}
-
 .battery-percentage,
 .battery-energy-rate {
     min-width: 0;
@@ -414,7 +422,7 @@ levelbar.battery-meter block {
 }
 
 levelbar.battery-meter block.filled {
-    background-color: var(--battery-meter-fill-color, rgba(137, 180, 250, 0.72));
+    background-color: var(--battery-meter-fill-color, var(--md-sys-color-primary, rgba(137, 180, 250, 0.72)));
 }
 
 .battery-dropdown-percentage {
@@ -451,7 +459,7 @@ button.profile-button,
 button.profile-button.toggle {
     background: transparent;
     background-image: none;
-    border: 1px solid var(--battery-profile-border-color, rgba(241, 243, 244, 0.16));
+    border: 1px solid var(--battery-profile-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 0;
     box-shadow: none;
     color: inherit;
@@ -465,7 +473,7 @@ button.profile-button:hover,
 button.profile-button.toggle:hover {
     background: var(--battery-profile-hover-background-color, rgba(241, 243, 244, 0.08));
     background-image: none;
-    border-color: var(--battery-profile-hover-border-color, rgba(137, 180, 250, 0.45));
+    border-color: var(--battery-profile-hover-border-color, var(--md-sys-color-primary, rgba(137, 180, 250, 0.45)));
     box-shadow: none;
     outline: none;
 }
@@ -478,7 +486,7 @@ button.profile-button.toggle:focus,
 button.profile-button.toggle:focus-visible {
     background: transparent;
     background-image: none;
-    border-color: var(--battery-profile-border-color, rgba(241, 243, 244, 0.16));
+    border-color: var(--battery-profile-border-color, rgba(241, 243, 244, 0.14));
     box-shadow: none;
     outline: none;
 }
@@ -488,7 +496,7 @@ button.profile-button:checked,
 button.profile-button.toggle:checked {
     background: var(--battery-profile-active-background-color, rgba(137, 180, 250, 0.22));
     background-image: none;
-    border-color: var(--battery-profile-active-border-color, rgba(137, 180, 250, 0.75));
+    border-color: var(--battery-profile-active-border-color, var(--md-sys-color-primary, rgba(137, 180, 250, 0.75)));
     box-shadow: none;
 }
 
@@ -517,12 +525,6 @@ button.profile-button.performance:checked {
 .volume-content,
 .brightness-content {
     min-height: 0;
-}
-
-.volume-icon,
-.brightness-icon {
-    -gtk-icon-size: 1em;
-    min-width: 1em;
 }
 
 .volume-percent,
@@ -561,7 +563,7 @@ button.volume-mute-button.toggle {
 }
 
 .control-scale highlight {
-    background-color: var(--battery-meter-fill-color, rgba(137, 180, 250, 0.72));
+    background-color: var(--battery-meter-fill-color, var(--md-sys-color-primary, rgba(137, 180, 250, 0.72)));
     border-radius: 999px;
     min-height: 8px;
 }
@@ -591,7 +593,7 @@ button.control-toggle,
 button.control-toggle.toggle {
     background: transparent;
     background-image: none;
-    border: 1px solid var(--surface-border-color, rgba(241, 243, 244, 0.14));
+    border: 1px solid rgba(241, 243, 244, 0.14);
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -617,7 +619,7 @@ button.control-toggle:hover,
 button.control-toggle.toggle:hover {
     background: rgba(241, 243, 244, 0.08);
     background-image: none;
-    border-color: rgba(137, 180, 250, 0.55);
+    border-color: var(--md-sys-color-primary, rgba(137, 180, 250, 0.55));
     box-shadow: none;
 }
 
@@ -626,17 +628,13 @@ button.control-toggle:checked,
 button.control-toggle.toggle:checked {
     background: rgba(137, 180, 250, 0.22);
     background-image: none;
-    border-color: rgba(137, 180, 250, 0.75);
+    border-color: var(--md-sys-color-primary, rgba(137, 180, 250, 0.75));
     box-shadow: none;
 }
 
 /* Systray */
 .systray-content {
-    background-color: var(--systray-content-background-color, rgba(255, 255, 255, 0.1));
-    border-radius: var(--systray-content-border-radius, 12px);
     border-spacing: 0.25em;
-    padding-left: var(--systray-content-padding-x, 8px);
-    padding-right: var(--systray-content-padding-x, 8px);
 }
 
 .systray-item {
@@ -702,7 +700,7 @@ popover.systray-menu button:focus-visible {
 }
 
 levelbar.osd-level trough {
-    background-color: var(--osd-level-track-color, rgba(241, 243, 244, 0.16));
+    background-color: var(--osd-level-track-color, rgba(241, 243, 244, 0.08));
     border-radius: 999px;
     min-height: 2px;
     padding: 0;
@@ -714,7 +712,19 @@ levelbar.osd-level block {
 }
 
 levelbar.osd-level block.filled {
-    background-color: var(--osd-level-fill-color, rgba(255, 255, 255, 0.92));
+    background-color: var(--osd-level-fill-color, var(--md-sys-color-primary, rgba(255, 255, 255, 0.92)));
+}
+
+.osd.brightness levelbar.osd-level block.filled {
+    background-color: var(--osd-brightness-level-fill-color, var(--md-sys-color-tertiary, #fdd664));
+}
+
+.osd.volume levelbar.osd-level block.filled {
+    background-color: var(--osd-volume-level-fill-color, var(--md-sys-color-primary, #89b4fa));
+}
+
+.osd.muted levelbar.osd-level block.filled {
+    background-color: var(--osd-muted-level-fill-color, var(--md-sys-color-error, #f28b82));
 }
 
 /* Notifications */
@@ -786,9 +796,9 @@ levelbar.osd-level block.filled {
 }
 
 .notification-card {
-    background-color: var(--notification-row-background-color, rgba(241, 243, 244, 0.055));
+    background-color: var(--notification-row-background-color, rgba(241, 243, 244, 0.06));
     background-image: none;
-    border: 1px solid var(--notification-row-border-color, rgba(241, 243, 244, 0.12));
+    border: 1px solid var(--notification-row-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
     box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 transparent;
     color: inherit;
@@ -803,10 +813,10 @@ levelbar.osd-level block.filled {
 }
 
 .notification-card:hover {
-    background-color: var(--notification-row-hover-background-color, rgba(241, 243, 244, 0.085));
-    border-top-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
-    border-right-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
-    border-bottom-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.18));
+    background-color: var(--notification-row-hover-background-color, rgba(241, 243, 244, 0.08));
+    border-top-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.14));
+    border-right-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.14));
+    border-bottom-color: var(--notification-row-hover-border-color, rgba(241, 243, 244, 0.14));
 }
 
 .notification-card.dismissing,
@@ -821,15 +831,15 @@ levelbar.osd-level block.filled {
 }
 
 .notification-card.low {
-    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-low-border-color, rgba(241, 243, 244, 0.28));
+    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-low-border-color, rgba(241, 243, 244, 0.14));
 }
 
 .notification-card.normal {
-    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-normal-border-color, rgba(137, 180, 250, 0.8));
+    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-normal-border-color, var(--md-sys-color-primary, rgba(137, 180, 250, 0.8)));
 }
 
 .notification-card.critical {
-    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-critical-border-color, rgba(242, 139, 130, 0.9));
+    box-shadow: inset var(--notification-indicator-border-width, 4px) 0 0 0 var(--notification-row-critical-border-color, var(--md-sys-color-error, rgba(242, 139, 130, 0.9)));
 }
 
 .notification-card-icon {
@@ -873,7 +883,7 @@ levelbar.osd-level block.filled {
 .notification-card-action {
     background: transparent;
     background-image: none;
-    border: 1px solid var(--notification-list-action-border-color, rgba(241, 243, 244, 0.16));
+    border: 1px solid var(--notification-list-action-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -883,7 +893,7 @@ levelbar.osd-level block.filled {
 
 .notification-card-action:hover {
     background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
-    border-color: var(--notification-list-action-hover-border-color, rgba(137, 180, 250, 0.65));
+    border-color: var(--notification-list-action-hover-border-color, var(--md-sys-color-primary, rgba(137, 180, 250, 0.65)));
 }
 
 .notification-card-dismiss,
@@ -932,7 +942,7 @@ levelbar.osd-level block.filled {
 .notification-clear-all:hover,
 .notification-clear-all.flat:hover {
     background: var(--notification-list-action-hover-background-color, rgba(241, 243, 244, 0.08));
-    border-color: var(--notification-clear-all-hover-border-color, rgba(242, 139, 130, 0.55));
+    border-color: var(--notification-clear-all-hover-border-color, var(--md-sys-color-error, rgba(242, 139, 130, 0.55)));
 }
 
 .notification-toast {
@@ -940,26 +950,34 @@ levelbar.osd-level block.filled {
 }
 
 .notification-toast.notification-card {
-    background-color: var(--notification-toast-background-color, var(--surface-background-color, rgba(30, 30, 46, 1)));
-    border: 1px solid var(--notification-row-border-color, rgba(241, 243, 244, 0.12));
+    background-color: var(--notification-toast-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
+    border: 1px solid var(--notification-row-border-color, rgba(241, 243, 244, 0.14));
     border-radius: 6px;
     padding: 0.85em 0.7em;
 }
 
 .notification-toast.notification-card:hover {
-    background-color: var(--notification-toast-hover-background-color, rgba(38, 38, 54, 1));
+    background-color: var(--notification-toast-hover-background-color, rgba(241, 243, 244, 0.08));
 }
 
 .action-menu-dropdown-content {
-    min-width: var(--action-menu-panel-width, 320px);
+    min-width: var(--action-menu-panel-width, 268px);
 }
 
 .action-menu-header {
-    margin-bottom: 0.15em;
+    margin-bottom: 0;
+    padding: 0.55em 0.65em;
 }
 
 .action-menu-section {
     margin: 0;
+}
+
+.action-menu-card-section {
+    background-color: var(--action-menu-section-background-color, rgba(241, 243, 244, 0.045));
+    border: 1px solid var(--action-menu-section-border-color, rgba(241, 243, 244, 0.08));
+    border-radius: var(--action-menu-section-border-radius, 7px);
+    padding: var(--action-menu-section-padding, 0.9em 0.95em);
 }
 
 .action-menu-section-title {
@@ -971,7 +989,8 @@ levelbar.osd-level block.filled {
     color: var(--dropdown-section-title-color, rgba(241, 243, 244, 0.72));
     font-size: 0.86em;
     font-weight: 600;
-    margin-top: 0.1em;
+    margin-bottom: 0.15em;
+    margin-top: 0;
 }
 
 .action-menu-settings,
@@ -982,9 +1001,9 @@ levelbar.osd-level block.filled {
 .action-menu-action.flat,
 .action-menu-screenshot-action,
 .action-menu-screenshot-action.flat {
-    background: var(--action-menu-button-background-color, rgba(241, 243, 244, 0.055));
+    background: var(--action-menu-button-background-color, rgba(203, 166, 247, 0.18));
     background-image: none;
-    border: 1px solid var(--action-menu-button-border-color, rgba(241, 243, 244, 0.14));
+    border: 1px solid var(--action-menu-button-border-color, rgba(241, 243, 244, 0.08));
     border-radius: 6px;
     box-shadow: none;
     color: inherit;
@@ -996,13 +1015,13 @@ levelbar.osd-level block.filled {
 .action-menu-power,
 .action-menu-action,
 .action-menu-screenshot-action {
-    padding: 0.65em 0.75em;
+    padding: 0;
 }
 
 .action-menu-settings,
 .action-menu-power {
-    min-height: 30px;
-    min-width: 30px;
+    min-height: 28px;
+    min-width: 28px;
     padding: 0;
 }
 
@@ -1016,7 +1035,7 @@ levelbar.osd-level block.filled {
 }
 
 .action-menu-action-label {
-    font-size: 0.82em;
+    font-size: 0.78em;
     font-weight: 500;
     opacity: 0.78;
 }
@@ -1030,20 +1049,24 @@ levelbar.osd-level block.filled {
 .action-menu-screenshot-action:hover,
 .action-menu-screenshot-action.flat:hover {
     background: var(--action-menu-button-hover-background-color, rgba(241, 243, 244, 0.08));
-    border-color: var(--action-menu-button-hover-border-color, rgba(137, 180, 250, 0.65));
+    border-color: var(--action-menu-button-hover-border-color, var(--md-sys-color-secondary, rgba(205, 164, 249, 0.5)));
 }
 
 .action-menu-action-icon {
     font-family: var(--action-menu-icon-font-family, "Symbols Nerd Font"), "Symbols Nerd Font Mono", "Adwaita Sans";
-    font-size: var(--action-menu-icon-font-size, 1.45em);
+    font-size: var(--action-menu-icon-font-size, 1.72em);
     font-weight: 400;
     line-height: 1;
+}
+
+.action-menu-bar-icon {
+    font-family: var(--action-menu-icon-font-family, "Symbols Nerd Font"), "Symbols Nerd Font Mono", "Adwaita Sans";
 }
 
 .action-menu-settings .action-menu-action-icon,
 .action-menu-power .action-menu-action-icon,
 .action-menu-action-icon.power {
-    font-size: var(--action-menu-header-icon-font-size, 1.25em);
+    font-size: var(--action-menu-header-icon-font-size, 1.15em);
 }
 
 .action-menu-settings label,
@@ -1054,9 +1077,9 @@ levelbar.osd-level block.filled {
 
 .action-menu-screenshot-action,
 .action-menu-screenshot-action.flat {
-    min-height: var(--action-menu-screenshot-button-size, 44px);
-    min-width: var(--action-menu-screenshot-button-size, 44px);
-    padding: 8px;
+    min-height: var(--action-menu-screenshot-button-size, 40px);
+    min-width: var(--action-menu-screenshot-button-size, 40px);
+    padding: 0;
 }
 
 .updates-list-scroll,
@@ -1078,15 +1101,15 @@ levelbar.osd-level block.filled {
 
 /* Settings */
 .settings-window {
-  background-color: var(--settings-background-color, rgba(20, 20, 24, 0.96));
-  color: var(--settings-color, rgba(245, 245, 245, 0.95));
+  background-color: var(--settings-background-color, rgba(30, 30, 46, 0.96));
+  color: var(--settings-color, var(--md-sys-color-on-surface, rgba(245, 245, 245, 0.95)));
   font-family: var(--settings-font-family, "Adwaita Sans");
   font-size: var(--settings-font-size, 14px);
 }
 
 .settings-titlebar {
-  background-color: var(--settings-titlebar-background-color, rgba(255, 255, 255, 0.08));
-  border-bottom: 1px solid var(--settings-titlebar-border-color, rgba(255, 255, 255, 0.08));
+  background-color: var(--settings-titlebar-background-color, rgba(241, 243, 244, 0.06));
+  border-bottom: 1px solid var(--settings-titlebar-border-color, rgba(241, 243, 244, 0.08));
   min-height: 30px;
   padding: 0 6px 0 12px;
 }
@@ -1105,30 +1128,45 @@ levelbar.osd-level block.filled {
 }
 
 .settings-sidebar {
-  background-color: var(--settings-sidebar-background-color, rgba(255, 255, 255, 0.06));
+  background-color: var(--settings-sidebar-background-color, rgba(241, 243, 244, 0.045));
   padding: 16px 12px;
-}
-
-.settings-sidebar-title {
-  font-size: 1.2em;
-  font-weight: 700;
-  margin-bottom: 12px;
 }
 
 .settings-sidebar-item {
   padding: 8px 10px;
   border-radius: 6px;
   background-color: transparent;
+  border: none;
+  box-shadow: none;
+  outline: none;
+}
+
+.settings-sidebar-item:focus,
+.settings-sidebar-item:focus-visible {
+  border: none;
+  box-shadow: none;
+  outline: none;
 }
 
 .settings-sidebar-item.active {
-  background-color: var(--settings-sidebar-active-background-color, rgba(255, 255, 255, 0.12));
+  background-color: var(--settings-sidebar-active-background-color, rgba(203, 166, 247, 0.18));
 }
 
 .settings-page-title {
   font-size: 1.4em;
   font-weight: 700;
   margin: 18px 24px 4px;
+}
+
+.settings-sidebar-group {
+  color: var(--settings-row-value-color, rgba(241, 243, 244, 0.72));
+  font-size: 0.78em;
+  font-weight: 700;
+  margin: 14px 12px 4px;
+}
+
+.settings-sidebar-item label {
+  margin-left: 10px;
 }
 
 .settings-section {
@@ -1143,7 +1181,7 @@ levelbar.osd-level block.filled {
 .settings-group {
   padding: 12px;
   border-radius: 8px;
-  background-color: var(--settings-group-background-color, rgba(255, 255, 255, 0.07));
+  background-color: var(--settings-group-background-color, rgba(241, 243, 244, 0.06));
 }
 
 .settings-row {
@@ -1151,12 +1189,12 @@ levelbar.osd-level block.filled {
 }
 
 .settings-row-label {
-  color: var(--settings-row-label-color, rgba(255, 255, 255, 0.78));
+  color: var(--settings-row-label-color, var(--md-sys-color-on-surface, rgba(255, 255, 255, 0.78)));
   font-weight: 600;
 }
 
 .settings-row-value {
-  color: var(--settings-row-value-color, rgba(255, 255, 255, 0.58));
+  color: var(--settings-row-value-color, rgba(241, 243, 244, 0.72));
 }
 
 .settings-toggle-button {
@@ -1165,16 +1203,24 @@ levelbar.osd-level block.filled {
 }
 
 .settings-toggle-button:checked {
-  background-color: var(--settings-sidebar-active-background-color, rgba(255, 255, 255, 0.12));
+  background-color: var(--settings-sidebar-active-background-color, rgba(203, 166, 247, 0.18));
 }
 
 .settings-color-value {
     font-family: monospace;
-    opacity: 0.75;
+    opacity: 1;
+}
+
+.settings-color-value-inherited {
+    opacity: 0.58;
+}
+
+.settings-color-value-custom {
+    opacity: 1;
 }
 
 .settings-color-value.error {
-    color: var(--settings-color-error, #f28b82);
+    color: var(--settings-color-error, var(--md-sys-color-error, #f28b82));
 }
 
 .settings-color-swatch-button {
@@ -1196,7 +1242,7 @@ levelbar.osd-level block.filled {
   padding: 4px 6px;
   border: 1px solid transparent;
   border-radius: 6px;
-  background-color: var(--settings-token-background-color, rgba(255, 255, 255, 0.1));
+  background-color: var(--settings-token-background-color, rgba(241, 243, 244, 0.08));
 }
 
 .bar-widget-token-label {
@@ -1211,8 +1257,8 @@ levelbar.osd-level block.filled {
 }
 
 .bar-widget-token.invalid {
-  border-color: var(--settings-token-invalid-border-color, rgba(255, 99, 71, 0.9));
-  color: var(--settings-token-invalid-color, rgba(255, 180, 170, 1));
+  border-color: var(--settings-token-invalid-border-color, var(--md-sys-color-error, rgba(255, 99, 71, 0.9)));
+  color: var(--settings-token-invalid-color, var(--md-sys-color-on-error-container, rgba(255, 180, 170, 1)));
 }
 
 .bar-widget-token.invalid .bar-widget-token-label {
@@ -1225,18 +1271,12 @@ levelbar.osd-level block.filled {
 }
 
 .bar-widget-token.drop-target {
-  border-color: var(--settings-token-drop-border-color, rgba(125, 200, 255, 0.95));
-  background-color: var(--settings-token-drop-background-color, rgba(125, 200, 255, 0.18));
+  border-color: var(--settings-token-drop-border-color, var(--md-sys-color-primary, rgba(125, 200, 255, 0.95)));
+  background-color: var(--settings-token-drop-background-color, rgba(137, 180, 250, 0.22));
 }
 
 .updates-content {
   border-spacing: 0.3em;
-}
-
-.updates-icon,
-.updates-spinner {
-  min-height: 1em;
-  min-width: 1em;
 }
 
 .updates-dropdown-content {
@@ -1248,7 +1288,7 @@ levelbar.osd-level block.filled {
 }
 
 .updates-refreshing {
-  color: #89b4fa;
+  color: var(--md-sys-color-primary, #89b4fa);
   font-weight: 600;
 }
 
@@ -1267,11 +1307,11 @@ levelbar.osd-level block.filled {
 .updates-refresh-button:hover,
 .updates-refresh-button.flat:hover {
   background: rgba(241, 243, 244, 0.08);
-  border-color: rgba(137, 180, 250, 0.65);
+  border-color: var(--md-sys-color-primary, rgba(137, 180, 250, 0.65));
 }
 
 .updates-error {
-  color: #f28b82;
+  color: var(--md-sys-color-error, #f28b82);
   font-weight: 500;
 }
 
@@ -1284,14 +1324,14 @@ levelbar.osd-level block.filled {
 }
 
 .updates-row.warning {
-  border-color: rgba(253, 214, 100, 0.65);
-  box-shadow: inset var(--updates-indicator-border-width, 4px) 0 0 0 rgba(253, 214, 100, 0.75);
+  border-color: var(--md-sys-color-tertiary, rgba(253, 214, 100, 0.65));
+  box-shadow: inset var(--updates-indicator-border-width, 4px) 0 0 0 var(--md-sys-color-tertiary, rgba(253, 214, 100, 0.75));
   background-color: rgba(253, 214, 100, 0.08);
 }
 
 .updates-row.critical {
-  border-color: rgba(242, 139, 130, 0.8);
-  box-shadow: inset var(--updates-indicator-border-width, 4px) 0 0 0 rgba(242, 139, 130, 0.85);
+  border-color: var(--md-sys-color-error, rgba(242, 139, 130, 0.8));
+  box-shadow: inset var(--updates-indicator-border-width, 4px) 0 0 0 var(--md-sys-color-error, rgba(242, 139, 130, 0.85));
   background-color: rgba(242, 139, 130, 0.1);
 }
 

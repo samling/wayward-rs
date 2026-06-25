@@ -2,7 +2,7 @@ use crate::config::{BarConfig, StyleConfig};
 use relm4::{
     gtk::{
         self,
-        prelude::{BoxExt, WidgetExt},
+        prelude::{BoxExt, ButtonExt, WidgetExt},
     },
     prelude::ComponentSender,
 };
@@ -11,7 +11,7 @@ use std::collections::BTreeMap;
 use super::{
     controls::{color_row, number_row, string_list_row, string_row, toggle_row},
     spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec},
-    window::SettingsWindow,
+    window::{SettingsInput, SettingsWindow},
 };
 
 #[derive(Clone, Debug, PartialEq)]
@@ -117,45 +117,26 @@ fn config_value_to_toml(value: &crate::config::ConfigValue) -> toml::Value {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(crate) enum SettingsPage {
-    Appearance,
-    Widgets,
-    BarLayout,
-}
-
-impl SettingsPage {
-    pub(crate) fn title(self) -> &'static str {
-        match self {
-            Self::Appearance => "Appearance",
-            Self::Widgets => "Widgets",
-            Self::BarLayout => "Bar Layout",
-        }
-    }
-}
-
 pub(crate) fn render_current_page(
     container: &gtk::Box,
     title: &gtk::Label,
-    active_page: SettingsPage,
+    active_item: &'static str,
     config: &SettingsConfig,
     sender: &ComponentSender<SettingsWindow>,
 ) {
     clear_container(container);
 
-    match active_page {
-        SettingsPage::Appearance => {
-            let page = super::pages::notifications::page(&config.style);
+    let Some(item) = super::nav::find_item(active_item) else {
+        return;
+    };
+
+    match build_page(item, config) {
+        Some(page) => {
             title.set_label(&page.title);
             render_page(container, page, sender);
         }
-        SettingsPage::Widgets => {
-            let page = super::pages::widgets::page(&config.widgets);
-            title.set_label(&page.title);
-            render_page(container, page, sender);
-        }
-        SettingsPage::BarLayout => {
-            title.set_label(SettingsPage::BarLayout.title());
+        None => {
+            title.set_label(item.title);
             super::pages::bar_layout::render(
                 container,
                 &config.bars,
@@ -163,17 +144,43 @@ pub(crate) fn render_current_page(
                 sender,
             );
         }
-    };
+    }
 }
 
-pub(crate) fn sidebar_button_classes(
-    active_page: SettingsPage,
-    page: SettingsPage,
-) -> Vec<&'static str> {
-    if active_page == page {
-        vec!["settings-sidebar-item", "active"]
-    } else {
-        vec!["settings-sidebar-item"]
+pub(crate) fn render_sidebar(
+    container: &gtk::Box,
+    active_item: &str,
+    sender: &ComponentSender<SettingsWindow>,
+) {
+    clear_container(container);
+
+    for group in super::nav::nav() {
+        let header = gtk::Label::new(Some(group.title));
+        header.set_halign(gtk::Align::Start);
+        header.add_css_class("settings-sidebar-group");
+        container.append(&header);
+
+        for item in group.items {
+            let button = gtk::Button::new();
+            let classes: &[&str] = if item.key == active_item {
+                &["settings-sidebar-item", "active"]
+            } else {
+                &["settings-sidebar-item"]
+            };
+            button.set_css_classes(classes);
+
+            let label = gtk::Label::new(Some(item.title));
+            label.set_halign(gtk::Align::Start);
+            button.set_child(Some(&label));
+
+            let key = item.key;
+            let input_sender = sender.input_sender().clone();
+            button.connect_clicked(move |_| {
+                let _ = input_sender.send(SettingsInput::SelectNavItem(key));
+            });
+
+            container.append(&button);
+        }
     }
 }
 
@@ -209,22 +216,33 @@ fn render_section(
     let group = gtk::Box::new(gtk::Orientation::Vertical, 12);
     group.add_css_class("settings-group");
 
+    // Shared column so every row's control cluster has the same width and aligns.
+    let controls_group = gtk::SizeGroup::new(gtk::SizeGroupMode::Horizontal);
+    // Shared width for the color value control, so the opacity column past it
+    // does not shift with the selected palette name's length.
+    let color_value_group = gtk::SizeGroup::new(gtk::SizeGroupMode::Horizontal);
+
     for setting in section.settings {
         match setting {
             SettingSpec::Number(setting) => {
-                group.append(&number_row(setting, sender));
+                group.append(&number_row(setting, sender, &controls_group));
             }
             SettingSpec::Toggle(setting) => {
-                group.append(&toggle_row(setting, sender));
+                group.append(&toggle_row(setting, sender, &controls_group));
             }
             SettingSpec::String(setting) => {
-                group.append(&string_row(setting, sender));
+                group.append(&string_row(setting, sender, &controls_group));
             }
             SettingSpec::StringList(setting) => {
-                group.append(&string_list_row(setting, sender));
+                group.append(&string_list_row(setting, sender, &controls_group));
             }
             SettingSpec::Color(setting) => {
-                group.append(&color_row(setting, sender));
+                group.append(&color_row(
+                    setting,
+                    sender,
+                    &controls_group,
+                    &color_value_group,
+                ));
             }
         }
     }
@@ -233,131 +251,37 @@ fn render_section(
     container.append(&section_box);
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::config::ConfigValue;
+pub(crate) fn build_page(
+    item: &super::nav::NavItem,
+    config: &SettingsConfig,
+) -> Option<SettingsPageSpec> {
+    use super::nav::NavContent;
 
-    #[test]
-    fn settings_config_applies_widget_string_value() {
-        let mut config = SettingsConfig {
-            style: StyleConfig::default(),
-            widgets: BTreeMap::new(),
-            bars: Vec::new(),
-            available_monitors: Vec::new(),
-        };
-
-        assert!(config.apply_config_value(
-            &["widgets", "example", "label"],
-            Some(&ConfigValue::String("Hello".to_string())),
-        ));
-
-        let value = config
-            .widgets
-            .get("example")
-            .and_then(|table| table.get("label"))
-            .and_then(|value| value.as_str());
-
-        assert_eq!(value, Some("Hello"));
-    }
-
-    #[test]
-    fn settings_config_applies_widget_string_list_value() {
-        let mut config = SettingsConfig {
-            style: StyleConfig::default(),
-            widgets: BTreeMap::new(),
-            bars: Vec::new(),
-            available_monitors: Vec::new(),
-        };
-
-        assert!(config.apply_config_value(
-            &["widgets", "updates", "critical-patterns"],
-            Some(&ConfigValue::StringList(vec!["linux-*".to_string()])),
-        ));
-
-        let values = config
-            .widgets
-            .get("updates")
-            .and_then(|table| table.get("critical-patterns"))
-            .and_then(|value| value.as_array())
-            .map(|values| {
-                values
-                    .iter()
-                    .filter_map(|value| value.as_str())
-                    .collect::<Vec<_>>()
-            });
-
-        assert_eq!(values, Some(vec!["linux-*"]));
-    }
-
-    #[test]
-    fn settings_config_removes_empty_widget_table_after_reset() {
-        let mut updates = toml::value::Table::new();
-        updates.insert(
-            "critical-patterns".to_string(),
-            toml::Value::Array(vec![toml::Value::String("linux-*".to_string())]),
-        );
-
-        let mut config = SettingsConfig {
-            style: StyleConfig::default(),
-            widgets: BTreeMap::from([("updates".to_string(), updates)]),
-            bars: Vec::new(),
-            available_monitors: Vec::new(),
-        };
-
-        assert!(config.apply_config_value(&["widgets", "updates", "critical-patterns"], None));
-
-        assert!(!config.widgets.contains_key("updates"));
-    }
-
-    #[test]
-    fn settings_config_applies_nested_widget_string_value() {
-        let mut config = SettingsConfig {
-            style: StyleConfig::default(),
-            widgets: BTreeMap::new(),
-            bars: Vec::new(),
-            available_monitors: Vec::new(),
-        };
-
-        assert!(config.apply_config_value(
-            &["widgets", "brightness", "sunsetr", "paused-preset"],
-            Some(&ConfigValue::String("day".to_string())),
-        ));
-
-        let value = config
-            .widgets
-            .get("brightness")
-            .and_then(|table| table.get("sunsetr"))
-            .and_then(toml::Value::as_table)
-            .and_then(|table| table.get("paused-preset"))
-            .and_then(toml::Value::as_str);
-
-        assert_eq!(value, Some("day"));
-    }
-
-    #[test]
-    fn settings_config_removes_empty_nested_widget_table_after_reset() {
-        let mut sunsetr = toml::value::Table::new();
-        sunsetr.insert(
-            "paused-preset".to_string(),
-            toml::Value::String("day".to_string()),
-        );
-
-        let mut brightness = toml::value::Table::new();
-        brightness.insert("sunsetr".to_string(), toml::Value::Table(sunsetr));
-
-        let mut config = SettingsConfig {
-            style: StyleConfig::default(),
-            widgets: BTreeMap::from([("brightness".to_string(), brightness)]),
-            bars: Vec::new(),
-            available_monitors: Vec::new(),
-        };
-
-        assert!(
-            config
-                .apply_config_value(&["widgets", "brightness", "sunsetr", "paused-preset"], None,)
-        );
-
-        assert!(!config.widgets.contains_key("brightness"));
+    match &item.content {
+        NavContent::StyleSection(section) => Some(SettingsPageSpec {
+            title: item.title.to_string(),
+            sections: vec![super::pages::style_sections::section(
+                section,
+                &config.style,
+            )],
+        }),
+        NavContent::Widget {
+            section,
+            config_key,
+        } => {
+            let mut sections = super::pages::widgets::config_sections(config_key, &config.widgets);
+            let mut style = super::pages::style_sections::section(section, &config.style);
+            style.title = "Style".to_string();
+            sections.push(style);
+            Some(SettingsPageSpec {
+                title: item.title.to_string(),
+                sections,
+            })
+        }
+        NavContent::BarLayout => None,
     }
 }
+
+#[cfg(test)]
+#[path = "page_test.rs"]
+mod tests;

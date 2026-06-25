@@ -161,9 +161,11 @@ impl WorkspacesComponent {
         let indicator = self.indicator.clone();
         let animation_state = self.indicator_animation.clone();
         let config = self.config.clone();
+        let edge = self.edge;
 
         gtk::glib::idle_add_local_once(move || {
-            let Some(target) = IndicatorBounds::from_widget(&active_workspace, &indicator_layer)
+            let Some(target) =
+                IndicatorBounds::from_widget(&active_workspace, &indicator_layer, edge)
             else {
                 let mut state = animation_state.borrow_mut();
 

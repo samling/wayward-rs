@@ -10,25 +10,27 @@ use relm4::{
     prelude::*,
 };
 
-use super::page::{SettingsPage, render_current_page, sidebar_button_classes};
+use super::page::{render_current_page, render_sidebar};
 
 pub(crate) use super::page::SettingsConfig;
 
 pub(crate) struct SettingsWindow {
     config: SettingsConfig,
-    active_page: SettingsPage,
-    appearance_scroll: f64,
-    widgets_scroll: f64,
-    bar_layout_scroll: f64,
+    active_item: &'static str,
+    scroll: std::collections::HashMap<&'static str, f64>,
 }
 
 #[derive(Debug)]
 pub(crate) enum SettingsInput {
     Close,
-    SetPage(SettingsPage),
+    SelectNavItem(&'static str),
     SetConfig(SettingsConfig),
     SetValue {
         path: &'static [&'static str],
+        value: Option<crate::config::ConfigValue>,
+    },
+    SetValueOwned {
+        path: Vec<String>,
         value: Option<crate::config::ConfigValue>,
     },
     SetBarRegion {
@@ -106,67 +108,11 @@ impl Component for SettingsWindow {
                     set_orientation: gtk::Orientation::Horizontal,
                     set_vexpand: true,
 
+                    #[name = "sidebar"]
                     gtk::Box {
                         set_orientation: gtk::Orientation::Vertical,
                         set_width_request: 220,
                         add_css_class: "settings-sidebar",
-
-                        gtk::Label {
-                            set_label: "Settings",
-                            set_halign: gtk::Align::Start,
-                            add_css_class: "settings-sidebar-title",
-                        },
-
-                        #[name = "appearance_button"]
-                        gtk::Button {
-                            add_css_class: "settings-sidebar-item",
-
-                            #[watch]
-                            set_css_classes: &sidebar_button_classes(model.active_page, SettingsPage::Appearance),
-
-                            connect_clicked[sender] => move |_| {
-                                sender.input(SettingsInput::SetPage(SettingsPage::Appearance));
-                            },
-
-                            gtk::Label {
-                                set_label: SettingsPage::Appearance.title(),
-                                set_halign: gtk::Align::Start,
-                            },
-                        },
-
-                        #[name = "widgets_button"]
-                        gtk::Button {
-                            add_css_class: "settings-sidebar-item",
-
-                            #[watch]
-                            set_css_classes: &sidebar_button_classes(model.active_page, SettingsPage::Widgets),
-
-                            connect_clicked[sender] => move |_| {
-                                sender.input(SettingsInput::SetPage(SettingsPage::Widgets));
-                            },
-
-                            gtk::Label {
-                                set_label: SettingsPage::Widgets.title(),
-                                set_halign: gtk::Align::Start,
-                            },
-                        },
-
-                        #[name = "bar_layout_button"]
-                        gtk::Button {
-                            add_css_class: "settings-sidebar-item",
-
-                            #[watch]
-                            set_css_classes: &sidebar_button_classes(model.active_page, SettingsPage::BarLayout),
-
-                            connect_clicked[sender] => move |_| {
-                                sender.input(SettingsInput::SetPage(SettingsPage::BarLayout));
-                            },
-
-                            gtk::Label {
-                                set_label: SettingsPage::BarLayout.title(),
-                                set_halign: gtk::Align::Start,
-                            },
-                        },
                     },
 
                     gtk::Box {
@@ -208,19 +154,18 @@ impl Component for SettingsWindow {
     ) -> ComponentParts<Self> {
         let model = Self {
             config,
-            active_page: SettingsPage::Appearance,
-            appearance_scroll: 0.0,
-            widgets_scroll: 0.0,
-            bar_layout_scroll: 0.0,
+            active_item: super::nav::DEFAULT_ITEM,
+            scroll: std::collections::HashMap::new(),
         };
         let widgets = view_output!();
 
         install_titlebar_drag(&widgets.titlebar_drag_area, &root);
 
+        render_sidebar(&widgets.sidebar, model.active_item, &sender);
         render_current_page(
             &widgets.page_content,
             &widgets.page_title,
-            model.active_page,
+            model.active_item,
             &model.config,
             &sender,
         );
@@ -239,14 +184,15 @@ impl Component for SettingsWindow {
             SettingsInput::Close => {
                 root.set_visible(false);
             }
-            SettingsInput::SetPage(page) => {
-                if self.active_page != page {
+            SettingsInput::SelectNavItem(key) => {
+                if self.active_item != key {
                     self.save_scroll(widgets);
-                    self.active_page = page;
+                    self.active_item = key;
+                    render_sidebar(&widgets.sidebar, self.active_item, &sender);
                     render_current_page(
                         &widgets.page_content,
                         &widgets.page_title,
-                        self.active_page,
+                        self.active_item,
                         &self.config,
                         &sender,
                     );
@@ -260,7 +206,7 @@ impl Component for SettingsWindow {
                     render_current_page(
                         &widgets.page_content,
                         &widgets.page_title,
-                        self.active_page,
+                        self.active_item,
                         &self.config,
                         &sender,
                     );
@@ -281,7 +227,30 @@ impl Component for SettingsWindow {
                         render_current_page(
                             &widgets.page_content,
                             &widgets.page_title,
-                            self.active_page,
+                            self.active_item,
+                            &self.config,
+                            &sender,
+                        );
+                        self.restore_scroll(widgets);
+                    }
+                }
+            }
+            SettingsInput::SetValueOwned { path, value } => {
+                let path_refs: Vec<&str> = path.iter().map(String::as_str).collect();
+                let value_for_model = value.clone();
+
+                if let Err(error) = crate::config::set_config_value(&path_refs, value) {
+                    tracing::error!(?path, "Failed to save setting: {error}")
+                } else if self
+                    .config
+                    .apply_config_value(&path_refs, value_for_model.as_ref())
+                {
+                    if value_for_model.is_none() {
+                        self.save_scroll(widgets);
+                        render_current_page(
+                            &widgets.page_content,
+                            &widgets.page_title,
+                            self.active_item,
                             &self.config,
                             &sender,
                         );
@@ -333,28 +302,14 @@ impl Component for SettingsWindow {
 }
 
 impl SettingsWindow {
-    fn scroll_position_mut(&mut self) -> &mut f64 {
-        match self.active_page {
-            SettingsPage::Appearance => &mut self.appearance_scroll,
-            SettingsPage::Widgets => &mut self.widgets_scroll,
-            SettingsPage::BarLayout => &mut self.bar_layout_scroll,
-        }
-    }
-
-    fn scroll_position(&self) -> f64 {
-        match self.active_page {
-            SettingsPage::Appearance => self.appearance_scroll,
-            SettingsPage::Widgets => self.widgets_scroll,
-            SettingsPage::BarLayout => self.bar_layout_scroll,
-        }
-    }
-
     fn save_scroll(&mut self, widgets: &SettingsWindowWidgets) {
-        *self.scroll_position_mut() = scroll_page_value(&widgets.page_scroll);
+        let value = scroll_page_value(&widgets.page_scroll);
+        self.scroll.insert(self.active_item, value);
     }
 
     fn restore_scroll(&self, widgets: &SettingsWindowWidgets) {
-        restore_page_scroll(&widgets.page_scroll, self.scroll_position());
+        let value = self.scroll.get(self.active_item).copied().unwrap_or(0.0);
+        restore_page_scroll(&widgets.page_scroll, value);
     }
 }
 
