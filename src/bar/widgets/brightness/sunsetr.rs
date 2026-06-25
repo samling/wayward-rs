@@ -156,12 +156,13 @@ pub(super) async fn current_state(config: SunsetrConfig) -> SunsetrState {
 }
 
 async fn is_running() -> bool {
+    // Use output() so pgrep's matched PID is captured, not inherited to our stdout.
     TokioCommand::new("pgrep")
         .arg("-x")
         .arg("sunsetr")
-        .status()
+        .output()
         .await
-        .map(|status| status.success())
+        .map(|output| output.status.success())
         .unwrap_or(false)
 }
 
