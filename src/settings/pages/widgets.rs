@@ -30,13 +30,21 @@ pub(crate) fn config_sections(
                 SettingSpec::String(StringSpec {
                     label: "sunsetr automatic preset",
                     path: &["widgets", "brightness", "sunsetr", "automatic-preset"],
-                    value: nested_string_value(widgets, "brightness", &["sunsetr", "automatic-preset"]),
+                    value: nested_string_value(
+                        widgets,
+                        "brightness",
+                        &["sunsetr", "automatic-preset"],
+                    ),
                     default: "default",
                 }),
                 SettingSpec::String(StringSpec {
                     label: "sunsetr paused preset",
                     path: &["widgets", "brightness", "sunsetr", "paused-preset"],
-                    value: nested_string_value(widgets, "brightness", &["sunsetr", "paused-preset"]),
+                    value: nested_string_value(
+                        widgets,
+                        "brightness",
+                        &["sunsetr", "paused-preset"],
+                    ),
                     default: "day",
                 }),
             ],

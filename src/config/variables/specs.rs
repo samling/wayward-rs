@@ -19,8 +19,8 @@ macro_rules! widget_surface_color_settings {
                 path: &["style", $group, "widget-background-color"],
                 setting: Some(SettingUiSpec::Color {
                     label: "Widget background",
-                    default: ColorDefault::Palette("surface-container-highest"),
-                    opacity_default: 12,
+                    default: ColorDefault::Inherit("widget-background-color"),
+                    opacity_default: 100,
                 }),
                 variable: concat!("--", $variable, "-widget-background-color"),
                 css_kind: CssValueKind::String { quoted: false },

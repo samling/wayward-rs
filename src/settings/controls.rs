@@ -453,7 +453,11 @@ fn consumer_color_row(
     let stack = gtk::Stack::new();
     stack.add_named(&palette_box, Some("palette"));
     stack.add_named(&custom_box, Some("custom"));
-    stack.set_visible_child_name(if setting.is_palette_ref { "palette" } else { "custom" });
+    stack.set_visible_child_name(if setting.is_palette_ref {
+        "palette"
+    } else {
+        "custom"
+    });
     value_align.add_widget(&stack);
 
     // --- opacity field ---
@@ -466,10 +470,8 @@ fn consumer_color_row(
 
     // --- writers ---
     let color_writer = SettingWriter::new(setting.path, sender.input_sender().clone());
-    let opacity_writer = OwnedSettingWriter::new(
-        setting.opacity_path.clone(),
-        sender.input_sender().clone(),
-    );
+    let opacity_writer =
+        OwnedSettingWriter::new(setting.opacity_path.clone(), sender.input_sender().clone());
 
     let opacity_label = gtk::Label::new(Some("Opacity"));
     opacity_label.add_css_class("settings-opacity-label");
@@ -611,7 +613,11 @@ fn consumer_color_row(
     });
 
     // --- opacity wiring ---
-    debug_assert!(!setting.opacity_path.is_empty(), "consumer color {:?} has empty opacity_path", setting.path);
+    debug_assert!(
+        !setting.opacity_path.is_empty(),
+        "consumer color {:?} has empty opacity_path",
+        setting.path
+    );
     let opacity_reset = reset_button.clone();
     let opacity_writer2 = opacity_writer.clone();
     opacity_scale.connect_value_changed(move |scale| {
