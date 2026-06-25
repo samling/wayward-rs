@@ -9,10 +9,15 @@ pub(super) struct UpdateRow {
     package: UpdatePackage,
 }
 
+#[derive(Debug)]
+pub(super) enum UpdateRowInput {
+    SetPackage(UpdatePackage),
+}
+
 #[relm4::factory(pub(super))]
 impl FactoryComponent for UpdateRow {
     type Init = UpdatePackage;
-    type Input = ();
+    type Input = UpdateRowInput;
     type Output = ();
     type CommandOutput = ();
     type ParentWidget = gtk::ListBox;
@@ -20,8 +25,8 @@ impl FactoryComponent for UpdateRow {
     view! {
         #[root]
         gtk::Box {
-            add_css_class: "updates-row",
-            add_css_class?: severity_class(&self.package.severity),
+            #[watch]
+            set_css_classes: &self.root_classes(),
             set_orientation: gtk::Orientation::Horizontal,
             set_spacing: 8,
             set_hexpand: true,
@@ -30,12 +35,14 @@ impl FactoryComponent for UpdateRow {
                 add_css_class: "updates-package-name",
                 set_hexpand: true,
                 set_halign: gtk::Align::Start,
+                #[watch]
                 set_text: &self.package.name,
             },
 
             gtk::Label {
                 add_css_class: "updates-version",
                 set_halign: gtk::Align::End,
+                #[watch]
                 set_text: &version_text(&self.package),
             },
         }
@@ -48,6 +55,12 @@ impl FactoryComponent for UpdateRow {
     ) -> Self {
         Self { package }
     }
+
+    fn update(&mut self, msg: Self::Input, _sender: FactorySender<Self>) {
+        match msg {
+            UpdateRowInput::SetPackage(package) => self.package = package,
+        }
+    }
 }
 
 impl UpdateRow {
@@ -55,8 +68,12 @@ impl UpdateRow {
         &self.package.name
     }
 
-    pub(super) fn set_package(&mut self, package: UpdatePackage) {
-        self.package = package;
+    fn root_classes(&self) -> Vec<&'static str> {
+        let mut classes = vec!["updates-row"];
+        if let Some(severity) = severity_class(&self.package.severity) {
+            classes.push(severity);
+        }
+        classes
     }
 }
 

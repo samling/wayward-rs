@@ -10,6 +10,8 @@ use super::config::{
     ActionMenuSectionAlign, ActionMenuSectionConfig,
 };
 
+const TOOLBAR_COLUMN_SPACING: i32 = 8;
+
 pub(super) struct ActionMenuDropdown {
     edge: BarEdge,
     region: BarRegion,
@@ -81,7 +83,13 @@ fn build_section(
     grid.set_halign(gtk_align(section.align));
     grid.set_hexpand(matches!(section.align, ActionMenuSectionAlign::Fill));
     grid.set_column_homogeneous(true);
-    grid.set_column_spacing(layout.column_spacing.max(0) as u32);
+    // Toolbar icon buttons sit together; the wide layout spacing is for labeled cards.
+    let column_spacing = if section.align == ActionMenuSectionAlign::End {
+        TOOLBAR_COLUMN_SPACING
+    } else {
+        layout.column_spacing.max(0)
+    };
+    grid.set_column_spacing(column_spacing as u32);
     grid.set_row_spacing(layout.row_spacing.max(0) as u32);
 
     let columns = section.columns.unwrap_or(layout.columns).max(1);

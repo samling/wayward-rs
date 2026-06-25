@@ -6,7 +6,7 @@ use relm4::prelude::*;
 use crate::bar::{dropdown, layout::BarEdge, widget::BarRegion};
 
 use super::model::{UpdatePackage, UpdatesSnapshot};
-use super::row::UpdateRow;
+use super::row::{UpdateRow, UpdateRowInput};
 
 pub(super) struct UpdatesDropdown {
     edge: BarEdge,
@@ -264,39 +264,43 @@ impl SimpleComponent for UpdatesDropdown {
 
 impl UpdatesDropdown {
     fn sync_rows(&mut self, packages: Vec<UpdatePackage>) {
-        let mut rows = self.rows.guard();
+        {
+            let mut rows = self.rows.guard();
 
-        for index in (0..rows.len()).rev() {
-            if !packages
-                .iter()
-                .any(|package| package.name == rows[index].name())
-            {
-                rows.remove(index);
+            // Drop rows whose package is no longer present.
+            for index in (0..rows.len()).rev() {
+                if !packages
+                    .iter()
+                    .any(|package| package.name == rows[index].name())
+                {
+                    rows.remove(index);
+                }
+            }
+
+            // Place each package at its target index, reusing existing rows by name.
+            for (target_index, package) in packages.iter().enumerate() {
+                if target_index < rows.len() && rows[target_index].name() == package.name {
+                    continue;
+                }
+
+                let existing_index = rows.iter().position(|row| row.name() == package.name);
+
+                if let Some(existing_index) = existing_index {
+                    rows.move_to(existing_index, target_index);
+                } else {
+                    rows.insert(target_index, package.clone());
+                }
+            }
+
+            while rows.len() > packages.len() {
+                rows.pop_back();
             }
         }
 
-        for (target_index, package) in packages.iter().enumerate() {
-            if target_index < rows.len() && rows[target_index].name() == package.name {
-                if let Some(row) = rows.get_mut(target_index) {
-                    row.set_package(package.clone());
-                }
-                continue;
-            }
-
-            let existing_index = rows.iter().position(|row| row.name() == package.name);
-
-            if let Some(existing_index) = existing_index {
-                rows.move_to(existing_index, target_index);
-                if let Some(row) = rows.get_mut(target_index) {
-                    row.set_package(package.clone());
-                }
-            } else {
-                rows.insert(target_index, package.clone());
-            }
-        }
-
-        while rows.len() > packages.len() {
-            rows.pop_back();
+        // Push current data into every row so severity and versions re-render.
+        // Mutating a factory model in place does not trigger a view update.
+        for (index, package) in packages.into_iter().enumerate() {
+            self.rows.send(index, UpdateRowInput::SetPackage(package));
         }
     }
 }
