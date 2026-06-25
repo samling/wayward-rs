@@ -5,6 +5,7 @@ use serde::Deserialize;
 pub(super) struct ActionMenuConfig {
     pub(super) panel: ActionMenuPanelConfig,
     pub(super) layout: ActionMenuLayoutConfig,
+    pub(super) header: ActionMenuHeaderConfig,
     pub(super) sections: Vec<ActionMenuSectionConfig>,
 }
 
@@ -13,38 +14,11 @@ impl Default for ActionMenuConfig {
         Self {
             panel: ActionMenuPanelConfig::default(),
             layout: ActionMenuLayoutConfig::default(),
+            header: ActionMenuHeaderConfig::default(),
             sections: vec![
-                ActionMenuSectionConfig {
-                    title: Some("Dashboard".to_string()),
-                    columns: Some(2),
-                    align: ActionMenuSectionAlign::End,
-                    actions: vec![
-                        ActionMenuActionConfig {
-                            label: "Settings".to_string(),
-                            icon: Some("\u{f013}".to_string()),
-                            action: ActionMenuActionKind::OpenSettings,
-                            command: None,
-                            args: Vec::new(),
-                            class: Some("action-menu-settings".to_string()),
-                            tooltip: Some("Settings".to_string()),
-                            show_label: false,
-                        },
-                        ActionMenuActionConfig {
-                            label: "Power menu".to_string(),
-                            icon: Some("\u{f011}".to_string()),
-                            action: ActionMenuActionKind::Command,
-                            command: Some("wlogout".to_string()),
-                            args: Vec::new(),
-                            class: Some("action-menu-power".to_string()),
-                            tooltip: Some("Power menu".to_string()),
-                            show_label: false,
-                        },
-                    ],
-                },
                 ActionMenuSectionConfig {
                     title: Some("Screenshot".to_string()),
                     columns: Some(3),
-                    align: ActionMenuSectionAlign::Center,
                     actions: vec![
                         ActionMenuActionConfig::screenshot("Region", "\u{f125}", "region"),
                         ActionMenuActionConfig::screenshot("Window", "\u{f2d0}", "window"),
@@ -53,21 +27,6 @@ impl Default for ActionMenuConfig {
                 },
             ],
         }
-    }
-}
-
-#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq)]
-#[serde(rename_all = "kebab-case")]
-pub(super) enum ActionMenuSectionAlign {
-    Start,
-    Center,
-    End,
-    Fill,
-}
-
-impl Default for ActionMenuSectionAlign {
-    fn default() -> Self {
-        Self::Fill
     }
 }
 
@@ -97,12 +56,27 @@ impl Default for ActionMenuPanelConfig {
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
+pub(super) struct ActionMenuHeaderConfig {
+    pub(super) power_command: String,
+    pub(super) power_args: Vec<String>,
+}
+
+impl Default for ActionMenuHeaderConfig {
+    fn default() -> Self {
+        Self {
+            power_command: "wlogout".to_string(),
+            power_args: Vec::new(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
 pub(super) struct ActionMenuLayoutConfig {
     pub(super) columns: usize,
     pub(super) button_width: Option<i32>,
     pub(super) button_height: Option<i32>,
     pub(super) row_spacing: i32,
-    pub(super) column_spacing: i32,
 }
 
 impl Default for ActionMenuLayoutConfig {
@@ -112,7 +86,6 @@ impl Default for ActionMenuLayoutConfig {
             button_width: Some(40),
             button_height: Some(40),
             row_spacing: 12,
-            column_spacing: 34,
         }
     }
 }
@@ -123,7 +96,6 @@ pub(super) struct ActionMenuSectionConfig {
     pub(super) title: Option<String>,
     pub(super) columns: Option<usize>,
     pub(super) actions: Vec<ActionMenuActionConfig>,
-    pub(super) align: ActionMenuSectionAlign,
 }
 
 #[derive(Clone, Debug, Deserialize)]

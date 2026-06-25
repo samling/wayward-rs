@@ -6,11 +6,8 @@ use crate::bar::widget::{ActionMenuAction, ActionMenuCommand, WidgetAction, Widg
 use crate::bar::{BarMsg, dropdown, layout::BarEdge, widget::BarRegion};
 
 use super::config::{
-    ActionMenuActionConfig, ActionMenuActionKind, ActionMenuConfig, ActionMenuLayoutConfig,
-    ActionMenuSectionAlign, ActionMenuSectionConfig,
+    ActionMenuActionConfig, ActionMenuActionKind, ActionMenuConfig, ActionMenuLayoutConfig, ActionMenuSectionConfig,
 };
-
-const TOOLBAR_COLUMN_SPACING: i32 = 8;
 
 pub(super) struct ActionMenuDropdown {
     edge: BarEdge,
@@ -46,6 +43,50 @@ fn configure_panel(scroller: &gtk::ScrolledWindow, content: &gtk::Box, config: &
     }
 }
 
+fn build_header(
+    config: &ActionMenuConfig,
+    sender: &ComponentSender<ActionMenuDropdown>,
+) -> gtk::Box {
+    let header = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    header.add_css_class("dropdown-header");
+    header.add_css_class("action-menu-header");
+    header.set_hexpand(true);
+
+    let title = gtk::Label::new(Some("Dashboard"));
+    title.add_css_class("dropdown-title");
+    title.add_css_class("action-menu-section-title");
+    title.set_halign(gtk::Align::Start);
+    title.set_hexpand(true);
+    header.append(&title);
+
+    let settings = ActionMenuActionConfig {
+        label: "Settings".to_string(),
+        icon: Some("\u{f013}".to_string()),
+        action: ActionMenuActionKind::OpenSettings,
+        command: None,
+        args: Vec::new(),
+        class: Some("action-menu-settings".to_string()),
+        tooltip: Some("Settings".to_string()),
+        show_label: false,
+    };
+
+    let power = ActionMenuActionConfig {
+        label: "Power menu".to_string(),
+        icon: Some("\u{f011}".to_string()),
+        action: ActionMenuActionKind::Command,
+        command: Some(config.header.power_command.clone()),
+        args: config.header.power_args.clone(),
+        class: Some("action-menu-power".to_string()),
+        tooltip: Some("Power menu".to_string()),
+        show_label: false,
+    };
+
+    header.append(&build_action_button(&settings, &config.layout, sender));
+    header.append(&build_action_button(&power, &config.layout, sender));
+
+    header
+}
+
 fn render_sections(
     content: &gtk::Box,
     config: &ActionMenuConfig,
@@ -56,15 +97,6 @@ fn render_sections(
     }
 }
 
-fn gtk_align(align: ActionMenuSectionAlign) -> gtk::Align {
-    match align {
-        ActionMenuSectionAlign::Start => gtk::Align::Start,
-        ActionMenuSectionAlign::Center => gtk::Align::Center,
-        ActionMenuSectionAlign::End => gtk::Align::End,
-        ActionMenuSectionAlign::Fill => gtk::Align::Fill,
-    }
-}
-
 fn build_section(
     section: &ActionMenuSectionConfig,
     layout: &ActionMenuLayoutConfig,
@@ -72,30 +104,21 @@ fn build_section(
 ) -> gtk::Box {
     let section_box = gtk::Box::new(gtk::Orientation::Vertical, layout.row_spacing.max(0));
     section_box.add_css_class("action-menu-section");
-    if section.align == ActionMenuSectionAlign::End {
-        section_box.add_css_class("action-menu-toolbar-section");
-    } else {
-        section_box.add_css_class("action-menu-card-section");
-    }
+    section_box.add_css_class("action-menu-card-section");
 
     let grid = gtk::Grid::new();
     grid.add_css_class("action-menu-actions");
-    grid.set_halign(gtk_align(section.align));
-    grid.set_hexpand(matches!(section.align, ActionMenuSectionAlign::Fill));
+    grid.set_halign(gtk::Align::Fill);
+    grid.set_hexpand(true);
     grid.set_column_homogeneous(true);
-    // Toolbar icon buttons sit together; the wide layout spacing is for labeled cards.
-    let column_spacing = if section.align == ActionMenuSectionAlign::End {
-        TOOLBAR_COLUMN_SPACING
-    } else {
-        layout.column_spacing.max(0)
-    };
-    grid.set_column_spacing(column_spacing as u32);
     grid.set_row_spacing(layout.row_spacing.max(0) as u32);
 
     let columns = section.columns.unwrap_or(layout.columns).max(1);
 
     for (index, action) in section.actions.iter().enumerate() {
         let control = build_action_control(action, layout, sender);
+        control.set_hexpand(true);
+        control.set_halign(gtk::Align::Center);
         grid.attach(
             &control,
             (index % columns) as i32,
@@ -109,24 +132,10 @@ fn build_section(
         let title_label = gtk::Label::new(Some(title));
         title_label.add_css_class("action-menu-section-title");
         title_label.set_halign(gtk::Align::Start);
-
-        if section.align == ActionMenuSectionAlign::End {
-            let header = gtk::Box::new(gtk::Orientation::Horizontal, layout.column_spacing.max(0));
-            header.add_css_class("dropdown-header");
-            header.add_css_class("action-menu-header");
-            header.set_hexpand(true);
-
-            title_label.set_hexpand(true);
-            header.append(&title_label);
-            header.append(&grid);
-            section_box.append(&header);
-        } else {
-            section_box.append(&title_label);
-            section_box.append(&grid);
-        }
-    } else {
-        section_box.append(&grid);
+        section_box.append(&title_label);
     }
+
+    section_box.append(&grid);
 
     section_box
 }
@@ -314,6 +323,7 @@ impl Component for ActionMenuDropdown {
         content.add_css_class("action-menu-dropdown-content");
 
         configure_panel(&widgets.scroller, &content, &model.config);
+        content.append(&build_header(&model.config, &sender));
         render_sections(&content, &model.config, &sender);
         widgets.scroller.set_child(Some(&content));
 
