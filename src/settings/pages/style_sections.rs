@@ -4,7 +4,7 @@ use crate::config::{
     variables::{SettingUiSpec, settings_for_section},
 };
 
-use super::super::spec::{
+use crate::settings_spec::{
     ColorSettingRole, ColorSpec, NumberSpec, PaletteOption, SettingSpec, SettingsSectionSpec,
     StringSpec, ToggleSpec,
 };
@@ -55,6 +55,7 @@ pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> Settin
                     step,
                 } => Some(SettingSpec::Number(NumberSpec {
                     label,
+                    description: None,
                     path: spec.path,
                     value: group.and_then(|group| group.integer(spec.key)),
                     default,
@@ -64,12 +65,14 @@ pub(crate) fn section(section_name: &'static str, style: &StyleConfig) -> Settin
                 })),
                 SettingUiSpec::Toggle { label, default } => Some(SettingSpec::Toggle(ToggleSpec {
                     label,
+                    description: None,
                     path: spec.path,
                     value: group.and_then(|group| group.bool(spec.key)),
                     default,
                 })),
                 SettingUiSpec::String { label, default } => Some(SettingSpec::String(StringSpec {
                     label,
+                    description: None,
                     path: spec.path,
                     value: group.and_then(|group| group.string(spec.key)),
                     default,

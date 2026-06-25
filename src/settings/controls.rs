@@ -1,7 +1,7 @@
 use super::{
-    spec::{ColorSettingRole, ColorSpec, NumberSpec, StringListSpec, StringSpec, ToggleSpec},
     window::SettingsInput,
 };
+use crate::settings_spec::{ChoiceSpec, ColorSettingRole, ColorSpec, NumberSpec, StringListSpec, StringSpec, ToggleSpec};
 use crate::config::ConfigValue;
 use relm4::{
     gtk::{self, prelude::*},
@@ -106,15 +106,35 @@ impl OwnedSettingWriter {
 /// Builds a settings row with a leading label and a controls box that shares a
 /// width column (via `align`) so clusters line up across rows. Append value
 /// widgets to the returned controls box, then the reset button to the row.
-fn row_with_label(label_text: &str, align: &gtk::SizeGroup) -> (gtk::Box, gtk::Box) {
+fn row_with_label(
+    label_text: &str,
+    description: Option<&str>,
+    align: &gtk::SizeGroup
+) -> (gtk::Box, gtk::Box) {
     let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
     row.add_css_class("settings-row");
 
+    let label_box = gtk::Box::new(gtk::Orientation::Horizontal, 12);
+    label_box.set_hexpand(true);
+    label_box.set_halign(gtk::Align::Start);
+    label_box.set_valign(gtk::Align::Center);
+
     let label = gtk::Label::new(Some(label_text));
-    label.set_hexpand(true);
     label.set_halign(gtk::Align::Start);
     label.add_css_class("settings-row-label");
     row.append(&label);
+
+    if let Some(description) = description {
+        let description_label = gtk::Label::new(None);
+        description_label.set_markup(description);
+        description_label.set_halign(gtk::Align::Start);
+        description_label.set_xalign(0.0);
+        description_label.set_wrap(true);
+        description_label.add_css_class("settings-row-description");
+        label_box.append(&description_label);
+    }
+
+    row.append(&label_box);
 
     let controls = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     controls.set_halign(gtk::Align::Start);
@@ -144,7 +164,7 @@ pub(crate) fn number_row(
     sender: &ComponentSender<super::window::SettingsWindow>,
     align: &gtk::SizeGroup,
 ) -> gtk::Box {
-    let (row, controls) = row_with_label(setting.label, align);
+    let (row, controls) = row_with_label(setting.label, setting.description, align);
 
     let spin = gtk::SpinButton::with_range(setting.min, setting.max, setting.step);
     spin.set_value(setting.display_value());
@@ -170,7 +190,7 @@ pub(crate) fn toggle_row(
     sender: &ComponentSender<super::window::SettingsWindow>,
     align: &gtk::SizeGroup,
 ) -> gtk::Box {
-    let (row, controls) = row_with_label(setting.label, align);
+    let (row, controls) = row_with_label(setting.label, setting.description, align);
 
     let toggle = gtk::ToggleButton::with_label(toggle_label(setting.display_value()));
     toggle.add_css_class("settings-toggle-button");
@@ -194,12 +214,43 @@ pub(crate) fn toggle_row(
     row
 }
 
+pub(crate) fn choice_row(
+    setting: ChoiceSpec,
+    sender: &ComponentSender<super::window::SettingsWindow>,
+    align: &gtk::SizeGroup,
+) -> gtk::Box {
+    let (row, controls)  = row_with_label(setting.label, setting.description, align);
+
+    let string_list = gtk::StringList::new(&[]);
+    for option in setting.options {
+        string_list.append(option.label);
+    }
+    let dropdown = gtk::DropDown::new(Some(string_list), None::<gtk::Expression>);
+    dropdown.add_css_class("settings-choice-dropdown");
+    dropdown.set_selected(setting.selected_index());
+
+    let path = setting.path;
+    let saved_setting = setting.clone();
+    let writer = SettingWriter::new(path, sender.input_sender().clone());
+    let change_writer = writer.clone();
+
+    controls.append(&dropdown);
+    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
+
+    dropdown.connect_selected_notify(move |dropdown| {
+        reset_button.set_sensitive(true);
+        change_writer.send_now(Some(saved_setting.value_for_config(dropdown.selected())));
+    });
+
+    row
+}
+
 pub(crate) fn string_row(
     setting: StringSpec,
     sender: &ComponentSender<super::window::SettingsWindow>,
     align: &gtk::SizeGroup,
 ) -> gtk::Box {
-    let (row, controls) = row_with_label(setting.label, align);
+    let (row, controls) = row_with_label(setting.label, setting.description, align);
 
     let entry = gtk::Entry::new();
     entry.set_text(&setting.display_value());
@@ -225,7 +276,7 @@ pub(crate) fn string_list_row(
     sender: &ComponentSender<super::window::SettingsWindow>,
     align: &gtk::SizeGroup,
 ) -> gtk::Box {
-    let (row, controls) = row_with_label(setting.label, align);
+    let (row, controls) = row_with_label(setting.label, setting.description, align);
 
     let entry = gtk::Entry::new();
     entry.set_text(&setting.display_value());
@@ -265,7 +316,7 @@ fn palette_color_row(
     align: &gtk::SizeGroup,
 ) -> gtk::Box {
     let label_text = setting.display_label();
-    let (row, controls) = row_with_label(&label_text, align);
+    let (row, controls) = row_with_label(&label_text, None, align);
 
     let color = parse_color(&setting.display_value());
     let dialog = gtk::ColorDialog::builder()
@@ -379,7 +430,7 @@ fn consumer_color_row(
     value_align: &gtk::SizeGroup,
 ) -> gtk::Box {
     let label_text = setting.display_label();
-    let (row, controls) = row_with_label(&label_text, align);
+    let (row, controls) = row_with_label(&label_text, None, align);
 
     // --- toggle ---
     let palette_toggle = gtk::ToggleButton::with_label("Palette");

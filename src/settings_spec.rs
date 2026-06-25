@@ -19,11 +19,13 @@ pub(crate) enum SettingSpec {
     String(StringSpec),
     StringList(StringListSpec),
     Color(ColorSpec),
+    Choice(ChoiceSpec),
 }
 
 #[derive(Clone, Debug)]
 pub(crate) struct NumberSpec {
     pub(crate) label: &'static str,
+    pub(crate) description: Option<&'static str>,
     pub(crate) path: &'static [&'static str],
     pub(crate) value: Option<u16>,
     pub(crate) default: u16,
@@ -45,6 +47,7 @@ impl NumberSpec {
 #[derive(Clone, Debug)]
 pub(crate) struct ToggleSpec {
     pub(crate) label: &'static str,
+    pub(crate) description: Option<&'static str>,
     pub(crate) path: &'static [&'static str],
     pub(crate) value: Option<bool>,
     pub(crate) default: bool,
@@ -60,9 +63,49 @@ impl ToggleSpec {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct ChoiceOption {
+    pub(crate) value: &'static str,
+    pub(crate) label: &'static str,
+}
+
+#[derive(Clone, Debug)]
+pub(crate) struct ChoiceSpec {
+    pub(crate) label: &'static str,
+    pub(crate) description: Option<&'static str>,
+    pub(crate) path: &'static [&'static str],
+    pub(crate) value: Option<String>,
+    pub(crate) default: &'static str,
+    pub(crate) options: &'static [ChoiceOption],
+}
+
+impl ChoiceSpec {
+    pub(crate) fn display_value(&self) -> String {
+        self.value.clone().unwrap_or_else(|| self.default.to_string())
+    }
+
+    pub(crate) fn selected_index(&self) -> u32 {
+        let current = self.display_value();
+        self.options
+            .iter()
+            .position(|option| option.value == current)
+            .unwrap_or(0) as u32
+    }
+
+    pub(crate) fn value_for_config(&self, index: u32) -> ConfigValue {
+        let value = self
+            .options
+            .get(index as usize)
+            .map(|option| option.value)
+            .unwrap_or(self.default);
+        ConfigValue::String(value.to_string())
+    }
+}
+
 #[derive(Clone, Debug)]
 pub(crate) struct StringSpec {
     pub(crate) label: &'static str,
+    pub(crate) description: Option<&'static str>,
     pub(crate) path: &'static [&'static str],
     pub(crate) value: Option<String>,
     pub(crate) default: &'static str,
@@ -83,6 +126,7 @@ impl StringSpec {
 #[derive(Clone, Debug)]
 pub(crate) struct StringListSpec {
     pub(crate) label: &'static str,
+    pub(crate) description: Option<&'static str>,
     pub(crate) path: &'static [&'static str],
     pub(crate) value: Option<Vec<String>>,
     pub(crate) default: &'static [&'static str],
@@ -108,6 +152,28 @@ fn parse_string_list(value: &str) -> Vec<String> {
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned)
         .collect()
+}
+
+pub(crate) fn table_string(table: &toml::value::Table, path: &[&str]) -> Option<String> {
+    let mut current = table;
+    for key in &path[..path.len().saturating_sub(1)] {
+        current = current.get(*key)?.as_table()?;
+    }
+    current.get(*path.last()?)?.as_str().map(ToOwned::to_owned)
+}
+
+pub(crate) fn table_string_list(table: &toml::value::Table, key: &str) -> Option<Vec<String>> {
+    let values = table.get(key)?.as_array()?;
+    Some(
+        values
+            .iter()
+            .filter_map(|value| value.as_str().map(ToOwned::to_owned))
+            .collect(),
+    )
+}
+
+pub(crate) fn table_u16(table: &toml::value::Table, key: &str) -> Option<u16> {
+    table.get(key)?.as_integer()?.try_into().ok()
 }
 
 #[derive(Clone, Debug)]
@@ -190,5 +256,5 @@ impl ColorSpec {
 }
 
 #[cfg(test)]
-#[path = "spec_test.rs"]
+#[path = "settings_spec_test.rs"]
 mod tests;

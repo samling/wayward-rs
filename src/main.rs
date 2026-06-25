@@ -5,6 +5,7 @@ mod notifications;
 mod osd;
 mod services;
 mod settings;
+mod settings_spec;
 mod shell;
 mod style;
 

@@ -1,4 +1,4 @@
-use super::super::super::spec::SettingSpec;
+use crate::settings_spec::SettingSpec;
 use super::*;
 use crate::config::StyleConfig;
 

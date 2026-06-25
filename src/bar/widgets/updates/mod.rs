@@ -15,6 +15,7 @@ use crate::bar::widget::{
     WidgetEvent, WidgetInstance,
 };
 use crate::services::ShellServices;
+use crate::settings_spec::{SettingSpec, SettingsSectionSpec, StringListSpec, table_string_list};
 
 use self::component::{UpdatesComponent, UpdatesInit, UpdatesInput};
 
@@ -54,6 +55,32 @@ impl BarWidgetRuntime for UpdatesRuntime {
 impl BarWidget for UpdatesWidget {
     fn id(&self) -> &'static str {
         "updates"
+    }
+
+    fn settings_sections(
+        &self,
+        config: &toml::value::Table,
+    ) -> Vec<crate::settings_spec::SettingsSectionSpec>
+    {
+        vec![SettingsSectionSpec {
+            title: "Config".to_string(),
+            settings: vec![
+                SettingSpec::StringList(StringListSpec {
+                    label: "Critical patterns",
+                    description: None,
+                    path: &["widgets", "updates", "critical-pattens"],
+                    value: table_string_list(config, "critical-patterns"),
+                    default: &[],
+                }),
+                SettingSpec::StringList(StringListSpec {
+                    label: "Warning patterns",
+                    description: None,
+                    path: &["widgets", "updates", "warning-pattens"],
+                    value: table_string_list(config, "warning-patterns"),
+                    default: &[],
+                }),
+            ]
+        }]
     }
 
     fn build(
