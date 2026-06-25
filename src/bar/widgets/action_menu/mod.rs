@@ -45,7 +45,7 @@ impl BarWidget for ActionMenuWidget {
     }
 
     fn config_table_keys(&self) -> &'static [&'static str] {
-        &["panel", "layout"]
+        &["panel", "layout", "header"]
     }
 
     fn build(
