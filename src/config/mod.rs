@@ -48,6 +48,7 @@ pub(crate) fn ensure_config_files() {
     }
 
     write_default_file(config_path(), DEFAULT_CONFIG_TOML);
+    seed_action_menu_sections_if_missing();
 }
 
 fn write_default_file(path: Option<PathBuf>, contents: &str) {
@@ -89,27 +90,15 @@ pub(crate) fn set_action_menu_action_field(
     field: &str,
     value: Option<ConfigValue>,
 ) -> io::Result<()> {
-    let Some(config_path) = config_path() else {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "could not determine config path",
-        ));
-    };
-
-    let contents = fs::read_to_string(&config_path).unwrap_or_default();
-    let mut document = contents
-        .parse::<toml_edit::DocumentMut>()
-        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
-
-    set_action_menu_action_field_in_document(
-        &mut document,
-        section_index,
-        action_index,
-        field,
-        value,
-    )?;
-
-    fs::write(config_path, document.to_string())
+    edit_document(|document| {
+        set_action_menu_action_field_in_document(
+            document,
+            section_index,
+            action_index,
+            field,
+            value,
+        )
+    })
 }
 
 fn set_action_menu_action_field_in_document(
@@ -630,6 +619,74 @@ fn action_menu_sections_mut(
         .ok_or_else(|| {
             io::Error::new(io::ErrorKind::InvalidData, "sections is not an array of tables")
         })
+}
+
+/// The built-in default action-menu sections as toml_edit tables, obtained by
+/// round-tripping the widget defaults through a serialized TOML document.
+fn default_action_menu_section_tables() -> Vec<toml_edit::Table> {
+    let mut wrapper = toml::value::Table::new();
+    wrapper.insert(
+        "sections".to_string(),
+        toml::Value::Array(crate::bar::widgets::action_menu::default_sections()),
+    );
+
+    let Ok(serialized) = toml::to_string(&toml::Value::Table(wrapper)) else {
+        return Vec::new();
+    };
+    let Ok(document) = serialized.parse::<toml_edit::DocumentMut>() else {
+        return Vec::new();
+    };
+
+    document
+        .get("sections")
+        .and_then(|item| item.as_array_of_tables())
+        .map(|sections| sections.iter().cloned().collect())
+        .unwrap_or_default()
+}
+
+/// Write the built-in default action-menu sections into the config file when it
+/// has none, so the config is the single source of truth and the settings editor
+/// reads real data. Idempotent: leaves an already-configured file untouched.
+pub(crate) fn seed_action_menu_sections_if_missing() {
+    let Some(config_path) = config_path() else {
+        return;
+    };
+
+    let Ok(contents) = fs::read_to_string(&config_path) else {
+        return;
+    };
+    let Ok(mut document) = contents.parse::<toml_edit::DocumentMut>() else {
+        return;
+    };
+
+    let already_configured = document
+        .as_table()
+        .get("widgets")
+        .and_then(|item| item.as_table())
+        .and_then(|widgets| widgets.get("action_menu"))
+        .and_then(|item| item.as_table())
+        .and_then(|action_menu| action_menu.get("sections"))
+        .and_then(|item| item.as_array_of_tables())
+        .is_some_and(|sections| !sections.is_empty());
+    if already_configured {
+        return;
+    }
+
+    let tables = default_action_menu_section_tables();
+    if tables.is_empty() {
+        return;
+    }
+
+    let Ok(sections) = action_menu_sections_mut(&mut document) else {
+        return;
+    };
+    for table in tables {
+        sections.push(table);
+    }
+
+    if let Err(error) = fs::write(config_path, document.to_string()) {
+        tracing::error!("Failed to seed action menu defaults: {error}");
+    }
 }
 
 pub(crate) fn add_action_menu_section() -> io::Result<()> {

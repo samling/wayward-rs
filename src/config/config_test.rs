@@ -462,3 +462,12 @@ fn action_menu_sections_mut_creates_tables_when_missing() {
             .contains("[[widgets.action_menu.sections]]")
     );
 }
+
+#[test]
+fn default_action_menu_section_tables_round_trip_from_widget_defaults() {
+    let tables = default_action_menu_section_tables();
+    // The widget ships at least one default section (Screenshot) with actions.
+    assert!(!tables.is_empty());
+    assert!(tables[0].contains_key("title"));
+    assert!(tables[0].contains_key("actions"));
+}
