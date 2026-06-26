@@ -45,7 +45,6 @@ impl BarWidgetRuntime for ClockRuntime {
 }
 
 impl BarWidget for ClockWidget {
-
     fn id(&self) -> &'static str {
         "clock"
     }
