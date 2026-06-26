@@ -2,119 +2,17 @@ use relm4::{gtk, gtk::prelude::*, prelude::ComponentSender};
 
 use super::super::page::{SettingsConfig, render_section};
 use super::super::window::{SettingsInput, SettingsWindow};
-use crate::settings_spec::{
-    NumberSpec, SettingSpec, SettingsSectionSpec, StringListSpec, StringSpec, table_string,
-    table_string_list, table_u16,
-};
 
 pub(crate) fn render(
     container: &gtk::Box,
     config: &SettingsConfig,
     sender: &ComponentSender<SettingsWindow>,
 ) {
-    let action_menu = config.widgets.get("action_menu");
-    let sub = |key: &str| {
-        action_menu
-            .and_then(|table| table.get(key))
-            .and_then(|value| value.as_table())
-    };
-    let panel = sub("panel");
-    let layout = sub("layout");
-    let header = sub("header");
-
     render_actions_section(container, config, sender);
 
-    render_section(
-        container,
-        SettingsSectionSpec {
-            title: "Panel".to_string(),
-            settings: vec![SettingSpec::Number(NumberSpec {
-                label: "Width",
-                description: None,
-                path: &["widgets", "action_menu", "panel", "width"],
-                value: panel.and_then(|table| table_u16(table, "width")),
-                default: 268,
-                min: 120.0,
-                max: 1200.0,
-                step: 4.0,
-            })],
-        },
-        sender,
-    );
-
-    render_section(
-        container,
-        SettingsSectionSpec {
-            title: "Layout".to_string(),
-            settings: vec![
-                SettingSpec::Number(NumberSpec {
-                    label: "Columns",
-                    description: None,
-                    path: &["widgets", "action_menu", "layout", "columns"],
-                    value: layout.and_then(|table| table_u16(table, "columns")),
-                    default: 3,
-                    min: 1.0,
-                    max: 8.0,
-                    step: 1.0,
-                }),
-                SettingSpec::Number(NumberSpec {
-                    label: "Button width",
-                    description: None,
-                    path: &["widgets", "action_menu", "layout", "button-width"],
-                    value: layout.and_then(|table| table_u16(table, "button-width")),
-                    default: 40,
-                    min: 16.0,
-                    max: 200.0,
-                    step: 2.0,
-                }),
-                SettingSpec::Number(NumberSpec {
-                    label: "Button height",
-                    description: None,
-                    path: &["widgets", "action_menu", "layout", "button-height"],
-                    value: layout.and_then(|table| table_u16(table, "button-height")),
-                    default: 40,
-                    min: 16.0,
-                    max: 200.0,
-                    step: 2.0,
-                }),
-                SettingSpec::Number(NumberSpec {
-                    label: "Row spacing",
-                    description: None,
-                    path: &["widgets", "action_menu", "layout", "row-spacing"],
-                    value: layout.and_then(|table| table_u16(table, "row-spacing")),
-                    default: 12,
-                    min: 0.0,
-                    max: 48.0,
-                    step: 1.0,
-                }),
-            ],
-        },
-        sender,
-    );
-
-    render_section(
-        container,
-        SettingsSectionSpec {
-            title: "Header".to_string(),
-            settings: vec![
-                SettingSpec::String(StringSpec {
-                    label: "Power command",
-                    description: None,
-                    path: &["widgets", "action_menu", "header", "power-command"],
-                    value: header.and_then(|table| table_string(table, &["power-command"])),
-                    default: "wlogout",
-                }),
-                SettingSpec::StringList(StringListSpec {
-                    label: "Power command args",
-                    description: None,
-                    path: &["widgets", "action_menu", "header", "power-args"],
-                    value: header.and_then(|table| table_string_list(table, "power-args")),
-                    default: &[],
-                }),
-            ],
-        },
-        sender,
-    );
+    for section in super::widgets::config_sections("action_menu", &config.widgets) {
+        render_section(container, section, sender);
+    }
 
     render_section(
         container,
