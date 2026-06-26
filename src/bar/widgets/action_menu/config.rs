@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Deserialize)]
 #[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
@@ -30,7 +30,7 @@ impl Default for ActionMenuConfig {
     }
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub(super) enum ActionMenuActionKind {
     #[default]
@@ -70,8 +70,10 @@ impl Default for ActionMenuHeaderConfig {
     }
 }
 
+// No deny_unknown_fields: tolerate deprecated keys (e.g. the removed `column-spacing`)
+// in existing configs instead of failing the whole action_menu config parse.
 #[derive(Clone, Debug, Deserialize)]
-#[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
+#[serde(default, rename_all = "kebab-case")]
 pub(super) struct ActionMenuLayoutConfig {
     pub(super) columns: usize,
     pub(super) button_width: Option<i32>,
@@ -90,29 +92,31 @@ impl Default for ActionMenuLayoutConfig {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 #[serde(default, deny_unknown_fields, rename_all = "kebab-case")]
 pub(super) struct ActionMenuSectionConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) title: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub(super) columns: Option<usize>,
     pub(super) actions: Vec<ActionMenuActionConfig>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
 pub(super) struct ActionMenuActionConfig {
     pub(super) label: String,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) icon: Option<String>,
     #[serde(default)]
     pub(super) action: ActionMenuActionKind,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) command: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(super) args: Vec<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) class: Option<String>,
-    #[serde(default)]
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub(super) tooltip: Option<String>,
     #[serde(default = "default_show_label")]
     pub(super) show_label: bool,
