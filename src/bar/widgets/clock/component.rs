@@ -37,6 +37,17 @@ pub(super) struct ClockWidgets {
     label: gtk::Label,
 }
 
+fn format_time(time: &DateTime<Local>, format: &str) -> String {
+    use std::fmt::Write;
+
+    let mut buffer = String::new();
+    if write!(buffer, "{}", time.format(format)).is_ok() {
+        buffer
+    } else {
+        time.format("%H:%M").to_string()
+    }
+}
+
 impl SimpleComponent for ClockComponent {
     type Init = ClockInit;
     type Input = ClockInput;
@@ -54,7 +65,7 @@ impl SimpleComponent for ClockComponent {
         _sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let time = Local::now();
-        let label_text = time.format(&init.format).to_string();
+        let label_text = format_time(&time, &init.format);
         let dropdown = ClockDropdown::builder()
             .launch(ClockDropdownInit {
                 date: time.date_naive(),
@@ -103,7 +114,7 @@ impl SimpleComponent for ClockComponent {
             ClockInput::SetTime(time) => {
                 let previous_date = self.time.date_naive();
 
-                self.label_text = time.format(&self.format).to_string();
+                self.label_text = format_time(&time, &self.format);
                 self.time = time;
 
                 let date = self.time.date_naive();

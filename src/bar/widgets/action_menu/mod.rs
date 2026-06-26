@@ -22,6 +22,17 @@ pub(crate) struct ActionMenuWidget;
 
 pub(crate) static WIDGET: ActionMenuWidget = ActionMenuWidget;
 
+/// The built-in default sections, as TOML values. Used to seed the config file
+/// with defaults on first run (when it has no `sections`), keeping the config the
+/// single source of truth for the settings editor.
+pub(crate) fn default_sections() -> toml::value::Array {
+    ActionMenuConfig::default()
+        .sections
+        .iter()
+        .filter_map(|section| toml::Value::try_from(section).ok())
+        .collect()
+}
+
 struct ActionMenuRuntime {
     controller: Controller<ActionMenuComponent>,
 }

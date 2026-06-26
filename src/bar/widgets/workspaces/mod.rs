@@ -15,6 +15,10 @@ use crate::bar::widget::{
 };
 use crate::services::ShellServices;
 use crate::shell::ShellMsg;
+use crate::settings_spec::{
+    ChoiceOption, ChoiceSpec, NumberSpec, SettingSpec, SettingsSectionSpec, StringSpec,
+    table_string, table_u16,
+};
 
 use self::component::{WorkspacesComponent, WorkspacesInit, WorkspacesInput};
 
@@ -55,6 +59,47 @@ pub(crate) static WIDGET: WorkspacesWidget = WorkspacesWidget;
 impl BarWidget for WorkspacesWidget {
     fn id(&self) -> &'static str {
         ID
+    }
+
+    fn settings_sections(
+        &self,
+        config: &toml::value::Table,
+    ) -> Vec<crate::settings_spec::SettingsSectionSpec>
+    {
+        vec![SettingsSectionSpec {
+            title: "Config".to_string(),
+            settings: vec![
+                SettingSpec::String(StringSpec {
+                    label: "Label format",
+                    description: Some("%I index · %T title · %L title or index · %% literal %"),
+                    path: &["widgets", "workspaces", "label_format"],
+                    value: table_string(config, &["label_format"]),
+                    default: "%L",
+                }),
+                SettingSpec::Choice(ChoiceSpec {
+                    label: "Indicator effect",
+                    description: None,
+                    path: &["widgets", "workspaces", "indicator_effect"],
+                    value: table_string(config, &["indicator_effect"]),
+                    default: "ease",
+                    options: &[
+                        ChoiceOption { value: "none", label: "None" },
+                        ChoiceOption { value: "slide", label: "Slide" },
+                        ChoiceOption { value: "ease", label: "Ease" },
+                    ],
+                }),
+                SettingSpec::Number(NumberSpec {
+                    label: "Indicator duration (ms)",
+                    description: None,
+                    path: &["widgets", "workspaces", "indicator_duration_ms"],
+                    value: table_u16(config, "indicator_duration_ms"),
+                    default: 160,
+                    min: 0.0,
+                    max: 1000.0,
+                    step: 10.0,
+                }),
+            ]
+        }]     
     }
 
     fn build(

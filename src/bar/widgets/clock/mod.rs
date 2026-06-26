@@ -13,6 +13,7 @@ use crate::bar::state::{BarItemState, ClockState};
 use crate::bar::widget::{
     BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetInstance,
 };
+use crate::settings_spec::{SettingSpec, SettingsSectionSpec, StringSpec, table_string};
 use crate::shell::ShellMsg;
 
 use self::component::{ClockComponent, ClockInit, ClockInput};
@@ -44,8 +45,24 @@ impl BarWidgetRuntime for ClockRuntime {
 }
 
 impl BarWidget for ClockWidget {
+
     fn id(&self) -> &'static str {
         "clock"
+    }
+
+    fn settings_sections(&self, config: &toml::value::Table) -> Vec<SettingsSectionSpec> {
+        vec![SettingsSectionSpec {
+            title: "Config".to_string(),
+            settings: vec![SettingSpec::String(StringSpec {
+                label: "Time format",
+                description: Some(
+                    "chrono <a href=\"https://docs.rs/chrono/latest/chrono/format/strftime/index.html\">strftime</a> codes, e.g. %H:%M",
+                ),
+                path: &["widgets", "clock", "format"],
+                value: table_string(config, &["format"]),
+                default: "%H:%M",
+            })],
+        }]
     }
 
     fn build(

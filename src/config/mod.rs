@@ -83,6 +83,53 @@ impl ConfigValue {
     }
 }
 
+pub(crate) fn set_action_menu_action_field(
+    section_index: usize,
+    action_index: usize,
+    field: &str,
+    value: Option<ConfigValue>,
+) -> io::Result<()> {
+    edit_document(|document| {
+        set_action_menu_action_field_in_document(
+            document,
+            section_index,
+            action_index,
+            field,
+            value,
+        )
+    })
+}
+
+fn set_action_menu_action_field_in_document(
+    document: &mut toml_edit::DocumentMut,
+    section_index: usize,
+    action_index: usize,
+    field: &str,
+    value: Option<ConfigValue>,
+) -> io::Result<()> {
+    let action = document
+        .get_mut("widgets")
+        .and_then(|item| item.as_table_mut())
+        .and_then(|table| table.get_mut("action_menu"))
+        .and_then(|item| item.as_table_mut())
+        .and_then(|table| table.get_mut("sections"))
+        .and_then(|item| item.as_array_of_tables_mut())
+        .and_then(|sections| sections.get_mut(section_index))
+        .and_then(|section| section.get_mut("actions"))
+        .and_then(|item| item.as_array_of_tables_mut())
+        .and_then(|actions| actions.get_mut(action_index))
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "action not found"))?;
+
+    match value {
+        Some(value) => action[field] = value.into_item(),
+        None => {
+            action.remove(field);
+        }
+    }
+
+    Ok(())
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum BarRegionKey {
     Start,
@@ -518,6 +565,205 @@ fn remove_document_value(item: &mut toml_edit::Item, path: &[&str]) -> bool {
     }
 
     table.is_empty()
+}
+
+fn edit_document(
+    edit: impl FnOnce(&mut toml_edit::DocumentMut) -> io::Result<()>,
+) -> io::Result<()> {
+    let Some(config_path) = config_path() else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "could not determine config path",
+        ));
+    };
+
+    let contents = fs::read_to_string(&config_path).unwrap_or_default();
+    let mut document = contents
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+
+    edit(&mut document)?;
+
+    fs::write(config_path, document.to_string())
+}
+
+fn action_menu_sections_mut(
+    document: &mut toml_edit::DocumentMut,
+) -> io::Result<&mut toml_edit::ArrayOfTables> {
+    let action_menu = document
+        .as_table_mut()
+        .entry("widgets")
+        .or_insert_with(toml_edit::table)
+        .as_table_mut()
+        .and_then(|widgets| {
+            widgets
+                .entry("action_menu")
+                .or_insert_with(toml_edit::table)
+                .as_table_mut()
+        })
+        .ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "widgets.action_menu is not a table")
+        })?;
+
+    match action_menu.get("sections") {
+        // Never configured: materialize the built-in defaults so edits operate on
+        // the same sections the settings editor displays.
+        None => {
+            let mut sections = toml_edit::ArrayOfTables::new();
+            for table in default_action_menu_section_tables() {
+                sections.push(table);
+            }
+            action_menu.insert("sections", toml_edit::Item::ArrayOfTables(sections));
+        }
+        // Explicitly emptied (`sections = []`): honor it, just make it pushable
+        // again without reintroducing the defaults.
+        Some(item) if item.as_array().is_some_and(toml_edit::Array::is_empty) => {
+            action_menu.insert(
+                "sections",
+                toml_edit::Item::ArrayOfTables(toml_edit::ArrayOfTables::new()),
+            );
+        }
+        Some(_) => {}
+    }
+
+    action_menu
+        .get_mut("sections")
+        .and_then(|item| item.as_array_of_tables_mut())
+        .ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "sections is not an array of tables")
+        })
+}
+
+/// The built-in default action-menu sections as toml_edit tables, obtained by
+/// round-tripping the widget defaults through a serialized TOML document.
+fn default_action_menu_section_tables() -> Vec<toml_edit::Table> {
+    let mut wrapper = toml::value::Table::new();
+    wrapper.insert(
+        "sections".to_string(),
+        toml::Value::Array(crate::bar::widgets::action_menu::default_sections()),
+    );
+
+    let Ok(serialized) = toml::to_string(&toml::Value::Table(wrapper)) else {
+        return Vec::new();
+    };
+    let Ok(document) = serialized.parse::<toml_edit::DocumentMut>() else {
+        return Vec::new();
+    };
+
+    document
+        .get("sections")
+        .and_then(|item| item.as_array_of_tables())
+        .map(|sections| sections.iter().cloned().collect())
+        .unwrap_or_default()
+}
+
+/// Write an explicit empty inline array (`sections = []`) so an emptied action
+/// menu stays empty across reloads. Without it, an empty array-of-tables renders
+/// to nothing, leaving the key absent and reintroducing the built-in defaults.
+fn persist_empty_action_menu_sections(document: &mut toml_edit::DocumentMut) {
+    if let Some(action_menu) = document
+        .get_mut("widgets")
+        .and_then(|item| item.as_table_mut())
+        .and_then(|widgets| widgets.get_mut("action_menu"))
+        .and_then(|item| item.as_table_mut())
+    {
+        action_menu["sections"] = toml_edit::value(toml_edit::Array::new());
+    }
+}
+
+pub(crate) fn add_action_menu_section() -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        let mut section = toml_edit::Table::new();
+        section.insert("title", toml_edit::value("New section"));
+        section.insert("columns", toml_edit::value(3_i64));
+        section.insert(
+            "actions",
+            toml_edit::Item::ArrayOfTables(toml_edit::ArrayOfTables::new()),
+        );
+        sections.push(section);
+        Ok(())
+    })
+}
+
+pub(crate) fn remove_action_menu_section(section_index: usize) -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        if section_index < sections.len() {
+            sections.remove(section_index);
+        }
+        let emptied = sections.is_empty();
+        if emptied {
+            persist_empty_action_menu_sections(document);
+        }
+        Ok(())
+    })
+}
+
+pub(crate) fn add_action_menu_action(section_index: usize) -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        let section = sections
+            .get_mut(section_index)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "section not found"))?;
+        if !section.contains_key("actions") {
+            section.insert(
+                "actions",
+                toml_edit::Item::ArrayOfTables(toml_edit::ArrayOfTables::new()),
+            );
+        }
+        let actions = section
+            .get_mut("actions")
+            .and_then(|item| item.as_array_of_tables_mut())
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidData, "actions is not an array of tables")
+            })?;
+        let mut action = toml_edit::Table::new();
+        action.insert("label", toml_edit::value("New button"));
+        actions.push(action);
+        Ok(())
+    })
+}
+
+pub(crate) fn remove_action_menu_action(
+    section_index: usize,
+    action_index: usize,
+) -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        let section = sections
+            .get_mut(section_index)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "section not found"))?;
+        if let Some(actions) = section
+            .get_mut("actions")
+            .and_then(|item| item.as_array_of_tables_mut())
+        {
+            if action_index < actions.len() {
+                actions.remove(action_index);
+            }
+        }
+        Ok(())
+    })
+}
+
+pub(crate) fn set_action_menu_section_field(
+    section_index: usize,
+    field: &str,
+    value: Option<ConfigValue>,
+) -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        let section = sections
+            .get_mut(section_index)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "section not found"))?;
+        match value {
+            Some(value) => section[field] = value.into_item(),
+            None => {
+                section.remove(field);
+            }
+        }
+        Ok(())
+    })
 }
 
 fn is_valid_bar_edge(edge: &str) -> bool {

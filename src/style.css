@@ -1188,6 +1188,11 @@ levelbar.osd-level block.filled {
   min-height: 34px;
 }
 
+.settings-row-description {
+    font-size: 0.85em;
+    opacity: 0.65;
+}
+
 .settings-row-label {
   color: var(--settings-row-label-color, var(--md-sys-color-on-surface, rgba(255, 255, 255, 0.78)));
   font-weight: 600;
