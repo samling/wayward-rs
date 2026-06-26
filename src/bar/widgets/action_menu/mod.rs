@@ -12,6 +12,10 @@ use crate::bar::state::BarItemState;
 use crate::bar::widget::{
     BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetEvent, WidgetInstance,
 };
+use crate::settings_spec::{
+    NumberSpec, SettingSpec, SettingsSectionSpec, StringListSpec, StringSpec, table_string,
+    table_string_list, table_u16,
+};
 
 use crate::services::ShellServices;
 
@@ -57,6 +61,93 @@ impl BarWidget for ActionMenuWidget {
 
     fn config_table_keys(&self) -> &'static [&'static str] {
         &["panel", "layout", "header"]
+    }
+
+    fn settings_sections(&self, config: &toml::value::Table) -> Vec<SettingsSectionSpec> {
+        let sub = |key: &str| config.get(key).and_then(|value| value.as_table());
+        let panel = sub("panel");
+        let layout = sub("layout");
+        let header = sub("header");
+
+        vec![
+            SettingsSectionSpec {
+                title: "Panel".to_string(),
+                settings: vec![SettingSpec::Number(NumberSpec {
+                    label: "Width",
+                    description: None,
+                    path: &["widgets", "action_menu", "panel", "width"],
+                    value: panel.and_then(|table| table_u16(table, "width")),
+                    default: 268,
+                    min: 120.0,
+                    max: 1200.0,
+                    step: 4.0,
+                })],
+            },
+            SettingsSectionSpec {
+                title: "Layout".to_string(),
+                settings: vec![
+                    SettingSpec::Number(NumberSpec {
+                        label: "Columns",
+                        description: None,
+                        path: &["widgets", "action_menu", "layout", "columns"],
+                        value: layout.and_then(|table| table_u16(table, "columns")),
+                        default: 3,
+                        min: 1.0,
+                        max: 8.0,
+                        step: 1.0,
+                    }),
+                    SettingSpec::Number(NumberSpec {
+                        label: "Button width",
+                        description: None,
+                        path: &["widgets", "action_menu", "layout", "button-width"],
+                        value: layout.and_then(|table| table_u16(table, "button-width")),
+                        default: 40,
+                        min: 16.0,
+                        max: 200.0,
+                        step: 2.0,
+                    }),
+                    SettingSpec::Number(NumberSpec {
+                        label: "Button height",
+                        description: None,
+                        path: &["widgets", "action_menu", "layout", "button-height"],
+                        value: layout.and_then(|table| table_u16(table, "button-height")),
+                        default: 40,
+                        min: 16.0,
+                        max: 200.0,
+                        step: 2.0,
+                    }),
+                    SettingSpec::Number(NumberSpec {
+                        label: "Row spacing",
+                        description: None,
+                        path: &["widgets", "action_menu", "layout", "row-spacing"],
+                        value: layout.and_then(|table| table_u16(table, "row-spacing")),
+                        default: 12,
+                        min: 0.0,
+                        max: 48.0,
+                        step: 1.0,
+                    }),
+                ],
+            },
+            SettingsSectionSpec {
+                title: "Header".to_string(),
+                settings: vec![
+                    SettingSpec::String(StringSpec {
+                        label: "Power command",
+                        description: None,
+                        path: &["widgets", "action_menu", "header", "power-command"],
+                        value: header.and_then(|table| table_string(table, &["power-command"])),
+                        default: "wlogout",
+                    }),
+                    SettingSpec::StringList(StringListSpec {
+                        label: "Power command args",
+                        description: None,
+                        path: &["widgets", "action_menu", "header", "power-args"],
+                        value: header.and_then(|table| table_string_list(table, "power-args")),
+                        default: &[],
+                    }),
+                ],
+            },
+        ]
     }
 
     fn build(
