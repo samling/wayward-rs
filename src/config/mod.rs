@@ -579,6 +579,185 @@ fn remove_document_value(item: &mut toml_edit::Item, path: &[&str]) -> bool {
     table.is_empty()
 }
 
+fn edit_document(
+    edit: impl FnOnce(&mut toml_edit::DocumentMut) -> io::Result<()>,
+) -> io::Result<()> {
+    let Some(config_path) = config_path() else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "could not determine config path",
+        ));
+    };
+
+    let contents = fs::read_to_string(&config_path).unwrap_or_default();
+    let mut document = contents
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+
+    edit(&mut document)?;
+
+    fs::write(config_path, document.to_string())
+}
+
+fn action_menu_sections_mut(
+    document: &mut toml_edit::DocumentMut,
+) -> io::Result<&mut toml_edit::ArrayOfTables> {
+    let action_menu = document
+        .as_table_mut()
+        .entry("widgets")
+        .or_insert_with(toml_edit::table)
+        .as_table_mut()
+        .and_then(|widgets| {
+            widgets
+                .entry("action_menu")
+                .or_insert_with(toml_edit::table)
+                .as_table_mut()
+        })
+        .ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "widgets.action_menu is not a table")
+        })?;
+
+    if !action_menu.contains_key("sections") {
+        action_menu.insert(
+            "sections",
+            toml_edit::Item::ArrayOfTables(toml_edit::ArrayOfTables::new()),
+        );
+    }
+
+    action_menu
+        .get_mut("sections")
+        .and_then(|item| item.as_array_of_tables_mut())
+        .ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, "sections is not an array of tables")
+        })
+}
+
+pub(crate) fn add_action_menu_section() -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        let mut section = toml_edit::Table::new();
+        section.insert("title", toml_edit::value("New section"));
+        section.insert("columns", toml_edit::value(3_i64));
+        section.insert(
+            "actions",
+            toml_edit::Item::ArrayOfTables(toml_edit::ArrayOfTables::new()),
+        );
+        sections.push(section);
+        Ok(())
+    })
+}
+
+pub(crate) fn remove_action_menu_section(section_index: usize) -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        if section_index < sections.len() {
+            sections.remove(section_index);
+        }
+        Ok(())
+    })
+}
+
+pub(crate) fn add_action_menu_action(section_index: usize) -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        let section = sections
+            .get_mut(section_index)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "section not found"))?;
+        if !section.contains_key("actions") {
+            section.insert(
+                "actions",
+                toml_edit::Item::ArrayOfTables(toml_edit::ArrayOfTables::new()),
+            );
+        }
+        let actions = section
+            .get_mut("actions")
+            .and_then(|item| item.as_array_of_tables_mut())
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidData, "actions is not an array of tables")
+            })?;
+        let mut action = toml_edit::Table::new();
+        action.insert("label", toml_edit::value("New button"));
+        actions.push(action);
+        Ok(())
+    })
+}
+
+pub(crate) fn remove_action_menu_action(
+    section_index: usize,
+    action_index: usize,
+) -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        let section = sections
+            .get_mut(section_index)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "section not found"))?;
+        if let Some(actions) = section
+            .get_mut("actions")
+            .and_then(|item| item.as_array_of_tables_mut())
+        {
+            if action_index < actions.len() {
+                actions.remove(action_index);
+            }
+        }
+        Ok(())
+    })
+}
+
+pub(crate) fn move_action_menu_action(
+    section_index: usize,
+    action_index: usize,
+    offset: i64,
+) -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        let section = sections
+            .get_mut(section_index)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "section not found"))?;
+        let Some(actions) = section
+            .get_mut("actions")
+            .and_then(|item| item.as_array_of_tables_mut())
+        else {
+            return Ok(());
+        };
+
+        let len = actions.len();
+        let target = action_index as i64 + offset;
+        if action_index >= len || target < 0 || target as usize >= len {
+            return Ok(());
+        }
+        let target = target as usize;
+
+        // ArrayOfTables has no swap/insert, so clone out, reorder, then rebuild.
+        let mut tables: Vec<toml_edit::Table> = actions.iter().cloned().collect();
+        tables.swap(action_index, target);
+        actions.clear();
+        for table in tables {
+            actions.push(table);
+        }
+        Ok(())
+    })
+}
+
+pub(crate) fn set_action_menu_section_field(
+    section_index: usize,
+    field: &str,
+    value: Option<ConfigValue>,
+) -> io::Result<()> {
+    edit_document(|document| {
+        let sections = action_menu_sections_mut(document)?;
+        let section = sections
+            .get_mut(section_index)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "section not found"))?;
+        match value {
+            Some(value) => section[field] = value.into_item(),
+            None => {
+                section.remove(field);
+            }
+        }
+        Ok(())
+    })
+}
+
 fn is_valid_bar_edge(edge: &str) -> bool {
     matches!(edge, "top" | "bottom" | "left" | "right")
 }

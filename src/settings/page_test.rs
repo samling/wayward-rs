@@ -17,7 +17,7 @@ fn build_page_for_updates_widget_has_config_then_style() {
 }
 
 #[test]
-fn build_page_for_clock_widget_has_only_style() {
+fn build_page_for_clock_widget_has_config_and_style() {
     let item = crate::settings::nav::find_item("clock").unwrap();
     let config = SettingsConfig {
         style: StyleConfig::default(),
@@ -26,8 +26,11 @@ fn build_page_for_clock_widget_has_only_style() {
         available_monitors: Vec::new(),
     };
     let page = build_page(item, &config).unwrap();
-    assert_eq!(page.sections.len(), 1);
-    assert_eq!(page.sections[0].title, "Style");
+    // The clock widget now declares a Config section (Time format) via settings_sections,
+    // and build_page appends the Style section.
+    assert_eq!(page.sections.len(), 2);
+    assert_eq!(page.sections[0].title, "Config");
+    assert_eq!(page.sections[1].title, "Style");
 }
 
 #[test]

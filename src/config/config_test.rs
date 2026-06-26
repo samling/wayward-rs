@@ -431,3 +431,34 @@ fn rename_bar_rejects_duplicate_names() {
 
     assert_eq!(error.kind(), io::ErrorKind::AlreadyExists);
 }
+
+#[test]
+fn action_menu_sections_mut_creates_array_under_existing_table() {
+    let mut document =
+        parse_document("[widgets.action_menu]\n[widgets.action_menu.layout]\ncolumns = 3\n");
+    {
+        let sections = action_menu_sections_mut(&mut document).unwrap();
+        let mut section = toml_edit::Table::new();
+        section.insert("title", toml_edit::value("New section"));
+        sections.push(section);
+    }
+    let rendered = document.to_string();
+    assert!(rendered.contains("[[widgets.action_menu.sections]]"), "{rendered}");
+    assert!(rendered.contains("title = \"New section\""), "{rendered}");
+    // sibling tables are preserved
+    assert!(rendered.contains("[widgets.action_menu.layout]"), "{rendered}");
+}
+
+#[test]
+fn action_menu_sections_mut_creates_tables_when_missing() {
+    let mut document = parse_document("");
+    {
+        let sections = action_menu_sections_mut(&mut document).unwrap();
+        sections.push(toml_edit::Table::new());
+    }
+    assert!(
+        document
+            .to_string()
+            .contains("[[widgets.action_menu.sections]]")
+    );
+}
