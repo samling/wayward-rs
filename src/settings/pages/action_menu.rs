@@ -26,12 +26,6 @@ pub(crate) fn render(
 
     render_section(
         container,
-        super::style_sections::section("Action menu", &config.style),
-        sender,
-    );
-
-    render_section(
-        container,
         SettingsSectionSpec {
             title: "Panel".to_string(),
             settings: vec![SettingSpec::Number(NumberSpec {
@@ -171,6 +165,14 @@ fn render_actions_section(
         }
     }
 
+    let add_section = gtk::Button::with_label("Add section");
+    add_section.set_halign(gtk::Align::Start);
+    let input = sender.input_sender().clone();
+    add_section.connect_clicked(move |_| {
+        let _ = input.send(SettingsInput::AddActionMenuSection);
+    });
+    section_box.append(&add_section);
+
     container.append(&section_box);
 }
 
@@ -182,19 +184,63 @@ fn render_section_card(
     let card = gtk::Box::new(gtk::Orientation::Vertical, 6);
     card.add_css_class("action-menu-settings-section");
 
-    let title = section
-        .get("title")
-        .and_then(|value| value.as_str())
-        .unwrap_or("(untitled section)");
-    let header_text = match section.get("columns").and_then(|value| value.as_integer()) {
-        Some(columns) => format!("{title} - {columns} columns"),
-        None => title.to_string(),
-    };
+    let header_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
 
-    let header = gtk::Label::new(Some(&header_text));
-    header.set_halign(gtk::Align::Start);
-    header.add_css_class("settings-row-label");
-    card.append(&header);
+    let title_entry = gtk::Entry::new();
+    title_entry.set_hexpand(true);
+    title_entry.set_placeholder_text(Some("Section title"));
+    title_entry.set_text(
+        section
+            .get("title")
+            .and_then(|value| value.as_str())
+            .unwrap_or(""),
+    );
+    {
+        let input = sender.input_sender().clone();
+        let entry_for_commit = title_entry.clone();
+        let commit = move || {
+            let text = entry_for_commit.text().to_string();
+            let value = (!text.is_empty()).then_some(crate::config::ConfigValue::String(text));
+            let _ = input.send(SettingsInput::SetActionMenuSectionField {
+                section: section_index,
+                field: "title",
+                value,
+            });
+        };
+        let focus = gtk::EventControllerFocus::new();
+        focus.connect_leave(move |_| commit());
+        title_entry.add_controller(focus);
+    }
+    header_row.append(&title_entry);
+
+    let columns_label = gtk::Label::new(Some("Columns"));
+    header_row.append(&columns_label);
+    let columns_spin = gtk::SpinButton::with_range(1.0, 8.0, 1.0);
+    columns_spin.set_value(
+        section
+            .get("columns")
+            .and_then(|value| value.as_integer())
+            .unwrap_or(3) as f64,
+    );
+    {
+        let input = sender.input_sender().clone();
+        columns_spin.connect_value_changed(move |spin| {
+            let _ = input.send(SettingsInput::SetActionMenuSectionField {
+                section: section_index,
+                field: "columns",
+                value: Some(crate::config::ConfigValue::Integer(spin.value() as i64)),
+            });
+        });
+    }
+    header_row.append(&columns_spin);
+
+    let remove_section = gtk::Button::with_label("Remove section");
+    let input = sender.input_sender().clone();
+    remove_section.connect_clicked(move |_| {
+        let _ = input.send(SettingsInput::RemoveActionMenuSection { section: section_index });
+    });
+    header_row.append(&remove_section);
+    card.append(&header_row);
 
     if let Some(actions) = section.get("actions").and_then(|value| value.as_array()) {
         for (action_index, action) in actions.iter().enumerate() {
@@ -203,6 +249,14 @@ fn render_section_card(
             }
         }
     }
+
+    let add_action = gtk::Button::with_label("Add button");
+    add_action.set_halign(gtk::Align::Start);
+    let input = sender.input_sender().clone();
+    add_action.connect_clicked(move |_| {
+        let _ = input.send(SettingsInput::AddActionMenuAction { section: section_index });
+    });
+    card.append(&add_action);
 
     card
 }
@@ -213,28 +267,85 @@ fn render_action_row(
     action: &toml::value::Table,
     sender: &ComponentSender<SettingsWindow>,
 ) -> gtk::Box {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    row.add_css_class("settings-row");
+    let outer = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    outer.add_css_class("settings-row");
 
     let str_field =
         |key: &str| action.get(key).and_then(|value| value.as_str()).unwrap_or("");
 
+    let top = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     let icon = action_text_field(section_index, action_index, "icon", str_field("icon"), sender);
     icon.set_width_chars(3);
     icon.set_hexpand(false);
     icon.set_placeholder_text(Some("icon"));
-    row.append(&icon);
-
+    top.append(&icon);
     let label = action_text_field(section_index, action_index, "label", str_field("label"), sender);
     label.set_placeholder_text(Some("label"));
-    row.append(&label);
+    top.append(&label);
+    top.append(&action_kind_field(section_index, action_index, str_field("action"), sender));
+    outer.append(&top);
 
     let command =
         action_text_field(section_index, action_index, "command", str_field("command"), sender);
     command.set_placeholder_text(Some("command"));
-    row.append(&command);
+    outer.append(&command);
 
-    row
+    let bottom = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    let args_text = action
+        .get("args")
+        .and_then(|value| value.as_array())
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(|value| value.as_str())
+                .collect::<Vec<_>>()
+                .join(" ")
+        })
+        .unwrap_or_default();
+    bottom.append(&action_args_field(section_index, action_index, &args_text, sender));
+    let show_label = action
+        .get("show-label")
+        .and_then(|value| value.as_bool())
+        .unwrap_or(true);
+    bottom.append(&action_toggle_field(section_index, action_index, show_label, sender));
+
+    let move_up = gtk::Button::from_icon_name("go-up-symbolic");
+    move_up.set_tooltip_text(Some("Move up"));
+    let input_up = sender.input_sender().clone();
+    move_up.connect_clicked(move |_| {
+        let _ = input_up.send(SettingsInput::MoveActionMenuAction {
+            section: section_index,
+            action: action_index,
+            offset: -1,
+        });
+    });
+    bottom.append(&move_up);
+
+    let move_down = gtk::Button::from_icon_name("go-down-symbolic");
+    move_down.set_tooltip_text(Some("Move down"));
+    let input_down = sender.input_sender().clone();
+    move_down.connect_clicked(move |_| {
+        let _ = input_down.send(SettingsInput::MoveActionMenuAction {
+            section: section_index,
+            action: action_index,
+            offset: 1,
+        });
+    });
+    bottom.append(&move_down);
+
+    let remove = gtk::Button::with_label("Remove");
+    let input_remove = sender.input_sender().clone();
+    remove.connect_clicked(move |_| {
+        let _ = input_remove.send(SettingsInput::RemoveActionMenuAction {
+            section: section_index,
+            action: action_index,
+        });
+    });
+    bottom.append(&remove);
+
+    outer.append(&bottom);
+
+    outer
 }
 
 fn action_text_field(
@@ -257,6 +368,89 @@ fn action_text_field(
             section: section_index,
             action: action_index,
             field,
+            value,
+        });
+    };
+
+    let focus = gtk::EventControllerFocus::new();
+    focus.connect_leave(move |_| commit());
+    entry.add_controller(focus);
+
+    entry
+}
+
+fn action_kind_field(
+    section_index: usize,
+    action_index: usize,
+    current: &str,
+    sender: &ComponentSender<SettingsWindow>,
+) -> gtk::DropDown {
+    let options = ["command", "open-settings"];
+    let string_list = gtk::StringList::new(&["Command", "Open settings"]);
+    let dropdown = gtk::DropDown::new(Some(string_list), None::<gtk::Expression>);
+    let selected = options.iter().position(|option| *option == current).unwrap_or(0) as u32;
+    dropdown.set_selected(selected);
+
+    let input = sender.input_sender().clone();
+    dropdown.connect_selected_notify(move |dropdown| {
+        let value = options.get(dropdown.selected() as usize).copied().unwrap_or("command");
+        let _ = input.send(SettingsInput::SetActionMenuActionField {
+            section: section_index,
+            action: action_index,
+            field: "action",
+            value: Some(crate::config::ConfigValue::String(value.to_string())),
+        });
+    });
+
+    dropdown
+}
+
+fn action_toggle_field(
+    section_index: usize,
+    action_index: usize,
+    current: bool,
+    sender: &ComponentSender<SettingsWindow>,
+) -> gtk::CheckButton {
+    let check = gtk::CheckButton::with_label("Show label");
+    check.set_active(current);
+
+    let input = sender.input_sender().clone();
+    check.connect_toggled(move |check| {
+        let _ = input.send(SettingsInput::SetActionMenuActionField {
+            section: section_index,
+            action: action_index,
+            field: "show-label",
+            value: Some(crate::config::ConfigValue::Bool(check.is_active())),
+        });
+    });
+
+    check
+}
+
+fn action_args_field(
+    section_index: usize,
+    action_index: usize,
+    current: &str,
+    sender: &ComponentSender<SettingsWindow>,
+) -> gtk::Entry {
+    let entry = gtk::Entry::new();
+    entry.set_text(current);
+    entry.set_hexpand(true);
+    entry.set_placeholder_text(Some("args (space separated)"));
+
+    let input = sender.input_sender().clone();
+    let entry_for_commit = entry.clone();
+    let commit = move || {
+        let args: Vec<String> = entry_for_commit
+            .text()
+            .split_whitespace()
+            .map(ToOwned::to_owned)
+            .collect();
+        let value = (!args.is_empty()).then_some(crate::config::ConfigValue::StringList(args));
+        let _ = input.send(SettingsInput::SetActionMenuActionField {
+            section: section_index,
+            action: action_index,
+            field: "args",
             value,
         });
     };
