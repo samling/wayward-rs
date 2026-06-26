@@ -464,6 +464,45 @@ fn action_menu_sections_mut_creates_tables_when_missing() {
 }
 
 #[test]
+fn action_menu_sections_mut_materializes_defaults_when_absent() {
+    let mut document = parse_document("");
+    let sections = action_menu_sections_mut(&mut document).unwrap();
+    assert!(
+        !sections.is_empty(),
+        "an absent sections key should materialize the built-in defaults"
+    );
+    assert!(sections.get(0).unwrap().contains_key("title"));
+    assert!(sections.get(0).unwrap().contains_key("actions"));
+}
+
+#[test]
+fn action_menu_sections_mut_preserves_explicit_empty() {
+    let mut document = parse_document("[widgets.action_menu]\nsections = []\n");
+    let sections = action_menu_sections_mut(&mut document).unwrap();
+    assert!(
+        sections.is_empty(),
+        "an explicit empty list must not be refilled with defaults"
+    );
+}
+
+#[test]
+fn persist_empty_action_menu_sections_writes_inline_empty_array() {
+    let mut document = parse_document("[[bars]]\nname = \"bar\"\n\n[widgets.action_menu]\n");
+    persist_empty_action_menu_sections(&mut document);
+    let rendered = document.to_string();
+    assert!(rendered.contains("sections = []"), "{rendered}");
+
+    // Round-trips as an empty configured list, not an absent key.
+    let config: AppConfig = toml::from_str(&rendered).unwrap();
+    let sections = config
+        .widgets
+        .get("action_menu")
+        .and_then(|table| table.get("sections"))
+        .and_then(|value| value.as_array());
+    assert!(sections.is_some_and(|array| array.is_empty()));
+}
+
+#[test]
 fn default_action_menu_section_tables_round_trip_from_widget_defaults() {
     let tables = default_action_menu_section_tables();
     // The widget ships at least one default section (Screenshot) with actions.
@@ -471,3 +510,4 @@ fn default_action_menu_section_tables_round_trip_from_widget_defaults() {
     assert!(tables[0].contains_key("title"));
     assert!(tables[0].contains_key("actions"));
 }
+

@@ -124,18 +124,27 @@ pub(crate) fn render(
 }
 
 fn read_sections(config: &SettingsConfig) -> Vec<toml::value::Table> {
-    config
+    match config
         .widgets
         .get("action_menu")
         .and_then(|table| table.get("sections"))
-        .and_then(|value| value.as_array())
-        .map(|sections| {
-            sections
-                .iter()
-                .filter_map(|section| section.as_table().cloned())
-                .collect()
-        })
-        .unwrap_or_default()
+    {
+        // Configured (including an explicit empty list): show exactly what's set.
+        Some(value) => value
+            .as_array()
+            .map(|sections| {
+                sections
+                    .iter()
+                    .filter_map(|section| section.as_table().cloned())
+                    .collect()
+            })
+            .unwrap_or_default(),
+        // Never configured: show the built-in defaults.
+        None => crate::bar::widgets::action_menu::default_sections()
+            .iter()
+            .filter_map(|section| section.as_table().cloned())
+            .collect(),
+    }
 }
 
 fn render_actions_section(
@@ -308,30 +317,6 @@ fn render_action_row(
         .and_then(|value| value.as_bool())
         .unwrap_or(true);
     bottom.append(&action_toggle_field(section_index, action_index, show_label, sender));
-
-    let move_up = gtk::Button::from_icon_name("go-up-symbolic");
-    move_up.set_tooltip_text(Some("Move up"));
-    let input_up = sender.input_sender().clone();
-    move_up.connect_clicked(move |_| {
-        let _ = input_up.send(SettingsInput::MoveActionMenuAction {
-            section: section_index,
-            action: action_index,
-            offset: -1,
-        });
-    });
-    bottom.append(&move_up);
-
-    let move_down = gtk::Button::from_icon_name("go-down-symbolic");
-    move_down.set_tooltip_text(Some("Move down"));
-    let input_down = sender.input_sender().clone();
-    move_down.connect_clicked(move |_| {
-        let _ = input_down.send(SettingsInput::MoveActionMenuAction {
-            section: section_index,
-            action: action_index,
-            offset: 1,
-        });
-    });
-    bottom.append(&move_down);
 
     let remove = gtk::Button::with_label("Remove");
     let input_remove = sender.input_sender().clone();
