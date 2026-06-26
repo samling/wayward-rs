@@ -14,11 +14,11 @@ use crate::bar::widget::{
     BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetEvent, WidgetInstance,
 };
 use crate::services::ShellServices;
-use crate::shell::ShellMsg;
 use crate::settings_spec::{
     ChoiceOption, ChoiceSpec, NumberSpec, SettingSpec, SettingsSectionSpec, StringSpec,
     table_string, table_u16,
 };
+use crate::shell::ShellMsg;
 
 use self::component::{WorkspacesComponent, WorkspacesInit, WorkspacesInput};
 
@@ -64,8 +64,7 @@ impl BarWidget for WorkspacesWidget {
     fn settings_sections(
         &self,
         config: &toml::value::Table,
-    ) -> Vec<crate::settings_spec::SettingsSectionSpec>
-    {
+    ) -> Vec<crate::settings_spec::SettingsSectionSpec> {
         vec![SettingsSectionSpec {
             title: "Config".to_string(),
             settings: vec![
@@ -83,9 +82,18 @@ impl BarWidget for WorkspacesWidget {
                     value: table_string(config, &["indicator_effect"]),
                     default: "ease",
                     options: &[
-                        ChoiceOption { value: "none", label: "None" },
-                        ChoiceOption { value: "slide", label: "Slide" },
-                        ChoiceOption { value: "ease", label: "Ease" },
+                        ChoiceOption {
+                            value: "none",
+                            label: "None",
+                        },
+                        ChoiceOption {
+                            value: "slide",
+                            label: "Slide",
+                        },
+                        ChoiceOption {
+                            value: "ease",
+                            label: "Ease",
+                        },
                     ],
                 }),
                 SettingSpec::Number(NumberSpec {
@@ -98,8 +106,8 @@ impl BarWidget for WorkspacesWidget {
                     max: 1000.0,
                     step: 10.0,
                 }),
-            ]
-        }]     
+            ],
+        }]
     }
 
     fn build(

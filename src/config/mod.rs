@@ -602,7 +602,10 @@ fn action_menu_sections_mut(
                 .as_table_mut()
         })
         .ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidData, "widgets.action_menu is not a table")
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "widgets.action_menu is not a table",
+            )
         })?;
 
     match action_menu.get("sections") {
@@ -630,7 +633,10 @@ fn action_menu_sections_mut(
         .get_mut("sections")
         .and_then(|item| item.as_array_of_tables_mut())
         .ok_or_else(|| {
-            io::Error::new(io::ErrorKind::InvalidData, "sections is not an array of tables")
+            io::Error::new(
+                io::ErrorKind::InvalidData,
+                "sections is not an array of tables",
+            )
         })
 }
 
@@ -716,7 +722,10 @@ pub(crate) fn add_action_menu_action(section_index: usize) -> io::Result<()> {
             .get_mut("actions")
             .and_then(|item| item.as_array_of_tables_mut())
             .ok_or_else(|| {
-                io::Error::new(io::ErrorKind::InvalidData, "actions is not an array of tables")
+                io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "actions is not an array of tables",
+                )
             })?;
         let mut action = toml_edit::Table::new();
         action.insert("label", toml_edit::value("New button"));

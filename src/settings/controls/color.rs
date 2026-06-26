@@ -1,8 +1,6 @@
-use super::{
-    window::SettingsInput,
-};
-use crate::settings_spec::{ChoiceSpec, ColorSettingRole, ColorSpec, NumberSpec, StringListSpec, StringSpec, ToggleSpec};
 use crate::config::ConfigValue;
+use crate::settings::window::SettingsWindow;
+use crate::settings_spec::{ColorSettingRole, ColorSpec};
 use relm4::{
     gtk::{self, prelude::*},
     prelude::*,
@@ -10,297 +8,13 @@ use relm4::{
 use std::{
     cell::{Cell, RefCell},
     rc::Rc,
-    time::Duration,
 };
 
-const SETTING_WRITE_DEBOUNCE: Duration = Duration::from_millis(300);
-
-#[derive(Clone)]
-struct SettingWriter {
-    path: &'static [&'static str],
-    input_sender: relm4::Sender<SettingsInput>,
-    pending: Rc<RefCell<Option<gtk::glib::SourceId>>>,
-}
-
-impl SettingWriter {
-    fn new(path: &'static [&'static str], input_sender: relm4::Sender<SettingsInput>) -> Self {
-        Self {
-            path,
-            input_sender,
-            pending: Rc::new(RefCell::new(None)),
-        }
-    }
-
-    fn send_debounced(&self, value: ConfigValue) {
-        self.cancel_pending();
-
-        let writer = self.clone();
-        let source = gtk::glib::timeout_add_local_once(SETTING_WRITE_DEBOUNCE, move || {
-            *writer.pending.borrow_mut() = None;
-            writer.send_now(Some(value));
-        });
-
-        *self.pending.borrow_mut() = Some(source);
-    }
-
-    fn send_now(&self, value: Option<ConfigValue>) {
-        self.cancel_pending();
-
-        let _ = self.input_sender.send(SettingsInput::SetValue {
-            path: self.path,
-            value,
-        });
-    }
-
-    fn cancel_pending(&self) {
-        if let Some(source) = self.pending.borrow_mut().take() {
-            source.remove();
-        }
-    }
-}
-
-#[derive(Clone)]
-struct OwnedSettingWriter {
-    path: Vec<String>,
-    input_sender: relm4::Sender<SettingsInput>,
-    pending: Rc<RefCell<Option<gtk::glib::SourceId>>>,
-}
-
-impl OwnedSettingWriter {
-    fn new(path: Vec<String>, input_sender: relm4::Sender<SettingsInput>) -> Self {
-        Self {
-            path,
-            input_sender,
-            pending: Rc::new(RefCell::new(None)),
-        }
-    }
-
-    fn send_debounced(&self, value: ConfigValue) {
-        self.cancel_pending();
-
-        let writer = self.clone();
-        let source = gtk::glib::timeout_add_local_once(SETTING_WRITE_DEBOUNCE, move || {
-            *writer.pending.borrow_mut() = None;
-            writer.send_now(Some(value));
-        });
-
-        *self.pending.borrow_mut() = Some(source);
-    }
-
-    fn send_now(&self, value: Option<ConfigValue>) {
-        self.cancel_pending();
-
-        let _ = self.input_sender.send(SettingsInput::SetValueOwned {
-            path: self.path.clone(),
-            value,
-        });
-    }
-
-    fn cancel_pending(&self) {
-        if let Some(source) = self.pending.borrow_mut().take() {
-            source.remove();
-        }
-    }
-}
-
-/// Builds a settings row with a leading label and a controls box that shares a
-/// width column (via `align`) so clusters line up across rows. Append value
-/// widgets to the returned controls box, then the reset button to the row.
-fn row_with_label(
-    label_text: &str,
-    description: Option<&str>,
-    align: &gtk::SizeGroup
-) -> (gtk::Box, gtk::Box) {
-    let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    row.add_css_class("settings-row");
-
-    let label_box = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-    label_box.set_hexpand(true);
-    label_box.set_halign(gtk::Align::Start);
-    label_box.set_valign(gtk::Align::Center);
-
-    let label = gtk::Label::new(Some(label_text));
-    label.set_halign(gtk::Align::Start);
-    label.add_css_class("settings-row-label");
-    row.append(&label);
-
-    if let Some(description) = description {
-        let description_label = gtk::Label::new(None);
-        description_label.set_markup(description);
-        description_label.set_halign(gtk::Align::Start);
-        description_label.set_xalign(0.0);
-        description_label.set_wrap(true);
-        description_label.add_css_class("settings-row-description");
-        label_box.append(&description_label);
-    }
-
-    row.append(&label_box);
-
-    let controls = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    controls.set_halign(gtk::Align::Start);
-    controls.set_valign(gtk::Align::Center);
-    align.add_widget(&controls);
-    row.append(&controls);
-
-    (row, controls)
-}
-
-fn append_reset_button(row: &gtk::Box, is_configured: bool, writer: SettingWriter) -> gtk::Button {
-    let button = gtk::Button::with_label("Reset");
-    button.add_css_class("settings-reset-button");
-    button.set_tooltip_text(Some("Reset to default"));
-    button.set_sensitive(is_configured);
-
-    button.connect_clicked(move |_| {
-        writer.send_now(None);
-    });
-
-    row.append(&button);
-    button
-}
-
-pub(crate) fn number_row(
-    setting: NumberSpec,
-    sender: &ComponentSender<super::window::SettingsWindow>,
-    align: &gtk::SizeGroup,
-) -> gtk::Box {
-    let (row, controls) = row_with_label(setting.label, setting.description, align);
-
-    let spin = gtk::SpinButton::with_range(setting.min, setting.max, setting.step);
-    spin.set_value(setting.display_value());
-    spin.set_width_chars(5);
-
-    let path = setting.path;
-    let saved_setting = setting.clone();
-    let writer = SettingWriter::new(path, sender.input_sender().clone());
-    let change_writer = writer.clone();
-
-    controls.append(&spin);
-    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
-
-    spin.connect_value_changed(move |spin| {
-        reset_button.set_sensitive(true);
-        change_writer.send_debounced(saved_setting.value_for_config(spin.value()));
-    });
-    row
-}
-
-pub(crate) fn toggle_row(
-    setting: ToggleSpec,
-    sender: &ComponentSender<super::window::SettingsWindow>,
-    align: &gtk::SizeGroup,
-) -> gtk::Box {
-    let (row, controls) = row_with_label(setting.label, setting.description, align);
-
-    let toggle = gtk::ToggleButton::with_label(toggle_label(setting.display_value()));
-    toggle.add_css_class("settings-toggle-button");
-    toggle.set_active(setting.display_value());
-    toggle.set_valign(gtk::Align::Center);
-
-    let path = setting.path;
-    let saved_setting = setting.clone();
-    let writer = SettingWriter::new(path, sender.input_sender().clone());
-    let change_writer = writer.clone();
-
-    controls.append(&toggle);
-    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
-
-    toggle.connect_toggled(move |toggle| {
-        let active = toggle.is_active();
-        toggle.set_label(toggle_label(active));
-        reset_button.set_sensitive(true);
-        change_writer.send_now(Some(saved_setting.value_for_config(active)));
-    });
-    row
-}
-
-pub(crate) fn choice_row(
-    setting: ChoiceSpec,
-    sender: &ComponentSender<super::window::SettingsWindow>,
-    align: &gtk::SizeGroup,
-) -> gtk::Box {
-    let (row, controls)  = row_with_label(setting.label, setting.description, align);
-
-    let string_list = gtk::StringList::new(&[]);
-    for option in setting.options {
-        string_list.append(option.label);
-    }
-    let dropdown = gtk::DropDown::new(Some(string_list), None::<gtk::Expression>);
-    dropdown.add_css_class("settings-choice-dropdown");
-    dropdown.set_selected(setting.selected_index());
-
-    let path = setting.path;
-    let saved_setting = setting.clone();
-    let writer = SettingWriter::new(path, sender.input_sender().clone());
-    let change_writer = writer.clone();
-
-    controls.append(&dropdown);
-    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
-
-    dropdown.connect_selected_notify(move |dropdown| {
-        reset_button.set_sensitive(true);
-        change_writer.send_now(Some(saved_setting.value_for_config(dropdown.selected())));
-    });
-
-    row
-}
-
-pub(crate) fn string_row(
-    setting: StringSpec,
-    sender: &ComponentSender<super::window::SettingsWindow>,
-    align: &gtk::SizeGroup,
-) -> gtk::Box {
-    let (row, controls) = row_with_label(setting.label, setting.description, align);
-
-    let entry = gtk::Entry::new();
-    entry.set_text(&setting.display_value());
-    entry.set_width_chars(18);
-
-    let path = setting.path;
-    let saved_setting = setting.clone();
-    let writer = SettingWriter::new(path, sender.input_sender().clone());
-    let change_writer = writer.clone();
-
-    controls.append(&entry);
-    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
-
-    entry.connect_changed(move |entry| {
-        reset_button.set_sensitive(true);
-        change_writer.send_debounced(saved_setting.value_for_config(entry.text().to_string()));
-    });
-    row
-}
-
-pub(crate) fn string_list_row(
-    setting: StringListSpec,
-    sender: &ComponentSender<super::window::SettingsWindow>,
-    align: &gtk::SizeGroup,
-) -> gtk::Box {
-    let (row, controls) = row_with_label(setting.label, setting.description, align);
-
-    let entry = gtk::Entry::new();
-    entry.set_text(&setting.display_value());
-    entry.set_width_chars(28);
-    entry.set_tooltip_text(Some("Separate values with commas"));
-
-    let path = setting.path;
-    let saved_setting = setting.clone();
-    let writer = SettingWriter::new(path, sender.input_sender().clone());
-    let change_writer = writer.clone();
-
-    controls.append(&entry);
-    let reset_button = append_reset_button(&row, setting.value.is_some(), writer);
-
-    entry.connect_changed(move |entry| {
-        reset_button.set_sensitive(true);
-        change_writer.send_debounced(saved_setting.value_for_config(entry.text().to_string()));
-    });
-    row
-}
+use super::shared::{SettingWriter, append_reset_button, row_with_label};
 
 pub(crate) fn color_row(
     setting: ColorSpec,
-    sender: &ComponentSender<super::window::SettingsWindow>,
+    sender: &ComponentSender<SettingsWindow>,
     align: &gtk::SizeGroup,
     value_align: &gtk::SizeGroup,
 ) -> gtk::Box {
@@ -312,7 +26,7 @@ pub(crate) fn color_row(
 
 fn palette_color_row(
     setting: ColorSpec,
-    sender: &ComponentSender<super::window::SettingsWindow>,
+    sender: &ComponentSender<SettingsWindow>,
     align: &gtk::SizeGroup,
 ) -> gtk::Box {
     let label_text = setting.display_label();
@@ -425,7 +139,7 @@ fn palette_color_row(
 
 fn consumer_color_row(
     setting: ColorSpec,
-    sender: &ComponentSender<super::window::SettingsWindow>,
+    sender: &ComponentSender<SettingsWindow>,
     align: &gtk::SizeGroup,
     value_align: &gtk::SizeGroup,
 ) -> gtk::Box {
@@ -522,7 +236,7 @@ fn consumer_color_row(
     // --- writers ---
     let color_writer = SettingWriter::new(setting.path, sender.input_sender().clone());
     let opacity_writer =
-        OwnedSettingWriter::new(setting.opacity_path.clone(), sender.input_sender().clone());
+        SettingWriter::new_owned(setting.opacity_path.clone(), sender.input_sender().clone());
 
     let opacity_label = gtk::Label::new(Some("Opacity"));
     opacity_label.add_css_class("settings-opacity-label");
@@ -735,8 +449,4 @@ fn solid_hex(color: gtk::gdk::RGBA) -> String {
     let g = (color.green() * 255.0).round() as u8;
     let b = (color.blue() * 255.0).round() as u8;
     format!("#{r:02x}{g:02x}{b:02x}")
-}
-
-fn toggle_label(active: bool) -> &'static str {
-    if active { "On" } else { "Off" }
 }

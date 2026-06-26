@@ -443,10 +443,16 @@ fn action_menu_sections_mut_creates_array_under_existing_table() {
         sections.push(section);
     }
     let rendered = document.to_string();
-    assert!(rendered.contains("[[widgets.action_menu.sections]]"), "{rendered}");
+    assert!(
+        rendered.contains("[[widgets.action_menu.sections]]"),
+        "{rendered}"
+    );
     assert!(rendered.contains("title = \"New section\""), "{rendered}");
     // sibling tables are preserved
-    assert!(rendered.contains("[widgets.action_menu.layout]"), "{rendered}");
+    assert!(
+        rendered.contains("[widgets.action_menu.layout]"),
+        "{rendered}"
+    );
 }
 
 #[test]
@@ -510,4 +516,3 @@ fn default_action_menu_section_tables_round_trip_from_widget_defaults() {
     assert!(tables[0].contains_key("title"));
     assert!(tables[0].contains_key("actions"));
 }
-
