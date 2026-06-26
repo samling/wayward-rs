@@ -73,11 +73,6 @@ pub(crate) enum SettingsInput {
         section: usize,
         action: usize,
     },
-    MoveActionMenuAction {
-        section: usize,
-        action: usize,
-        offset: i64,
-    },
     SetActionMenuSectionField {
         section: usize,
         field: &'static str,
@@ -356,16 +351,6 @@ impl Component for SettingsWindow {
             SettingsInput::RemoveActionMenuAction { section, action } => {
                 if let Err(error) = crate::config::remove_action_menu_action(section, action) {
                     tracing::error!(section, action, "Failed to remove action: {error}");
-                }
-                self.refresh_from_disk(widgets, &sender);
-            }
-            SettingsInput::MoveActionMenuAction {
-                section,
-                action,
-                offset,
-            } => {
-                if let Err(error) = crate::config::move_action_menu_action(section, action, offset) {
-                    tracing::error!(section, action, "Failed to move action: {error}");
                 }
                 self.refresh_from_disk(widgets, &sender);
             }

@@ -48,7 +48,6 @@ pub(crate) fn ensure_config_files() {
     }
 
     write_default_file(config_path(), DEFAULT_CONFIG_TOML);
-    seed_action_menu_sections_if_missing();
 }
 
 fn write_default_file(path: Option<PathBuf>, contents: &str) {
@@ -606,11 +605,25 @@ fn action_menu_sections_mut(
             io::Error::new(io::ErrorKind::InvalidData, "widgets.action_menu is not a table")
         })?;
 
-    if !action_menu.contains_key("sections") {
-        action_menu.insert(
-            "sections",
-            toml_edit::Item::ArrayOfTables(toml_edit::ArrayOfTables::new()),
-        );
+    match action_menu.get("sections") {
+        // Never configured: materialize the built-in defaults so edits operate on
+        // the same sections the settings editor displays.
+        None => {
+            let mut sections = toml_edit::ArrayOfTables::new();
+            for table in default_action_menu_section_tables() {
+                sections.push(table);
+            }
+            action_menu.insert("sections", toml_edit::Item::ArrayOfTables(sections));
+        }
+        // Explicitly emptied (`sections = []`): honor it, just make it pushable
+        // again without reintroducing the defaults.
+        Some(item) if item.as_array().is_some_and(toml_edit::Array::is_empty) => {
+            action_menu.insert(
+                "sections",
+                toml_edit::Item::ArrayOfTables(toml_edit::ArrayOfTables::new()),
+            );
+        }
+        Some(_) => {}
     }
 
     action_menu
@@ -644,48 +657,17 @@ fn default_action_menu_section_tables() -> Vec<toml_edit::Table> {
         .unwrap_or_default()
 }
 
-/// Write the built-in default action-menu sections into the config file when it
-/// has none, so the config is the single source of truth and the settings editor
-/// reads real data. Idempotent: leaves an already-configured file untouched.
-pub(crate) fn seed_action_menu_sections_if_missing() {
-    let Some(config_path) = config_path() else {
-        return;
-    };
-
-    let Ok(contents) = fs::read_to_string(&config_path) else {
-        return;
-    };
-    let Ok(mut document) = contents.parse::<toml_edit::DocumentMut>() else {
-        return;
-    };
-
-    let already_configured = document
-        .as_table()
-        .get("widgets")
-        .and_then(|item| item.as_table())
-        .and_then(|widgets| widgets.get("action_menu"))
-        .and_then(|item| item.as_table())
-        .and_then(|action_menu| action_menu.get("sections"))
-        .and_then(|item| item.as_array_of_tables())
-        .is_some_and(|sections| !sections.is_empty());
-    if already_configured {
-        return;
-    }
-
-    let tables = default_action_menu_section_tables();
-    if tables.is_empty() {
-        return;
-    }
-
-    let Ok(sections) = action_menu_sections_mut(&mut document) else {
-        return;
-    };
-    for table in tables {
-        sections.push(table);
-    }
-
-    if let Err(error) = fs::write(config_path, document.to_string()) {
-        tracing::error!("Failed to seed action menu defaults: {error}");
+/// Write an explicit empty inline array (`sections = []`) so an emptied action
+/// menu stays empty across reloads. Without it, an empty array-of-tables renders
+/// to nothing, leaving the key absent and reintroducing the built-in defaults.
+fn persist_empty_action_menu_sections(document: &mut toml_edit::DocumentMut) {
+    if let Some(action_menu) = document
+        .get_mut("widgets")
+        .and_then(|item| item.as_table_mut())
+        .and_then(|widgets| widgets.get_mut("action_menu"))
+        .and_then(|item| item.as_table_mut())
+    {
+        action_menu["sections"] = toml_edit::value(toml_edit::Array::new());
     }
 }
 
@@ -709,6 +691,10 @@ pub(crate) fn remove_action_menu_section(section_index: usize) -> io::Result<()>
         let sections = action_menu_sections_mut(document)?;
         if section_index < sections.len() {
             sections.remove(section_index);
+        }
+        let emptied = sections.is_empty();
+        if emptied {
+            persist_empty_action_menu_sections(document);
         }
         Ok(())
     })
@@ -755,41 +741,6 @@ pub(crate) fn remove_action_menu_action(
             if action_index < actions.len() {
                 actions.remove(action_index);
             }
-        }
-        Ok(())
-    })
-}
-
-pub(crate) fn move_action_menu_action(
-    section_index: usize,
-    action_index: usize,
-    offset: i64,
-) -> io::Result<()> {
-    edit_document(|document| {
-        let sections = action_menu_sections_mut(document)?;
-        let section = sections
-            .get_mut(section_index)
-            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "section not found"))?;
-        let Some(actions) = section
-            .get_mut("actions")
-            .and_then(|item| item.as_array_of_tables_mut())
-        else {
-            return Ok(());
-        };
-
-        let len = actions.len();
-        let target = action_index as i64 + offset;
-        if action_index >= len || target < 0 || target as usize >= len {
-            return Ok(());
-        }
-        let target = target as usize;
-
-        // ArrayOfTables has no swap/insert, so clone out, reorder, then rebuild.
-        let mut tables: Vec<toml_edit::Table> = actions.iter().cloned().collect();
-        tables.swap(action_index, target);
-        actions.clear();
-        for table in tables {
-            actions.push(table);
         }
         Ok(())
     })
