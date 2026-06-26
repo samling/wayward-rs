@@ -63,8 +63,7 @@ impl BarWidget for BrightnessWidget {
     fn settings_sections(
         &self,
         config: &toml::value::Table,
-    ) -> Vec<crate::settings_spec::SettingsSectionSpec>
-    {
+    ) -> Vec<crate::settings_spec::SettingsSectionSpec> {
         vec![SettingsSectionSpec {
             title: "Config".to_string(),
             settings: vec![
@@ -82,7 +81,7 @@ impl BarWidget for BrightnessWidget {
                     value: table_string(config, &["sunsetr", "paused-preset"]),
                     default: "day",
                 }),
-            ]
+            ],
         }]
     }
 

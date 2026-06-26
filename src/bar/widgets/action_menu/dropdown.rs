@@ -6,7 +6,8 @@ use crate::bar::widget::{ActionMenuAction, ActionMenuCommand, WidgetAction, Widg
 use crate::bar::{BarMsg, dropdown, layout::BarEdge, widget::BarRegion};
 
 use super::config::{
-    ActionMenuActionConfig, ActionMenuActionKind, ActionMenuConfig, ActionMenuLayoutConfig, ActionMenuSectionConfig,
+    ActionMenuActionConfig, ActionMenuActionKind, ActionMenuConfig, ActionMenuLayoutConfig,
+    ActionMenuSectionConfig,
 };
 
 pub(super) struct ActionMenuDropdown {

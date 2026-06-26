@@ -27,11 +27,19 @@ pub(crate) fn nav() -> &'static [NavGroup] {
     &[
         NavGroup {
             title: "Appearance",
+            items: &[NavItem {
+                key: "palette",
+                title: "Palette",
+                content: StyleSection("Palette"),
+            }],
+        },
+        NavGroup {
+            title: "Layout",
             items: &[
                 NavItem {
-                    key: "palette",
-                    title: "Palette",
-                    content: StyleSection("Palette"),
+                    key: "bars",
+                    title: "Bars",
+                    content: BarLayout,
                 },
                 NavItem {
                     key: "bar",
@@ -42,6 +50,35 @@ pub(crate) fn nav() -> &'static [NavGroup] {
                     key: "settings-window",
                     title: "Settings window",
                     content: StyleSection("Settings window"),
+                },
+                NavItem {
+                    key: "action-menu",
+                    title: "Action menu",
+                    content: ActionMenu,
+                },
+                NavItem {
+                    key: "osd",
+                    title: "OSD",
+                    content: Widget {
+                        section: "OSD",
+                        config_key: "osd",
+                    },
+                },
+                NavItem {
+                    key: "notifications",
+                    title: "Notifications",
+                    content: Widget {
+                        section: "Notifications",
+                        config_key: "notifications",
+                    },
+                },
+                NavItem {
+                    key: "notification-cards",
+                    title: "Notification cards",
+                    content: Widget {
+                        section: "Notification cards",
+                        config_key: "notifications",
+                    },
                 },
             ],
         },
@@ -104,44 +141,7 @@ pub(crate) fn nav() -> &'static [NavGroup] {
                         config_key: "updates",
                     },
                 },
-                NavItem {
-                    key: "notifications",
-                    title: "Notifications",
-                    content: Widget {
-                        section: "Notifications",
-                        config_key: "notifications",
-                    },
-                },
-                NavItem {
-                    key: "notification-cards",
-                    title: "Notification cards",
-                    content: Widget {
-                        section: "Notification cards",
-                        config_key: "notifications",
-                    },
-                },
-                NavItem {
-                    key: "osd",
-                    title: "OSD",
-                    content: Widget {
-                        section: "OSD",
-                        config_key: "osd",
-                    },
-                },
-                NavItem {
-                    key: "action-menu",
-                    title: "Action menu",
-                    content: ActionMenu,
-                },
             ],
-        },
-        NavGroup {
-            title: "Layout",
-            items: &[NavItem {
-                key: "bars",
-                title: "Bars",
-                content: BarLayout,
-            }],
         },
     ]
 }

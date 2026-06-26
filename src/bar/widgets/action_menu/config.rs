@@ -15,17 +15,15 @@ impl Default for ActionMenuConfig {
             panel: ActionMenuPanelConfig::default(),
             layout: ActionMenuLayoutConfig::default(),
             header: ActionMenuHeaderConfig::default(),
-            sections: vec![
-                ActionMenuSectionConfig {
-                    title: Some("Screenshot".to_string()),
-                    columns: Some(3),
-                    actions: vec![
-                        ActionMenuActionConfig::screenshot("Region", "\u{f125}", "region"),
-                        ActionMenuActionConfig::screenshot("Window", "\u{f2d0}", "window"),
-                        ActionMenuActionConfig::screenshot("Screen", "\u{f108}", "monitor"),
-                    ],
-                },
-            ],
+            sections: vec![ActionMenuSectionConfig {
+                title: Some("Screenshot".to_string()),
+                columns: Some(3),
+                actions: vec![
+                    ActionMenuActionConfig::screenshot("Region", "\u{f125}", "region"),
+                    ActionMenuActionConfig::screenshot("Window", "\u{f2d0}", "window"),
+                    ActionMenuActionConfig::screenshot("Screen", "\u{f108}", "monitor"),
+                ],
+            }],
         }
     }
 }
