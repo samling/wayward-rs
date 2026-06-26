@@ -1,5 +1,6 @@
 use super::*;
 use crate::config::ConfigValue;
+use crate::settings_spec::SettingSpec;
 
 #[test]
 fn build_page_for_updates_widget_has_config_then_style() {
@@ -153,4 +154,69 @@ fn settings_config_removes_empty_nested_widget_table_after_reset() {
     );
 
     assert!(!config.widgets.contains_key("brightness"));
+}
+
+#[test]
+fn action_menu_config_sections_use_widget_owned_settings() {
+    let mut panel = toml::value::Table::new();
+    panel.insert("width".to_string(), toml::Value::Integer(320));
+
+    let mut layout = toml::value::Table::new();
+    layout.insert("columns".to_string(), toml::Value::Integer(4));
+
+    let mut header = toml::value::Table::new();
+    header.insert(
+        "power-command".to_string(),
+        toml::Value::String("systemctl poweroff".to_string()),
+    );
+    header.insert(
+        "power-args".to_string(),
+        toml::Value::Array(vec![toml::Value::String("--logout".to_string())]),
+    );
+
+    let mut action_menu = toml::value::Table::new();
+    action_menu.insert("panel".to_string(), toml::Value::Table(panel));
+    action_menu.insert("layout".to_string(), toml::Value::Table(layout));
+    action_menu.insert("header".to_string(), toml::Value::Table(header));
+
+    let widgets = BTreeMap::from([("action_menu".to_string(), action_menu)]);
+    let sections = super::super::pages::widgets::config_sections("action_menu", &widgets);
+
+    assert_eq!(
+        sections
+            .iter()
+            .map(|section| section.title.as_str())
+            .collect::<Vec<_>>(),
+        vec!["Panel", "Layout", "Header"]
+    );
+    assert_eq!(sections[0].settings.len(), 1);
+    assert_eq!(sections[1].settings.len(), 4);
+    assert_eq!(sections[2].settings.len(), 2);
+
+    let SettingSpec::Number(width) = &sections[0].settings[0] else {
+        panic!("width setting");
+    };
+    assert_eq!(width.path, ["widgets", "action_menu", "panel", "width"]);
+    assert_eq!(width.value, Some(320));
+    assert_eq!(width.default, 268);
+
+    let SettingSpec::Number(columns) = &sections[1].settings[0] else {
+        panic!("columns setting");
+    };
+    assert_eq!(
+        columns.path,
+        ["widgets", "action_menu", "layout", "columns"]
+    );
+    assert_eq!(columns.value, Some(4));
+    assert_eq!(columns.default, 3);
+
+    let SettingSpec::String(power_command) = &sections[2].settings[0] else {
+        panic!("power command setting");
+    };
+    assert_eq!(
+        power_command.path,
+        ["widgets", "action_menu", "header", "power-command"]
+    );
+    assert_eq!(power_command.value.as_deref(), Some("systemctl poweroff"));
+    assert_eq!(power_command.default, "wlogout");
 }
