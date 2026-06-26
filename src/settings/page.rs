@@ -9,10 +9,10 @@ use relm4::{
 use std::collections::BTreeMap;
 
 use super::{
-    controls::{color_row, number_row, string_list_row, string_row, toggle_row},
-    spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec},
+    controls::{choice_row, color_row, number_row, string_list_row, string_row, toggle_row},
     window::{SettingsInput, SettingsWindow},
 };
+use crate::settings_spec::{SettingSpec, SettingsPageSpec, SettingsSectionSpec};
 
 #[derive(Clone, Debug, PartialEq)]
 pub(crate) struct SettingsConfig {
@@ -130,12 +130,8 @@ pub(crate) fn render_current_page(
         return;
     };
 
-    match build_page(item, config) {
-        Some(page) => {
-            title.set_label(&page.title);
-            render_page(container, page, sender);
-        }
-        None => {
+    match &item.content {
+        super::nav::NavContent::BarLayout => {
             title.set_label(item.title);
             super::pages::bar_layout::render(
                 container,
@@ -143,6 +139,16 @@ pub(crate) fn render_current_page(
                 &config.available_monitors,
                 sender,
             );
+        }
+        super::nav::NavContent::ActionMenu => {
+            title.set_label(item.title);
+            super::pages::action_menu::render(container, config, sender);
+        }
+        _ => {
+            if let Some(page) = build_page(item, config) {
+                title.set_label(&page.title);
+                render_page(container, page, sender);
+            }
         }
     }
 }
@@ -200,7 +206,7 @@ fn render_page(
     }
 }
 
-fn render_section(
+pub(super) fn render_section(
     container: &gtk::Box,
     section: SettingsSectionSpec,
     sender: &ComponentSender<SettingsWindow>,
@@ -235,6 +241,9 @@ fn render_section(
             }
             SettingSpec::StringList(setting) => {
                 group.append(&string_list_row(setting, sender, &controls_group));
+            }
+            SettingSpec::Choice(setting) => {
+                group.append(&choice_row(setting, sender, &controls_group));
             }
             SettingSpec::Color(setting) => {
                 group.append(&color_row(
@@ -279,6 +288,7 @@ pub(crate) fn build_page(
             })
         }
         NavContent::BarLayout => None,
+        NavContent::ActionMenu => None,
     }
 }
 

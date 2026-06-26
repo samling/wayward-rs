@@ -16,12 +16,13 @@ pub(crate) enum NavContent {
         config_key: &'static str,
     },
     BarLayout,
+    ActionMenu,
 }
 
 pub(crate) const DEFAULT_ITEM: &str = "palette";
 
 pub(crate) fn nav() -> &'static [NavGroup] {
-    use NavContent::{BarLayout, StyleSection, Widget};
+    use NavContent::{ActionMenu, BarLayout, StyleSection, Widget};
 
     &[
         NavGroup {
@@ -130,10 +131,7 @@ pub(crate) fn nav() -> &'static [NavGroup] {
                 NavItem {
                     key: "action-menu",
                     title: "Action menu",
-                    content: Widget {
-                        section: "Action menu",
-                        config_key: "action-menu",
-                    },
+                    content: ActionMenu,
                 },
             ],
         },

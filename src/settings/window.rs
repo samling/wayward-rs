@@ -56,6 +56,28 @@ pub(crate) enum SettingsInput {
         current_name: String,
         next_name: String,
     },
+    SetActionMenuActionField {
+        section: usize,
+        action: usize,
+        field: &'static str,
+        value: Option<crate::config::ConfigValue>,
+    },
+    AddActionMenuSection,
+    RemoveActionMenuSection {
+        section: usize,
+    },
+    AddActionMenuAction {
+        section: usize,
+    },
+    RemoveActionMenuAction {
+        section: usize,
+        action: usize,
+    },
+    SetActionMenuSectionField {
+        section: usize,
+        field: &'static str,
+        value: Option<crate::config::ConfigValue>,
+    },
 }
 
 #[relm4::component(pub(crate))]
@@ -295,6 +317,56 @@ impl Component for SettingsWindow {
                     tracing::error!(current_name, next_name, "Failed to rename bar: {error}");
                 }
             }
+            SettingsInput::SetActionMenuActionField {
+                section,
+                action,
+                field,
+                value,
+            } => {
+                if let Err(error) =
+                    crate::config::set_action_menu_action_field(section, action, field, value)
+                {
+                    tracing::error!(section, action, field, "Failed to save action: {error}");
+                }
+                self.refresh_from_disk(widgets, &sender);
+            }
+            SettingsInput::AddActionMenuSection => {
+                if let Err(error) = crate::config::add_action_menu_section() {
+                    tracing::error!("Failed to add section: {error}");
+                }
+                self.refresh_from_disk(widgets, &sender);
+            }
+            SettingsInput::RemoveActionMenuSection { section } => {
+                if let Err(error) = crate::config::remove_action_menu_section(section) {
+                    tracing::error!(section, "Failed to remove section: {error}");
+                }
+                self.refresh_from_disk(widgets, &sender);
+            }
+            SettingsInput::AddActionMenuAction { section } => {
+                if let Err(error) = crate::config::add_action_menu_action(section) {
+                    tracing::error!(section, "Failed to add action: {error}");
+                }
+                self.refresh_from_disk(widgets, &sender);
+            }
+            SettingsInput::RemoveActionMenuAction { section, action } => {
+                if let Err(error) = crate::config::remove_action_menu_action(section, action) {
+                    tracing::error!(section, action, "Failed to remove action: {error}");
+                }
+                self.refresh_from_disk(widgets, &sender);
+            }
+            SettingsInput::SetActionMenuSectionField {
+                section,
+                field,
+                value,
+            } => {
+                if let Err(error) =
+                    crate::config::set_action_menu_section_field(section, field, value)
+                {
+                    tracing::error!(section, field, "Failed to save section: {error}");
+                }
+                self.refresh_from_disk(widgets, &sender);
+            }
+
         }
 
         self.update_view(widgets, sender);
@@ -310,6 +382,33 @@ impl SettingsWindow {
     fn restore_scroll(&self, widgets: &SettingsWindowWidgets) {
         let value = self.scroll.get(self.active_item).copied().unwrap_or(0.0);
         restore_page_scroll(&widgets.page_scroll, value);
+    }
+
+    /// Re-read config from disk and re-render the current page. Structural action-menu
+    /// edits only write the file, so this refreshes the UI without depending on the
+    /// file-watch round-trip.
+    fn refresh_from_disk(
+        &mut self,
+        widgets: &SettingsWindowWidgets,
+        sender: &ComponentSender<Self>,
+    ) {
+        let config = SettingsConfig::new(
+            &crate::config::AppConfig::load(),
+            self.config.available_monitors.clone(),
+        );
+
+        if self.config != config {
+            self.save_scroll(widgets);
+            self.config = config;
+            render_current_page(
+                &widgets.page_content,
+                &widgets.page_title,
+                self.active_item,
+                &self.config,
+                sender,
+            );
+            self.restore_scroll(widgets);
+        }
     }
 }
 

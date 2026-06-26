@@ -146,6 +146,13 @@ pub(crate) trait BarWidget: Sync {
         &[]
     }
 
+    fn settings_sections(
+        &self,
+        _config: &toml::value::Table,
+    ) -> Vec<crate::settings_spec::SettingsSectionSpec> {
+        Vec::new()
+    }
+
     fn build(
         &self,
         instance: &WidgetInstance,

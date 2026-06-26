@@ -14,6 +14,7 @@ use crate::bar::widget::{
     BarContext, BarWidget, BarWidgetRuntime, WidgetBuildContext, WidgetEvent, WidgetInstance,
 };
 use crate::services::ShellServices;
+use crate::settings_spec::{SettingSpec, SettingsSectionSpec, StringSpec, table_string};
 
 use self::component::{BrightnessComponent, BrightnessInit, BrightnessInput};
 
@@ -57,6 +58,32 @@ impl BarWidget for BrightnessWidget {
 
     fn config_table_keys(&self) -> &'static [&'static str] {
         &["sunsetr"]
+    }
+
+    fn settings_sections(
+        &self,
+        config: &toml::value::Table,
+    ) -> Vec<crate::settings_spec::SettingsSectionSpec>
+    {
+        vec![SettingsSectionSpec {
+            title: "Config".to_string(),
+            settings: vec![
+                SettingSpec::String(StringSpec {
+                    label: "sunsetr automatic preset",
+                    description: None,
+                    path: &["widgets", "brightness", "sunsetr", "automatic-preset"],
+                    value: table_string(config, &["sunsetr", "automatic-preset"]),
+                    default: "default",
+                }),
+                SettingSpec::String(StringSpec {
+                    label: "sunsetr paused preset",
+                    description: None,
+                    path: &["widgets", "brightness", "sunsetr", "paused-preset"],
+                    value: table_string(config, &["sunsetr", "paused-preset"]),
+                    default: "day",
+                }),
+            ]
+        }]
     }
 
     fn build(
