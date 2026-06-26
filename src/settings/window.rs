@@ -56,6 +56,12 @@ pub(crate) enum SettingsInput {
         current_name: String,
         next_name: String,
     },
+    SetActionMenuActionField {
+        section: usize,
+        action: usize,
+        field: &'static str,
+        value: Option<crate::config::ConfigValue>,
+    },
 }
 
 #[relm4::component(pub(crate))]
@@ -293,6 +299,18 @@ impl Component for SettingsWindow {
             } => {
                 if let Err(error) = crate::config::rename_bar(&current_name, &next_name) {
                     tracing::error!(current_name, next_name, "Failed to rename bar: {error}");
+                }
+            }
+            SettingsInput::SetActionMenuActionField {
+                section,
+                action,
+                field,
+                value,
+            } => {
+                if let Err(error) =
+                    crate::config::set_action_menu_action_field(section, action, field, value)
+                {
+                    tracing::error!(section, action, field, "Failed to save action: {error}")
                 }
             }
         }

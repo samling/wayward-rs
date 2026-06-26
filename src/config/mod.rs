@@ -83,6 +83,65 @@ impl ConfigValue {
     }
 }
 
+pub(crate) fn set_action_menu_action_field(
+    section_index: usize,
+    action_index: usize,
+    field: &str,
+    value: Option<ConfigValue>,
+) -> io::Result<()> {
+    let Some(config_path) = config_path() else {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "could not determine config path",
+        ));
+    };
+
+    let contents = fs::read_to_string(&config_path).unwrap_or_default();
+    let mut document = contents
+        .parse::<toml_edit::DocumentMut>()
+        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+
+    set_action_menu_action_field_in_document(
+        &mut document,
+        section_index,
+        action_index,
+        field,
+        value,
+    )?;
+
+    fs::write(config_path, document.to_string())
+}
+
+fn set_action_menu_action_field_in_document(
+    document: &mut toml_edit::DocumentMut,
+    section_index: usize,
+    action_index: usize,
+    field: &str,
+    value: Option<ConfigValue>,
+) -> io::Result<()> {
+    let action = document
+        .get_mut("widgets")
+        .and_then(|item| item.as_table_mut())
+        .and_then(|table| table.get_mut("action_menu"))
+        .and_then(|item| item.as_table_mut())
+        .and_then(|table| table.get_mut("sections"))
+        .and_then(|item| item.as_array_of_tables_mut())
+        .and_then(|sections| sections.get_mut(section_index))
+        .and_then(|section| section.get_mut("actions"))
+        .and_then(|item| item.as_array_of_tables_mut())
+        .and_then(|actions| actions.get_mut(action_index))
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "action not found"))?;
+
+    match value {
+        Some(value) => action[field] = value.into_item(),
+        None => {
+            action.remove(field);
+        }
+    }
+
+    Ok(())
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum BarRegionKey {
     Start,
