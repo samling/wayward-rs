@@ -246,7 +246,9 @@ fn render_section_card(
     let remove_section = gtk::Button::with_label("Remove section");
     let input = sender.input_sender().clone();
     remove_section.connect_clicked(move |_| {
-        let _ = input.send(SettingsInput::RemoveActionMenuSection { section: section_index });
+        let _ = input.send(SettingsInput::RemoveActionMenuSection {
+            section: section_index,
+        });
     });
     header_row.append(&remove_section);
     card.append(&header_row);
@@ -254,7 +256,12 @@ fn render_section_card(
     if let Some(actions) = section.get("actions").and_then(|value| value.as_array()) {
         for (action_index, action) in actions.iter().enumerate() {
             if let Some(action) = action.as_table() {
-                card.append(&render_action_row(section_index, action_index, action, sender));
+                card.append(&render_action_row(
+                    section_index,
+                    action_index,
+                    action,
+                    sender,
+                ));
             }
         }
     }
@@ -263,7 +270,9 @@ fn render_section_card(
     add_action.set_halign(gtk::Align::Start);
     let input = sender.input_sender().clone();
     add_action.connect_clicked(move |_| {
-        let _ = input.send(SettingsInput::AddActionMenuAction { section: section_index });
+        let _ = input.send(SettingsInput::AddActionMenuAction {
+            section: section_index,
+        });
     });
     card.append(&add_action);
 
@@ -279,23 +288,49 @@ fn render_action_row(
     let outer = gtk::Box::new(gtk::Orientation::Vertical, 4);
     outer.add_css_class("settings-row");
 
-    let str_field =
-        |key: &str| action.get(key).and_then(|value| value.as_str()).unwrap_or("");
+    let str_field = |key: &str| {
+        action
+            .get(key)
+            .and_then(|value| value.as_str())
+            .unwrap_or("")
+    };
 
     let top = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-    let icon = action_text_field(section_index, action_index, "icon", str_field("icon"), sender);
+    let icon = action_text_field(
+        section_index,
+        action_index,
+        "icon",
+        str_field("icon"),
+        sender,
+    );
     icon.set_width_chars(3);
     icon.set_hexpand(false);
     icon.set_placeholder_text(Some("icon"));
     top.append(&icon);
-    let label = action_text_field(section_index, action_index, "label", str_field("label"), sender);
+    let label = action_text_field(
+        section_index,
+        action_index,
+        "label",
+        str_field("label"),
+        sender,
+    );
     label.set_placeholder_text(Some("label"));
     top.append(&label);
-    top.append(&action_kind_field(section_index, action_index, str_field("action"), sender));
+    top.append(&action_kind_field(
+        section_index,
+        action_index,
+        str_field("action"),
+        sender,
+    ));
     outer.append(&top);
 
-    let command =
-        action_text_field(section_index, action_index, "command", str_field("command"), sender);
+    let command = action_text_field(
+        section_index,
+        action_index,
+        "command",
+        str_field("command"),
+        sender,
+    );
     command.set_placeholder_text(Some("command"));
     outer.append(&command);
 
@@ -311,12 +346,22 @@ fn render_action_row(
                 .join(" ")
         })
         .unwrap_or_default();
-    bottom.append(&action_args_field(section_index, action_index, &args_text, sender));
+    bottom.append(&action_args_field(
+        section_index,
+        action_index,
+        &args_text,
+        sender,
+    ));
     let show_label = action
         .get("show-label")
         .and_then(|value| value.as_bool())
         .unwrap_or(true);
-    bottom.append(&action_toggle_field(section_index, action_index, show_label, sender));
+    bottom.append(&action_toggle_field(
+        section_index,
+        action_index,
+        show_label,
+        sender,
+    ));
 
     let remove = gtk::Button::with_label("Remove");
     let input_remove = sender.input_sender().clone();
@@ -373,12 +418,18 @@ fn action_kind_field(
     let options = ["command", "open-settings"];
     let string_list = gtk::StringList::new(&["Command", "Open settings"]);
     let dropdown = gtk::DropDown::new(Some(string_list), None::<gtk::Expression>);
-    let selected = options.iter().position(|option| *option == current).unwrap_or(0) as u32;
+    let selected = options
+        .iter()
+        .position(|option| *option == current)
+        .unwrap_or(0) as u32;
     dropdown.set_selected(selected);
 
     let input = sender.input_sender().clone();
     dropdown.connect_selected_notify(move |dropdown| {
-        let value = options.get(dropdown.selected() as usize).copied().unwrap_or("command");
+        let value = options
+            .get(dropdown.selected() as usize)
+            .copied()
+            .unwrap_or("command");
         let _ = input.send(SettingsInput::SetActionMenuActionField {
             section: section_index,
             action: action_index,

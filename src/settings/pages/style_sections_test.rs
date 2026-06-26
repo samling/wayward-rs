@@ -1,6 +1,6 @@
-use crate::settings_spec::SettingSpec;
 use super::*;
 use crate::config::StyleConfig;
+use crate::settings_spec::SettingSpec;
 
 #[test]
 fn palette_options_are_nonempty_and_contain_primary() {

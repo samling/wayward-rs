@@ -81,7 +81,9 @@ pub(crate) struct ChoiceSpec {
 
 impl ChoiceSpec {
     pub(crate) fn display_value(&self) -> String {
-        self.value.clone().unwrap_or_else(|| self.default.to_string())
+        self.value
+            .clone()
+            .unwrap_or_else(|| self.default.to_string())
     }
 
     pub(crate) fn selected_index(&self) -> u32 {

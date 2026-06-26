@@ -366,7 +366,6 @@ impl Component for SettingsWindow {
                 }
                 self.refresh_from_disk(widgets, &sender);
             }
-
         }
 
         self.update_view(widgets, sender);

@@ -60,8 +60,7 @@ impl BarWidget for UpdatesWidget {
     fn settings_sections(
         &self,
         config: &toml::value::Table,
-    ) -> Vec<crate::settings_spec::SettingsSectionSpec>
-    {
+    ) -> Vec<crate::settings_spec::SettingsSectionSpec> {
         vec![SettingsSectionSpec {
             title: "Config".to_string(),
             settings: vec![
@@ -79,7 +78,7 @@ impl BarWidget for UpdatesWidget {
                     value: table_string_list(config, "warning-patterns"),
                     default: &[],
                 }),
-            ]
+            ],
         }]
     }
 
