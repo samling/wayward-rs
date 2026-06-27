@@ -62,6 +62,57 @@ impl SettingsConfig {
 
         true
     }
+
+    pub(crate) fn apply_action_menu_section_field(
+        &mut self,
+        section: usize,
+        field: &str,
+        value: Option<&crate::config::ConfigValue>,
+    ) -> bool {
+        let Some(section) = self
+            .action_menu_sections_mut()
+            .and_then(|sections| sections.get_mut(section))
+            .and_then(toml::Value::as_table_mut)
+        else {
+            return false;
+        };
+
+        apply_table_config_value(section, field, value);
+        true
+    }
+
+    pub(crate) fn apply_action_menu_action_field(
+        &mut self,
+        section: usize,
+        action: usize,
+        field: &str,
+        value: Option<&crate::config::ConfigValue>,
+    ) -> bool {
+        let Some(action) = self
+            .action_menu_sections_mut()
+            .and_then(|sections| sections.get_mut(section))
+            .and_then(toml::Value::as_table_mut)
+            .and_then(|section| section.get_mut("actions"))
+            .and_then(toml::Value::as_array_mut)
+            .and_then(|actions| actions.get_mut(action))
+            .and_then(toml::Value::as_table_mut)
+        else {
+            return false;
+        };
+
+        apply_table_config_value(action, field, value);
+        true
+    }
+
+    fn action_menu_sections_mut(&mut self) -> Option<&mut toml::value::Array> {
+        let action_menu = self.widgets.entry("action_menu".to_string()).or_default();
+        action_menu
+            .entry("sections".to_string())
+            .or_insert_with(|| {
+                toml::Value::Array(crate::bar::widgets::action_menu::default_sections())
+            })
+            .as_array_mut()
+    }
 }
 
 fn insert_widget_value(table: &mut toml::value::Table, path: &[&str], value: toml::Value) {
@@ -101,6 +152,21 @@ fn remove_widget_value(table: &mut toml::value::Table, path: &[&str]) -> bool {
     }
 
     table.is_empty()
+}
+
+fn apply_table_config_value(
+    table: &mut toml::value::Table,
+    field: &str,
+    value: Option<&crate::config::ConfigValue>,
+) {
+    match value {
+        Some(value) => {
+            table.insert(field.to_string(), config_value_to_toml(value));
+        }
+        None => {
+            table.remove(field);
+        }
+    }
 }
 
 fn config_value_to_toml(value: &crate::config::ConfigValue) -> toml::Value {

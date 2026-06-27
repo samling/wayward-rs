@@ -516,3 +516,131 @@ fn default_action_menu_section_tables_round_trip_from_widget_defaults() {
     assert!(tables[0].contains_key("title"));
     assert!(tables[0].contains_key("actions"));
 }
+
+#[test]
+fn move_action_menu_section_in_document_moves_section_up() {
+    let mut document = parse_document(
+        r#"
+[[widgets.action_menu.sections]]
+title = "First"
+
+[[widgets.action_menu.sections]]
+title = "Second"
+
+[[widgets.action_menu.sections]]
+title = "Third"
+"#,
+    );
+
+    move_action_menu_section_in_document(&mut document, 1, ActionMenuSectionMove::Up).unwrap();
+
+    let sections = document["widgets"]["action_menu"]["sections"]
+        .as_array_of_tables()
+        .unwrap();
+
+    assert_eq!(sections.get(0).unwrap()["title"].as_str(), Some("Second"));
+    assert_eq!(sections.get(1).unwrap()["title"].as_str(), Some("First"));
+    assert_eq!(sections.get(2).unwrap()["title"].as_str(), Some("Third"));
+}
+
+#[test]
+fn move_action_menu_section_in_document_serializes_reordered_sections() {
+    let mut document = parse_document(
+        r#"
+[[bars]]
+start = []
+center = []
+end = []
+
+[[widgets.action_menu.sections]]
+title = "First"
+
+[[widgets.action_menu.sections]]
+title = "Second"
+
+[[widgets.action_menu.sections]]
+title = "Third"
+"#,
+    );
+
+    move_action_menu_section_in_document(&mut document, 1, ActionMenuSectionMove::Up).unwrap();
+
+    let config: AppConfig = toml::from_str(&document.to_string()).unwrap();
+    let sections = config
+        .widgets
+        .get("action_menu")
+        .and_then(|table| table.get("sections"))
+        .and_then(|value| value.as_array())
+        .unwrap();
+
+    assert_eq!(sections[0]["title"].as_str(), Some("Second"));
+    assert_eq!(sections[1]["title"].as_str(), Some("First"));
+    assert_eq!(sections[2]["title"].as_str(), Some("Third"));
+}
+
+#[test]
+fn move_action_menu_section_in_document_keeps_actions_with_section() {
+    let mut document = parse_document(
+        r#"
+[[bars]]
+start = []
+center = []
+end = []
+
+[[widgets.action_menu.sections]]
+title = "First"
+
+[[widgets.action_menu.sections.actions]]
+label = "First action"
+
+[[widgets.action_menu.sections]]
+title = "Second"
+
+[[widgets.action_menu.sections.actions]]
+label = "Second action"
+"#,
+    );
+
+    move_action_menu_section_in_document(&mut document, 1, ActionMenuSectionMove::Up).unwrap();
+
+    let config: AppConfig = toml::from_str(&document.to_string()).unwrap();
+    let sections = config
+        .widgets
+        .get("action_menu")
+        .and_then(|table| table.get("sections"))
+        .and_then(|value| value.as_array())
+        .unwrap();
+
+    assert_eq!(sections[0]["title"].as_str(), Some("Second"));
+    assert_eq!(
+        sections[0]["actions"][0]["label"].as_str(),
+        Some("Second action")
+    );
+    assert_eq!(sections[1]["title"].as_str(), Some("First"));
+    assert_eq!(
+        sections[1]["actions"][0]["label"].as_str(),
+        Some("First action")
+    );
+}
+
+#[test]
+fn move_action_menu_section_in_document_ignores_boundary_move() {
+    let mut document = parse_document(
+        r#"
+[[widgets.action_menu.sections]]
+title = "First"
+
+[[widgets.action_menu.sections]]
+title = "Second"
+"#,
+    );
+
+    move_action_menu_section_in_document(&mut document, 0, ActionMenuSectionMove::Up).unwrap();
+
+    let sections = document["widgets"]["action_menu"]["sections"]
+        .as_array_of_tables()
+        .unwrap();
+
+    assert_eq!(sections.get(0).unwrap()["title"].as_str(), Some("First"));
+    assert_eq!(sections.get(1).unwrap()["title"].as_str(), Some("Second"));
+}

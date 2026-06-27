@@ -677,6 +677,127 @@ fn persist_empty_action_menu_sections(document: &mut toml_edit::DocumentMut) {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ActionMenuSectionMove {
+    Up,
+    Down,
+}
+
+pub(crate) fn move_action_menu_section(
+    section_index: usize,
+    direction: ActionMenuSectionMove,
+) -> io::Result<()> {
+    edit_document(|document| {
+        move_action_menu_section_in_document(document, section_index, direction)
+    })
+}
+
+fn move_action_menu_section_in_document(
+    document: &mut toml_edit::DocumentMut,
+    section_index: usize,
+    direction: ActionMenuSectionMove,
+) -> io::Result<()> {
+    let reordered = {
+        let sections = action_menu_sections_mut(document)?;
+        let target_index = match direction {
+            ActionMenuSectionMove::Up if section_index > 0 && section_index < sections.len() => {
+                Some(section_index - 1)
+            }
+            ActionMenuSectionMove::Down => section_index
+                .checked_add(1)
+                .filter(|target_index| *target_index < sections.len()),
+            _ => None,
+        };
+
+        let Some(target_index) = target_index else {
+            return Ok(());
+        };
+
+        let mut reordered = sections
+            .iter()
+            .map(fresh_action_menu_section_table)
+            .collect::<Vec<_>>();
+        let section = reordered.remove(section_index);
+        reordered.insert(target_index, section);
+
+        for (position, section) in reordered.iter_mut().enumerate() {
+            section.set_position(position);
+        }
+
+        reordered
+    };
+
+    let mut sections = toml_edit::ArrayOfTables::new();
+    sections.extend(reordered);
+
+    document["widgets"]["action_menu"]["sections"] = toml_edit::Item::ArrayOfTables(sections);
+
+    Ok(())
+}
+
+fn fresh_action_menu_section_table(section: &toml_edit::Table) -> toml_edit::Table {
+    let mut fresh = toml_edit::Table::new();
+
+    copy_string_field(section, &mut fresh, "title");
+    copy_integer_field(section, &mut fresh, "columns");
+
+    if let Some(actions) = section
+        .get("actions")
+        .and_then(|item| item.as_array_of_tables())
+    {
+        let mut fresh_actions = toml_edit::ArrayOfTables::new();
+        for action in actions.iter() {
+            fresh_actions.push(fresh_action_menu_action_table(action));
+        }
+        fresh.insert("actions", toml_edit::Item::ArrayOfTables(fresh_actions));
+    }
+
+    fresh
+}
+
+fn fresh_action_menu_action_table(action: &toml_edit::Table) -> toml_edit::Table {
+    let mut fresh = toml_edit::Table::new();
+
+    for field in ["label", "icon", "action", "command", "class", "tooltip"] {
+        copy_string_field(action, &mut fresh, field);
+    }
+    copy_string_array_field(action, &mut fresh, "args");
+    copy_bool_field(action, &mut fresh, "show-label");
+
+    fresh
+}
+
+fn copy_string_field(source: &toml_edit::Table, target: &mut toml_edit::Table, field: &str) {
+    if let Some(value) = source.get(field).and_then(|item| item.as_str()) {
+        target.insert(field, toml_edit::value(value));
+    }
+}
+
+fn copy_integer_field(source: &toml_edit::Table, target: &mut toml_edit::Table, field: &str) {
+    if let Some(value) = source.get(field).and_then(|item| item.as_integer()) {
+        target.insert(field, toml_edit::value(value));
+    }
+}
+
+fn copy_bool_field(source: &toml_edit::Table, target: &mut toml_edit::Table, field: &str) {
+    if let Some(value) = source.get(field).and_then(|item| item.as_bool()) {
+        target.insert(field, toml_edit::value(value));
+    }
+}
+
+fn copy_string_array_field(source: &toml_edit::Table, target: &mut toml_edit::Table, field: &str) {
+    let Some(values) = source.get(field).and_then(|item| item.as_array()) else {
+        return;
+    };
+
+    let mut fresh_values = toml_edit::Array::new();
+    for value in values.iter().filter_map(|value| value.as_str()) {
+        fresh_values.push(value);
+    }
+
+    target.insert(field, toml_edit::value(fresh_values));
+}
+
 pub(crate) fn add_action_menu_section() -> io::Result<()> {
     edit_document(|document| {
         let sections = action_menu_sections_mut(document)?;

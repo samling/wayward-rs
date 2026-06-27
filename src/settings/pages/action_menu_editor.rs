@@ -4,8 +4,12 @@ use relm4::{
     gtk,
     gtk::prelude::*,
 };
+use std::{cell::RefCell, rc::Rc, time::Duration};
 
 use super::super::window::SettingsInput;
+use crate::config::ActionMenuSectionMove;
+
+const ACTION_MENU_EDITOR_WRITE_DEBOUNCE: Duration = Duration::from_millis(500);
 
 pub(crate) struct ActionMenuEditor {
     _sections: FactoryVecDeque<ActionMenuSectionRow>,
@@ -39,6 +43,10 @@ pub(crate) enum ActionMenuEditorInput {
     RemoveAction {
         section: DynamicIndex,
         action: DynamicIndex,
+    },
+    MoveSection {
+        section: DynamicIndex,
+        direction: ActionMenuSectionMove,
     },
 }
 
@@ -110,6 +118,9 @@ impl SimpleComponent for ActionMenuEditor {
                 },
                 ActionMenuSectionOutput::RemoveAction { section, action } => {
                     ActionMenuEditorInput::RemoveAction { section, action }
+                }
+                ActionMenuSectionOutput::Move { section, direction } => {
+                    ActionMenuEditorInput::MoveSection { section, direction }
                 }
             },
         );
@@ -190,6 +201,14 @@ impl SimpleComponent for ActionMenuEditor {
                         action: action.current_index(),
                     });
             }
+            ActionMenuEditorInput::MoveSection { section, direction } => {
+                let _ = self
+                    .input_sender
+                    .send(SettingsInput::MoveActionMenuSection {
+                        section: section.current_index(),
+                        direction,
+                    });
+            }
         }
     }
 }
@@ -228,6 +247,10 @@ enum ActionMenuSectionOutput {
     },
     Remove {
         section: DynamicIndex,
+    },
+    Move {
+        section: DynamicIndex,
+        direction: ActionMenuSectionMove,
     },
     SetActionField {
         section: DynamicIndex,
@@ -277,7 +300,7 @@ impl FactoryComponent for ActionMenuSectionRow {
 
         populate_section_header(&widgets.root, index, &self.section, sender.clone());
 
-        let action_box = gtk::Box::new(gtk::Orientation::Vertical, 4);
+        let action_box = gtk::Box::new(gtk::Orientation::Vertical, 8);
         widgets.root.append(&action_box);
 
         let mut actions = FactoryVecDeque::builder().launch(action_box).forward(
@@ -373,24 +396,17 @@ fn populate_section_header(
     {
         let output = sender.clone();
         let section = section_index.clone();
-        let entry_for_commit = title_entry.clone();
-        let commit = move || {
-            let text = entry_for_commit.text().to_string();
+        connect_text_entry_commit(&title_entry, &title_entry.text(), move |text| {
             let value = (!text.is_empty()).then_some(crate::config::ConfigValue::String(text));
             let _ = output.output(ActionMenuSectionOutput::SetField {
                 section: section.clone(),
                 field: "title",
                 value,
             });
-        };
-        let focus = gtk::EventControllerFocus::new();
-        focus.connect_leave(move |_| commit());
-        title_entry.add_controller(focus);
+        });
     }
-    header_row.append(&title_entry);
+    header_row.append(&labeled_control("Section title", &title_entry));
 
-    let columns_label = gtk::Label::new(Some("Columns"));
-    header_row.append(&columns_label);
     let columns_spin = gtk::SpinButton::with_range(1.0, 8.0, 1.0);
     columns_spin.set_value(
         section
@@ -409,7 +425,37 @@ fn populate_section_header(
             });
         });
     }
-    header_row.append(&columns_spin);
+    header_row.append(&labeled_control("Columns", &columns_spin));
+
+    let move_up = gtk::Button::with_label("↑");
+    move_up.set_focus_on_click(false);
+    move_up.set_tooltip_text(Some("Move section up"));
+    {
+        let output = sender.clone();
+        let section = section_index.clone();
+        move_up.connect_clicked(move |_| {
+            let _ = output.output(ActionMenuSectionOutput::Move {
+                section: section.clone(),
+                direction: ActionMenuSectionMove::Up,
+            });
+        });
+    }
+    header_row.append(&move_up);
+
+    let move_down = gtk::Button::with_label("↓");
+    move_down.set_focus_on_click(false);
+    move_down.set_tooltip_text(Some("Move section down"));
+    {
+        let output = sender.clone();
+        let section = section_index.clone();
+        move_down.connect_clicked(move |_| {
+            let _ = output.output(ActionMenuSectionOutput::Move {
+                section: section.clone(),
+                direction: ActionMenuSectionMove::Down,
+            });
+        });
+    }
+    header_row.append(&move_down);
 
     let remove_section = gtk::Button::with_label("Remove section");
     let output = sender;
@@ -422,6 +468,88 @@ fn populate_section_header(
     header_row.append(&remove_section);
 
     card.append(&header_row);
+}
+
+fn connect_text_entry_commit(
+    entry: &gtk::Entry,
+    current: &str,
+    commit_text: impl Fn(String) + 'static,
+) {
+    let pending = Rc::new(RefCell::new(None::<gtk::glib::SourceId>));
+    let last_committed = Rc::new(RefCell::new(current.to_string()));
+    let commit_text: Rc<dyn Fn(String)> = Rc::new(commit_text);
+
+    let commit_now: Rc<dyn Fn(&gtk::Entry)> = {
+        let pending = pending.clone();
+        let last_committed = last_committed.clone();
+        let commit_text = commit_text.clone();
+        Rc::new(move |entry| {
+            cancel_pending_entry_commit(&pending);
+
+            let text = entry.text().to_string();
+            if text == *last_committed.borrow() {
+                return;
+            }
+
+            *last_committed.borrow_mut() = text.clone();
+            commit_text(text);
+        })
+    };
+
+    {
+        let pending = pending.clone();
+        let commit_now = commit_now.clone();
+        entry.connect_changed(move |entry| {
+            cancel_pending_entry_commit(&pending);
+
+            let entry = entry.clone();
+            let pending_for_timeout = pending.clone();
+            let commit_for_timeout = commit_now.clone();
+            let source =
+                gtk::glib::timeout_add_local_once(ACTION_MENU_EDITOR_WRITE_DEBOUNCE, move || {
+                    *pending_for_timeout.borrow_mut() = None;
+                    commit_for_timeout(&entry);
+                });
+
+            *pending.borrow_mut() = Some(source);
+        });
+    }
+
+    {
+        let commit_now = commit_now.clone();
+        entry.connect_activate(move |entry| commit_now(entry));
+    }
+
+    let focus = gtk::EventControllerFocus::new();
+    {
+        let entry = entry.clone();
+        let commit_now = commit_now.clone();
+        focus.connect_leave(move |_| commit_now(&entry));
+    }
+    entry.add_controller(focus);
+}
+
+fn cancel_pending_entry_commit(pending: &Rc<RefCell<Option<gtk::glib::SourceId>>>) {
+    if let Some(source) = pending.borrow_mut().take() {
+        source.remove();
+    }
+}
+
+fn labeled_control(label_text: &str, control: &impl IsA<gtk::Widget>) -> gtk::Box {
+    let container = gtk::Box::new(gtk::Orientation::Horizontal, 6);
+    container.set_hexpand(control.as_ref().hexpands());
+    container.set_valign(gtk::Align::Center);
+
+    let label = gtk::Label::new(Some(label_text));
+    label.set_halign(gtk::Align::Start);
+    label.set_valign(gtk::Align::Center);
+    label.set_width_chars(8);
+    label.set_xalign(0.0);
+    label.add_css_class("settings-row-label");
+    container.append(&label);
+    container.append(control);
+
+    container
 }
 
 struct ActionMenuActionInit {
@@ -456,8 +584,9 @@ impl FactoryComponent for ActionMenuActionRow {
         #[name = "root"]
         gtk::Box {
             add_css_class: "settings-row",
+            add_css_class: "action-menu-settings-action",
             set_orientation: gtk::Orientation::Vertical,
-            set_spacing: 4,
+            set_spacing: 8,
         }
     }
 
@@ -499,18 +628,13 @@ fn populate_action_row(
     let icon = action_text_field(action_index, "icon", str_field("icon"), sender.clone());
     icon.set_width_chars(3);
     icon.set_hexpand(false);
-    icon.set_placeholder_text(Some("icon"));
-    top.append(&icon);
+    top.append(&labeled_control("Icon", &icon));
 
     let label = action_text_field(action_index, "label", str_field("label"), sender.clone());
-    label.set_placeholder_text(Some("label"));
-    top.append(&label);
+    top.append(&labeled_control("Label", &label));
 
-    top.append(&action_kind_field(
-        action_index,
-        str_field("action"),
-        sender.clone(),
-    ));
+    let kind = action_kind_field(action_index, str_field("action"), sender.clone());
+    top.append(&labeled_control("Action", &kind));
     outer.append(&top);
 
     let command = action_text_field(
@@ -519,8 +643,7 @@ fn populate_action_row(
         str_field("command"),
         sender.clone(),
     );
-    command.set_placeholder_text(Some("command"));
-    outer.append(&command);
+    outer.append(&labeled_control("Command", &command));
 
     let bottom = gtk::Box::new(gtk::Orientation::Horizontal, 8);
     let args_text = action
@@ -534,7 +657,8 @@ fn populate_action_row(
                 .join(" ")
         })
         .unwrap_or_default();
-    bottom.append(&action_args_field(action_index, &args_text, sender.clone()));
+    let args = action_args_field(action_index, &args_text, sender.clone());
+    bottom.append(&labeled_control("Args", &args));
 
     let show_label = action
         .get("show-label")
@@ -571,20 +695,14 @@ fn action_text_field(
 
     let output = sender;
     let action = action_index.clone();
-    let entry_for_commit = entry.clone();
-    let commit = move || {
-        let text = entry_for_commit.text().to_string();
+    connect_text_entry_commit(&entry, current, move |text| {
         let value = (!text.is_empty()).then_some(crate::config::ConfigValue::String(text));
         let _ = output.output(ActionMenuActionOutput::SetField {
             action: action.clone(),
             field,
             value,
         });
-    };
-
-    let focus = gtk::EventControllerFocus::new();
-    focus.connect_leave(move |_| commit());
-    entry.add_controller(focus);
+    });
 
     entry
 }
@@ -653,24 +771,15 @@ fn action_args_field(
 
     let output = sender;
     let action = action_index.clone();
-    let entry_for_commit = entry.clone();
-    let commit = move || {
-        let args: Vec<String> = entry_for_commit
-            .text()
-            .split_whitespace()
-            .map(ToOwned::to_owned)
-            .collect();
+    connect_text_entry_commit(&entry, current, move |text| {
+        let args: Vec<String> = text.split_whitespace().map(ToOwned::to_owned).collect();
         let value = (!args.is_empty()).then_some(crate::config::ConfigValue::StringList(args));
         let _ = output.output(ActionMenuActionOutput::SetField {
             action: action.clone(),
             field: "args",
             value,
         });
-    };
-
-    let focus = gtk::EventControllerFocus::new();
-    focus.connect_leave(move |_| commit());
-    entry.add_controller(focus);
+    });
 
     entry
 }
