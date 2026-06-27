@@ -1,4 +1,4 @@
-use crate::config::BarRegionKey;
+use crate::config::{ActionMenuSectionMove, BarRegionKey};
 use relm4::{
     gtk::{
         self,
@@ -79,6 +79,10 @@ pub(crate) enum SettingsInput {
         section: usize,
         field: &'static str,
         value: Option<crate::config::ConfigValue>,
+    },
+    MoveActionMenuSection {
+        section: usize,
+        direction: ActionMenuSectionMove,
     },
 }
 
@@ -331,12 +335,19 @@ impl Component for SettingsWindow {
                 field,
                 value,
             } => {
+                let value_for_model = value.clone();
                 if let Err(error) =
                     crate::config::set_action_menu_action_field(section, action, field, value)
                 {
                     tracing::error!(section, action, field, "Failed to save action: {error}");
+                } else {
+                    self.config.apply_action_menu_action_field(
+                        section,
+                        action,
+                        field,
+                        value_for_model.as_ref(),
+                    );
                 }
-                self.refresh_from_disk(widgets, &sender);
             }
             SettingsInput::AddActionMenuSection => {
                 if let Err(error) = crate::config::add_action_menu_section() {
@@ -367,10 +378,22 @@ impl Component for SettingsWindow {
                 field,
                 value,
             } => {
+                let value_for_model = value.clone();
                 if let Err(error) =
                     crate::config::set_action_menu_section_field(section, field, value)
                 {
                     tracing::error!(section, field, "Failed to save section: {error}");
+                } else {
+                    self.config.apply_action_menu_section_field(
+                        section,
+                        field,
+                        value_for_model.as_ref(),
+                    );
+                }
+            }
+            SettingsInput::MoveActionMenuSection { section, direction } => {
+                if let Err(error) = crate::config::move_action_menu_section(section, direction) {
+                    tracing::error!(section, ?direction, "Failed to move section: {error}");
                 }
                 self.refresh_from_disk(widgets, &sender);
             }

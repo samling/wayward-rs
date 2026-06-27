@@ -157,6 +157,90 @@ fn settings_config_removes_empty_nested_widget_table_after_reset() {
 }
 
 #[test]
+fn settings_config_applies_action_menu_section_field_to_defaults() {
+    let mut config = SettingsConfig {
+        style: StyleConfig::default(),
+        widgets: BTreeMap::new(),
+        bars: Vec::new(),
+        available_monitors: Vec::new(),
+    };
+
+    assert!(config.apply_action_menu_section_field(
+        0,
+        "title",
+        Some(&ConfigValue::String("Captures".to_string())),
+    ));
+
+    let title = config
+        .widgets
+        .get("action_menu")
+        .and_then(|table| table.get("sections"))
+        .and_then(toml::Value::as_array)
+        .and_then(|sections| sections.first())
+        .and_then(toml::Value::as_table)
+        .and_then(|section| section.get("title"))
+        .and_then(toml::Value::as_str);
+
+    assert_eq!(title, Some("Captures"));
+}
+
+#[test]
+fn settings_config_applies_action_menu_action_field() {
+    let mut action = toml::value::Table::new();
+    action.insert("label".to_string(), toml::Value::String("Old".to_string()));
+    action.insert(
+        "tooltip".to_string(),
+        toml::Value::String("Remove me".to_string()),
+    );
+
+    let mut section = toml::value::Table::new();
+    section.insert(
+        "actions".to_string(),
+        toml::Value::Array(vec![toml::Value::Table(action)]),
+    );
+
+    let mut action_menu = toml::value::Table::new();
+    action_menu.insert(
+        "sections".to_string(),
+        toml::Value::Array(vec![toml::Value::Table(section)]),
+    );
+
+    let mut config = SettingsConfig {
+        style: StyleConfig::default(),
+        widgets: BTreeMap::from([("action_menu".to_string(), action_menu)]),
+        bars: Vec::new(),
+        available_monitors: Vec::new(),
+    };
+
+    assert!(config.apply_action_menu_action_field(
+        0,
+        0,
+        "label",
+        Some(&ConfigValue::String("New".to_string())),
+    ));
+    assert!(config.apply_action_menu_action_field(0, 0, "tooltip", None));
+
+    let action = config
+        .widgets
+        .get("action_menu")
+        .and_then(|table| table.get("sections"))
+        .and_then(toml::Value::as_array)
+        .and_then(|sections| sections.first())
+        .and_then(toml::Value::as_table)
+        .and_then(|section| section.get("actions"))
+        .and_then(toml::Value::as_array)
+        .and_then(|actions| actions.first())
+        .and_then(toml::Value::as_table)
+        .unwrap();
+
+    assert_eq!(
+        action.get("label").and_then(toml::Value::as_str),
+        Some("New")
+    );
+    assert!(!action.contains_key("tooltip"));
+}
+
+#[test]
 fn action_menu_config_sections_use_widget_owned_settings() {
     let mut panel = toml::value::Table::new();
     panel.insert("width".to_string(), toml::Value::Integer(320));
