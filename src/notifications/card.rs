@@ -1,3 +1,4 @@
+use chrono::{DateTime, Local, Utc};
 use relm4::gtk;
 use relm4::gtk::prelude::*;
 use std::cell::{Cell, RefCell};
@@ -25,6 +26,7 @@ pub(crate) struct NotificationCardOptions {
     pub(crate) summary_lines: i32,
     pub(crate) body_lines: i32,
     pub(crate) body_preview_lines: Option<usize>,
+    pub(crate) show_timestamp: bool,
 }
 
 pub(crate) fn dropdown_card_options() -> NotificationCardOptions {
@@ -35,6 +37,7 @@ pub(crate) fn dropdown_card_options() -> NotificationCardOptions {
         summary_lines: 2,
         body_lines: 3,
         body_preview_lines: Some(DROPDOWN_BODY_PREVIEW_LINES),
+        show_timestamp: true,
     }
 }
 
@@ -46,6 +49,7 @@ pub(crate) fn toast_card_options() -> NotificationCardOptions {
         summary_lines: 2,
         body_lines: 4,
         body_preview_lines: None,
+        show_timestamp: false,
     }
 }
 
@@ -53,6 +57,7 @@ pub(crate) struct NotificationCard {
     root: gtk::Box,
     icon: gtk::Image,
     app_name: gtk::Label,
+    timestamp: gtk::Label,
     summary: gtk::Label,
     body: gtk::Label,
     message: gtk::Box,
@@ -108,6 +113,7 @@ impl NotificationCard {
             root,
             icon,
             app_name: app_name_label(&message),
+            timestamp: timestamp_label(&message),
             summary: summary_label(&message),
             body: body_label(&message),
             message,
@@ -142,6 +148,7 @@ impl NotificationCard {
 
         crate::notifications::icon::set_notification_icon(&self.icon, notification);
         self.app_name.set_label(&notification.app_name);
+        update_timestamp_label(&self.timestamp, notification, self.options);
         self.summary.set_label(&notification.summary);
         update_body_label(&self.body, notification, self.options);
         update_message_action_state(&self.message, notification.has_default_action());
@@ -230,14 +237,28 @@ fn message_widget(
     let message = gtk::Box::new(gtk::Orientation::Vertical, 4);
     message.add_css_class("notification-card-message");
 
+    let metadata = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+    metadata.add_css_class("notification-card-metadata");
+
     let app_name = gtk::Label::new(Some(&notification.app_name));
     app_name.add_css_class("notification-card-app-name");
     app_name.set_widget_name("notification-card-app-name");
     app_name.set_halign(gtk::Align::Start);
+    app_name.set_hexpand(true);
     app_name.set_xalign(0.0);
     app_name.set_max_width_chars(options.text_width_chars);
     app_name.set_ellipsize(gtk::pango::EllipsizeMode::End);
-    message.append(&app_name);
+    metadata.append(&app_name);
+
+    let timestamp = gtk::Label::new(None);
+    timestamp.add_css_class("notification-card-timestamp");
+    timestamp.set_widget_name("notification-card-timestamp");
+    timestamp.set_halign(gtk::Align::End);
+    timestamp.set_xalign(1.0);
+    update_timestamp_label(&timestamp, notification, options);
+    metadata.append(&timestamp);
+
+    message.append(&metadata);
 
     let summary = gtk::Label::new(Some(&notification.summary));
     summary.add_css_class("notification-card-summary");
@@ -325,20 +346,49 @@ fn body_label(message: &gtk::Box) -> gtk::Label {
     named_child(message, "notification-card-body")
 }
 
+fn timestamp_label(message: &gtk::Box) -> gtk::Label {
+    named_child(message, "notification-card-timestamp")
+}
+
+fn update_timestamp_label(
+    label: &gtk::Label,
+    notification: &NotificationToast,
+    options: NotificationCardOptions,
+) {
+    if options.show_timestamp {
+        label.set_label(&relative_timestamp_text(notification.timestamp));
+        label.set_tooltip_text(Some(&full_timestamp_text(notification.timestamp)));
+        label.set_visible(true);
+    } else {
+        label.set_label("");
+        label.set_tooltip_text(None);
+        label.set_visible(false);
+    }
+}
+
 fn named_child(parent: &gtk::Box, name: &str) -> gtk::Label {
+    find_named_label(parent.upcast_ref(), name)
+        .unwrap_or_else(|| panic!("missing notification card child: {name}"))
+}
+
+fn find_named_label(parent: &gtk::Widget, name: &str) -> Option<gtk::Label> {
     let mut child = parent.first_child();
 
     while let Some(widget) = child {
         if widget.widget_name() == name {
-            return widget
+            return Some(widget
                 .downcast::<gtk::Label>()
-                .expect("named child is a label");
+                .expect("named child is a label"));
+        }
+
+        if let Some(label) = find_named_label(&widget, name) {
+            return Some(label);
         }
 
         child = widget.next_sibling();
     }
 
-    panic!("missing notification card child: {name}");
+    None
 }
 
 fn configure_wrapping_label(label: &gtk::Label, width_chars: i32, max_lines: i32) {
@@ -352,6 +402,29 @@ fn configure_wrapping_label(label: &gtk::Label, width_chars: i32, max_lines: i32
     label.set_lines(max_lines);
     label.set_ellipsize(gtk::pango::EllipsizeMode::End);
     label.set_xalign(0.0);
+}
+
+fn relative_timestamp_text(timestamp: DateTime<Utc>) -> String {
+    let elapsed = Utc::now().signed_duration_since(timestamp);
+
+    if elapsed.num_seconds() < 60 {
+        "now".to_string()
+    } else if elapsed.num_minutes() < 60 {
+        format!("{}m ago", elapsed.num_minutes())
+    } else if elapsed.num_hours() < 24 {
+        format!("{}h ago", elapsed.num_hours())
+    } else if elapsed.num_days() < 7 {
+        format!("{}d ago", elapsed.num_days())
+    } else {
+        timestamp.with_timezone(&Local).format("%b %-d").to_string()
+    }
+}
+
+fn full_timestamp_text(timestamp: DateTime<Utc>) -> String {
+    timestamp
+        .with_timezone(&Local)
+        .format("%Y-%m-%d %H:%M")
+        .to_string()
 }
 
 fn body_text(notification: &NotificationToast, options: NotificationCardOptions) -> Option<String> {
