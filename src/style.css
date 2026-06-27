@@ -1188,6 +1188,13 @@ levelbar.osd-level block.filled {
   min-height: 34px;
 }
 
+.action-menu-settings-action {
+  padding: 10px;
+  border: 1px solid rgba(241, 243, 244, 0.12);
+  border-radius: 6px;
+  background-color: rgba(241, 243, 244, 0.045);
+}
+
 .settings-row-description {
     font-size: 0.85em;
     opacity: 0.65;
