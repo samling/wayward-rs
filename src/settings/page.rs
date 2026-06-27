@@ -123,7 +123,11 @@ pub(crate) fn render_current_page(
     active_item: &'static str,
     config: &SettingsConfig,
     sender: &ComponentSender<SettingsWindow>,
+    action_menu_editor: &mut Option<
+        relm4::Controller<super::pages::action_menu_editor::ActionMenuEditor>,
+    >,
 ) {
+    *action_menu_editor = None;
     clear_container(container);
 
     let Some(item) = super::nav::find_item(active_item) else {
@@ -142,7 +146,7 @@ pub(crate) fn render_current_page(
         }
         super::nav::NavContent::ActionMenu => {
             title.set_label(item.title);
-            super::pages::action_menu::render(container, config, sender);
+            super::pages::action_menu::render(container, config, sender, action_menu_editor);
         }
         _ => {
             if let Some(page) = build_page(item, config) {

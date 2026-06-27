@@ -18,6 +18,8 @@ pub(crate) struct SettingsWindow {
     config: SettingsConfig,
     active_item: &'static str,
     scroll: std::collections::HashMap<&'static str, f64>,
+    action_menu_editor:
+        Option<relm4::Controller<super::pages::action_menu_editor::ActionMenuEditor>>,
 }
 
 #[derive(Debug)]
@@ -174,10 +176,11 @@ impl Component for SettingsWindow {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let model = Self {
+        let mut model = Self {
             config,
             active_item: super::nav::DEFAULT_ITEM,
             scroll: std::collections::HashMap::new(),
+            action_menu_editor: None,
         };
         let widgets = view_output!();
 
@@ -190,6 +193,7 @@ impl Component for SettingsWindow {
             model.active_item,
             &model.config,
             &sender,
+            &mut model.action_menu_editor,
         );
 
         ComponentParts { model, widgets }
@@ -217,6 +221,7 @@ impl Component for SettingsWindow {
                         self.active_item,
                         &self.config,
                         &sender,
+                        &mut self.action_menu_editor,
                     );
                     self.restore_scroll(widgets);
                 }
@@ -231,6 +236,7 @@ impl Component for SettingsWindow {
                         self.active_item,
                         &self.config,
                         &sender,
+                        &mut self.action_menu_editor,
                     );
                     self.restore_scroll(widgets);
                 }
@@ -252,6 +258,7 @@ impl Component for SettingsWindow {
                             self.active_item,
                             &self.config,
                             &sender,
+                            &mut self.action_menu_editor,
                         );
                         self.restore_scroll(widgets);
                     }
@@ -275,6 +282,7 @@ impl Component for SettingsWindow {
                             self.active_item,
                             &self.config,
                             &sender,
+                            &mut self.action_menu_editor,
                         );
                         self.restore_scroll(widgets);
                     }
@@ -405,6 +413,7 @@ impl SettingsWindow {
                 self.active_item,
                 &self.config,
                 sender,
+                &mut self.action_menu_editor,
             );
             self.restore_scroll(widgets);
         }
