@@ -50,6 +50,9 @@ impl SimpleComponent for BatteryComponent {
             add_css_class: "battery",
             add_css_class: "flat",
 
+            #[watch]
+            set_tooltip_text: model.view_model.tooltip_text.as_deref(),
+
             #[wrap(Some)]
             #[name = "content"]
             set_child = &gtk::Box {

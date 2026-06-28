@@ -37,6 +37,8 @@ pub(crate) struct BatterySnapshot {
     pub(crate) percentage: f64,
     pub(crate) state: DeviceState,
     pub(crate) energy_rate: f64,
+    pub(crate) time_to_empty: i64,
+    pub(crate) time_to_full: i64,
     pub(crate) capacity: f64,
     pub(crate) active_profile: Option<PowerProfile>,
     pub(crate) available_profiles: Vec<PowerProfile>,

@@ -534,6 +534,18 @@ button.profile-button.performance:checked {
     font-weight: 600;
 }
 
+.blue-light-detail-key {
+    opacity: 0.62;
+    font-size: 0.86em;
+    font-weight: 600;
+}
+
+.blue-light-detail-value,
+.blue-light-detail-message {
+    opacity: 0.82;
+    font-size: 0.9em;
+}
+
 .control-row {
     border-spacing: 0.6em;
 }
