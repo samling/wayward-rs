@@ -14,7 +14,7 @@ use super::dropdown::{
     BrightnessDropdown, BrightnessDropdownInit, BrightnessDropdownInput, BrightnessDropdownOutput,
     BrightnessDropdownSnapshot,
 };
-use super::sunsetr::SunsetrState;
+use super::sunsetr::{PendingSunsetrAction, SunsetrState};
 
 pub(super) struct BrightnessComponent {
     edge: BarEdge,
@@ -25,6 +25,7 @@ pub(super) struct BrightnessComponent {
     bar_sender: relm4::Sender<BarMsg>,
     config: BrightnessConfig,
     sunsetr_state: SunsetrState,
+    pending_sunsetr_action: Option<PendingSunsetrAction>,
 }
 
 #[derive(Debug)]
@@ -113,6 +114,7 @@ impl SimpleComponent for BrightnessComponent {
             bar_sender: init.bar_sender,
             config: init.config,
             sunsetr_state: SunsetrState::Unknown("Checking sunsetr".to_string()),
+            pending_sunsetr_action: None,
         };
 
         let widgets = view_output!();
@@ -159,7 +161,10 @@ impl SimpleComponent for BrightnessComponent {
                     self.config.sunsetr.automatic_preset.clone()
                 };
 
-                self.sunsetr_state = SunsetrState::Unknown("Updating sunsetr".to_string());
+                self.pending_sunsetr_action = Some(PendingSunsetrAction::new(paused));
+                self.sunsetr_state = self
+                    .sunsetr_state
+                    .with_action_applied(paused, &self.config.sunsetr);
                 self.sync_dropdown_snapshot();
                 self.send_action(WidgetAction::Brightness(
                     BrightnessAction::SetSunsetrPreset { preset },
@@ -170,6 +175,16 @@ impl SimpleComponent for BrightnessComponent {
                 self.check_sunsetr_state(_sender.input_sender().clone());
             }
             BrightnessInput::SetSunsetrState(state) => {
+                if let Some(mut pending) = self.pending_sunsetr_action {
+                    if !pending.accepts_status(&state) {
+                        self.pending_sunsetr_action = Some(pending);
+                        self.check_sunsetr_state_delayed(_sender.input_sender().clone());
+                        return;
+                    }
+
+                    self.pending_sunsetr_action = None;
+                }
+
                 self.sunsetr_state = state;
                 self.sync_dropdown_snapshot();
             }

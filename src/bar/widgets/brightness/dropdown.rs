@@ -7,7 +7,7 @@ use relm4::prelude::*;
 
 use crate::bar::{dropdown, layout::BarEdge, widget::BarRegion};
 
-use super::sunsetr::SunsetrState;
+use super::sunsetr::{SunsetrDetails, SunsetrState};
 
 #[derive(Clone, Debug)]
 pub(super) struct BrightnessDropdownSnapshot {
@@ -164,11 +164,11 @@ impl Component for BrightnessDropdown {
                         },
                     },
 
-                    #[name = "sunsetr_detail_label"]
-                    gtk::Label {
-                        add_css_class: "blue-light-detail",
-                        set_halign: gtk::Align::Start,
-                        set_wrap: true,
+                    #[name = "sunsetr_details_grid"]
+                    gtk::Grid {
+                        add_css_class: "blue-light-details",
+                        set_column_spacing: 10,
+                        set_row_spacing: 3,
                     },
                 }
             }
@@ -252,9 +252,7 @@ impl BrightnessDropdown {
                 widgets
                     .sunsetr_status_label
                     .set_text(snapshot.sunsetr_state.status_text());
-                widgets
-                    .sunsetr_detail_label
-                    .set_text(&snapshot.sunsetr_state.detail_text());
+                sync_sunsetr_details(&widgets.sunsetr_details_grid, &snapshot.sunsetr_state);
 
                 if let Some(label) = snapshot.sunsetr_state.action_label() {
                     widgets.sunsetr_button.set_label(label);
@@ -285,12 +283,52 @@ impl BrightnessDropdown {
                 widgets.brightness_scale.set_value(0.0);
                 widgets.brightness_scale.set_sensitive(false);
                 widgets.sunsetr_status_label.set_text("Unknown");
-                widgets.sunsetr_detail_label.set_text("");
+                clear_grid(&widgets.sunsetr_details_grid);
                 widgets.sunsetr_button.set_sensitive(false);
             }
         }
 
         self.syncing.set(false);
+    }
+}
+
+fn sync_sunsetr_details(grid: &gtk::Grid, state: &SunsetrState) {
+    clear_grid(grid);
+
+    match state.details() {
+        SunsetrDetails::Rows(rows) => {
+            for (row_index, row) in rows.iter().enumerate() {
+                add_detail_row(grid, row_index as i32, row.label, &row.value);
+            }
+        }
+        SunsetrDetails::Message(message) => {
+            let label = gtk::Label::new(Some(&message));
+            label.add_css_class("blue-light-detail-message");
+            label.set_halign(gtk::Align::Start);
+            label.set_wrap(true);
+            grid.attach(&label, 0, 0, 2, 1);
+        }
+    }
+}
+
+fn add_detail_row(grid: &gtk::Grid, row: i32, label_text: &str, value_text: &str) {
+    let label = gtk::Label::new(Some(label_text));
+    label.add_css_class("blue-light-detail-key");
+    label.set_halign(gtk::Align::Start);
+
+    let value = gtk::Label::new(Some(value_text));
+    value.add_css_class("blue-light-detail-value");
+    value.set_halign(gtk::Align::Start);
+    value.set_hexpand(true);
+    value.set_wrap(true);
+
+    grid.attach(&label, 0, row, 1, 1);
+    grid.attach(&value, 1, row, 1, 1);
+}
+
+fn clear_grid(grid: &gtk::Grid) {
+    while let Some(child) = grid.first_child() {
+        grid.remove(&child);
     }
 }
 
