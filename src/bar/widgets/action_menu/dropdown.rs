@@ -10,6 +10,8 @@ use super::config::{
     ActionMenuSectionConfig,
 };
 
+const DEFAULT_SECTION_COLUMNS: usize = 3;
+
 pub(super) struct ActionMenuDropdown {
     edge: BarEdge,
     region: BarRegion,
@@ -114,7 +116,7 @@ fn build_section(
     grid.set_column_homogeneous(true);
     grid.set_row_spacing(layout.row_spacing.max(0) as u32);
 
-    let columns = section.columns.unwrap_or(layout.columns).max(1);
+    let columns = section.columns.unwrap_or(DEFAULT_SECTION_COLUMNS).max(1);
 
     for (index, action) in section.actions.iter().enumerate() {
         let control = build_action_control(action, layout, sender);
