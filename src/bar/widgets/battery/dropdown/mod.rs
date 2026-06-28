@@ -193,6 +193,29 @@ impl SimpleComponent for BatteryDropdown {
                                 set_text: &model.view_model.health_text,
                             },
                         },
+
+                        gtk::Box {
+                            add_css_class: "battery-detail",
+                            set_orientation: gtk::Orientation::Vertical,
+                            set_spacing: 2,
+                            set_hexpand: true,
+
+                            gtk::Label {
+                                add_css_class: "battery-detail-label",
+                                set_halign: gtk::Align::Start,
+
+                                #[watch]
+                                set_text: model.view_model.time_remaining_label,
+                            },
+
+                            gtk::Label {
+                                add_css_class: "battery-detail-value",
+                                set_halign: gtk::Align::Start,
+
+                                #[watch]
+                                set_text: &model.view_model.time_remaining_text,
+                            },
+                        },
                     },
 
                     gtk::Label {

@@ -12,12 +12,61 @@ pub(super) struct SunsetrStatus {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub(super) struct SunsetrDetailRow {
+    pub(super) label: &'static str,
+    pub(super) value: String,
+}
+
+impl SunsetrDetailRow {
+    pub(super) fn new(label: &'static str, value: impl Into<String>) -> Self {
+        Self {
+            label,
+            value: value.into(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub(super) enum SunsetrDetails {
+    Rows(Vec<SunsetrDetailRow>),
+    Message(String),
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub(super) enum SunsetrState {
     NotRunning,
     Automatic(SunsetrStatus),
     Paused(SunsetrStatus),
     Custom(SunsetrStatus),
     Unknown(String),
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) struct PendingSunsetrAction {
+    paused: bool,
+    remaining_stale_checks: u8,
+}
+
+impl PendingSunsetrAction {
+    pub(super) fn new(paused: bool) -> Self {
+        Self {
+            paused,
+            remaining_stale_checks: 4,
+        }
+    }
+
+    pub(super) fn accepts_status(&mut self, state: &SunsetrState) -> bool {
+        if state.matches_paused(self.paused) {
+            return true;
+        }
+
+        if self.remaining_stale_checks == 0 {
+            return true;
+        }
+
+        self.remaining_stale_checks -= 1;
+        false
+    }
 }
 
 impl SunsetrState {
@@ -41,13 +90,13 @@ impl SunsetrState {
         }
     }
 
-    pub(super) fn detail_text(&self) -> String {
+    pub(super) fn details(&self) -> SunsetrDetails {
         match self {
-            Self::NotRunning => "sunsetr is not running".to_string(),
+            Self::NotRunning => SunsetrDetails::Message("sunsetr is not running".to_string()),
             Self::Automatic(status) | Self::Paused(status) | Self::Custom(status) => {
-                status.detail_text()
+                SunsetrDetails::Rows(status.detail_rows())
             }
-            Self::Unknown(error) => error.clone(),
+            Self::Unknown(error) => SunsetrDetails::Message(error.clone()),
         }
     }
 
@@ -66,32 +115,49 @@ impl SunsetrState {
             Self::NotRunning | Self::Unknown(_) => None,
         }
     }
+
+    pub(super) fn with_action_applied(&self, paused: bool, config: &SunsetrConfig) -> Self {
+        let preset = if paused {
+            &config.paused_preset
+        } else {
+            &config.automatic_preset
+        };
+
+        match self {
+            Self::Automatic(status) | Self::Paused(status) | Self::Custom(status) => {
+                let mut status = status.clone();
+                status.active_preset = preset.clone();
+                Self::from_status(status, config)
+            }
+            Self::NotRunning | Self::Unknown(_) => Self::Unknown("Updating sunsetr".to_string()),
+        }
+    }
+
+    fn matches_paused(&self, paused: bool) -> bool {
+        matches!(
+            (paused, self),
+            (true, Self::Paused(_)) | (false, Self::Automatic(_))
+        )
+    }
 }
 
 impl SunsetrStatus {
-    fn detail_text(&self) -> String {
-        let mut parts = Vec::new();
+    fn detail_rows(&self) -> Vec<SunsetrDetailRow> {
+        let mut rows = vec![SunsetrDetailRow::new("Preset", &self.active_preset)];
 
-        if self.active_preset != "default" {
-            parts.push(format!("Preset {}", self.active_preset));
-        }
-
-        for value in [
-            self.current_period.as_deref(),
-            self.temperature.as_deref(),
-            self.gamma.as_deref(),
+        for (label, value) in [
+            ("Period", self.current_period.as_deref()),
+            ("Temperature", self.temperature.as_deref()),
+            ("Gamma", self.gamma.as_deref()),
+            ("Next", self.next_period.as_deref()),
         ]
         .into_iter()
-        .flatten()
+        .filter_map(|(label, value)| value.map(|value| (label, value)))
         {
-            parts.push(value.to_string());
+            rows.push(SunsetrDetailRow::new(label, value));
         }
 
-        if let Some(next_period) = &self.next_period {
-            parts.push(format!("Next {next_period}"));
-        }
-
-        parts.join(" | ")
+        rows
     }
 }
 
