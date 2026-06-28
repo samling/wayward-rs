@@ -6,6 +6,7 @@ use relm4::{
 };
 
 use crate::bar::layout::BarEdge;
+use crate::bar::menu_button;
 use crate::bar::widget::BarRegion;
 
 use super::dropdown::{ClockDropdown, ClockDropdownInit, ClockDropdownInput};
@@ -83,20 +84,16 @@ impl SimpleComponent for ClockComponent {
             dropdown,
         };
 
-        let content = gtk::Box::new(model.edge.orientation(), 0);
-        crate::bar::style::add_bar_item_content_classes(&content, "clock-content");
+        let content = menu_button::content_box(model.edge.orientation(), 0, "clock-content");
 
         let label = gtk::Label::new(Some(&model.label_text));
         label.add_css_class("clock-label");
         crate::bar::style::configure_bar_label(&label);
         content.append(&label);
 
-        root.set_always_show_arrow(false);
-        root.set_cursor_from_name(Some("pointer"));
-        crate::bar::style::add_bar_item_classes(&root, "clock", init.instance_class.as_deref());
-        root.add_css_class("flat");
-        root.set_child(Some(&content));
-        root.set_popover(Some(model.dropdown.widget()));
+        menu_button::configure_root(&root, "clock", init.instance_class.as_deref());
+        menu_button::attach_content(&root, &content);
+        menu_button::attach_popover(&root, model.dropdown.widget());
 
         let widgets = ClockWidgets { content, label };
 
