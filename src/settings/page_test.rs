@@ -246,7 +246,7 @@ fn action_menu_config_sections_use_widget_owned_settings() {
     panel.insert("width".to_string(), toml::Value::Integer(320));
 
     let mut layout = toml::value::Table::new();
-    layout.insert("columns".to_string(), toml::Value::Integer(4));
+    layout.insert("button-width".to_string(), toml::Value::Integer(44));
 
     let mut header = toml::value::Table::new();
     header.insert(
@@ -274,7 +274,7 @@ fn action_menu_config_sections_use_widget_owned_settings() {
         vec!["Panel", "Layout", "Header"]
     );
     assert_eq!(sections[0].settings.len(), 1);
-    assert_eq!(sections[1].settings.len(), 4);
+    assert_eq!(sections[1].settings.len(), 3);
     assert_eq!(sections[2].settings.len(), 2);
 
     let SettingSpec::Number(width) = &sections[0].settings[0] else {
@@ -284,15 +284,15 @@ fn action_menu_config_sections_use_widget_owned_settings() {
     assert_eq!(width.value, Some(320));
     assert_eq!(width.default, 268);
 
-    let SettingSpec::Number(columns) = &sections[1].settings[0] else {
-        panic!("columns setting");
+    let SettingSpec::Number(button_width) = &sections[1].settings[0] else {
+        panic!("button width setting");
     };
     assert_eq!(
-        columns.path,
-        ["widgets", "action_menu", "layout", "columns"]
+        button_width.path,
+        ["widgets", "action_menu", "layout", "button-width"]
     );
-    assert_eq!(columns.value, Some(4));
-    assert_eq!(columns.default, 3);
+    assert_eq!(button_width.value, Some(44));
+    assert_eq!(button_width.default, 40);
 
     let SettingSpec::String(power_command) = &sections[2].settings[0] else {
         panic!("power command setting");

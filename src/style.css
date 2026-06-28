@@ -957,7 +957,7 @@ levelbar.osd-level block.filled {
 }
 
 .notification-toast.notification-card:hover {
-    background-color: var(--notification-toast-hover-background-color, rgba(241, 243, 244, 0.08));
+    background-color: var(--notification-toast-background-color, var(--md-sys-color-surface, rgba(30, 30, 46, 1)));
 }
 
 .action-menu-dropdown-content {
@@ -1186,6 +1186,13 @@ levelbar.osd-level block.filled {
 
 .settings-row {
   min-height: 34px;
+}
+
+.action-menu-settings-section {
+  padding: 12px;
+  border: 1px solid rgba(241, 243, 244, 0.10);
+  border-radius: 8px;
+  background-color: rgba(241, 243, 244, 0.025);
 }
 
 .action-menu-settings-action {
