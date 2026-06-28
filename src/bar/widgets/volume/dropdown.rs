@@ -52,162 +52,131 @@ impl Component for VolumeDropdown {
 
     view! {
         #[root]
-        #[name = "popover"]
-        gtk::Popover {
-            set_has_arrow: false,
-            set_autohide: true,
-            add_css_class: "dropdown",
-            add_css_class: "volume-dropdown",
+        #[template]
+        #[name = "shell"]
+        dropdown::DropdownPopover(dropdown::DropdownPopoverInit {
+            root_css_class: "volume-dropdown",
+            content_css_class: "volume-dropdown-content",
+            content_spacing: 10,
+        }) {
+            #[template_child]
+            content {
+                gtk::Box {
+                    add_css_class: "dropdown-header",
+                    add_css_class: "volume-dropdown-header",
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_spacing: 8,
 
-            #[watch]
-            set_position: dropdown::position_for_edge(model.edge),
+                    gtk::Label {
+                        add_css_class: "dropdown-title",
+                        set_halign: gtk::Align::Start,
+                        set_hexpand: true,
+                        set_text: "Volume",
+                    },
 
-            #[watch]
-            set_offset: (
-                dropdown::x_offset_for_placement(model.edge, model.region),
-                dropdown::y_offset_for_placement(model.edge, model.region),
-            ),
+                    #[name = "percent_label"]
+                    gtk::Label {
+                        add_css_class: "volume-dropdown-percent",
+                        set_halign: gtk::Align::End,
+                    },
+                },
 
-            #[watch]
-            set_margin_start: dropdown::margin_start_for_placement(model.edge, model.region),
-            #[watch]
-            set_margin_end: dropdown::margin_end_for_placement(model.edge, model.region),
-            #[watch]
-            set_margin_top: dropdown::margin_top_for_placement(model.edge, model.region),
-            #[watch]
-            set_margin_bottom: dropdown::margin_bottom_for_placement(model.edge, model.region),
-
-            #[name = "revealer"]
-            gtk::Revealer {
-                set_transition_duration: dropdown::TRANSITION_MS,
-                set_reveal_child: false,
-
-                #[watch]
-                set_transition_type: dropdown::transition_for_edge(model.edge),
+                #[name = "error_label"]
+                gtk::Label {
+                    add_css_class: "volume-error",
+                    set_halign: gtk::Align::Start,
+                    set_visible: false,
+                },
 
                 gtk::Box {
-                    add_css_class: "dropdown-content",
-                    add_css_class: "volume-dropdown-content",
-                    set_orientation: gtk::Orientation::Vertical,
-                    set_spacing: 10,
+                    add_css_class: "control-row",
+                    add_css_class: "volume-control-row",
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_spacing: 8,
+                    set_hexpand: true,
 
                     gtk::Box {
-                        add_css_class: "dropdown-header",
-                        add_css_class: "volume-dropdown-header",
+                        add_css_class: "control-label",
+                        add_css_class: "volume-mute-cell",
+                        set_halign: gtk::Align::Fill,
                         set_orientation: gtk::Orientation::Horizontal,
-                        set_spacing: 8,
 
-                        gtk::Label {
-                            add_css_class: "dropdown-title",
-                            set_halign: gtk::Align::Start,
-                            set_hexpand: true,
-                            set_text: "Volume",
-                        },
+                        #[name = "mute_button"]
+                        gtk::ToggleButton {
+                            add_css_class: "control-toggle",
+                            add_css_class: "icon-toggle",
+                            add_css_class: "volume-mute-button",
+                            set_cursor_from_name: Some("pointer"),
+                            set_halign: gtk::Align::Center,
+                            set_valign: gtk::Align::Center,
+                            set_size_request: (32, 32),
+                            set_tooltip_text: Some("Toggle mute"),
 
-                        #[name = "percent_label"]
-                        gtk::Label {
-                            add_css_class: "volume-dropdown-percent",
-                            set_halign: gtk::Align::End,
-                        },
-                    },
-
-                    #[name = "error_label"]
-                    gtk::Label {
-                        add_css_class: "volume-error",
-                        set_halign: gtk::Align::Start,
-                        set_visible: false,
-                    },
-
-                    gtk::Box {
-                        add_css_class: "control-row",
-                        add_css_class: "volume-control-row",
-                        set_orientation: gtk::Orientation::Horizontal,
-                        set_spacing: 8,
-                        set_hexpand: true,
-
-                        gtk::Box {
-                            add_css_class: "control-label",
-                            add_css_class: "volume-mute-cell",
-                            set_halign: gtk::Align::Fill,
-                            set_orientation: gtk::Orientation::Horizontal,
-
-                            #[name = "mute_button"]
-                            gtk::ToggleButton {
-                                add_css_class: "control-toggle",
-                                add_css_class: "icon-toggle",
-                                add_css_class: "volume-mute-button",
-                                set_cursor_from_name: Some("pointer"),
-                                set_halign: gtk::Align::Center,
-                                set_valign: gtk::Align::Center,
-                                set_size_request: (32, 32),
-                                set_tooltip_text: Some("Toggle mute"),
-
-                                #[wrap(Some)]
-                                set_child = &gtk::Image {
-                                    add_css_class: "control-toggle-icon",
-                                    set_icon_name: Some("audio-volume-high-symbolic"),
-                                },
+                            #[wrap(Some)]
+                            set_child = &gtk::Image {
+                                add_css_class: "control-toggle-icon",
+                                set_icon_name: Some("audio-volume-high-symbolic"),
                             },
                         },
-
-                        #[name = "volume_scale"]
-                        gtk::Scale {
-                            add_css_class: "control-scale",
-                            set_hexpand: true,
-                            set_halign: gtk::Align::Fill,
-                            set_valign: gtk::Align::Center,
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_draw_value: false,
-                            set_range: (0.0, 100.0),
-                            set_increments: (1.0, 10.0),
-                        },
                     },
 
-                    gtk::Box {
-                        add_css_class: "control-row",
-                        set_orientation: gtk::Orientation::Horizontal,
-                        set_spacing: 8,
+                    #[name = "volume_scale"]
+                    gtk::Scale {
+                        add_css_class: "control-scale",
                         set_hexpand: true,
-
-                        gtk::Label {
-                            add_css_class: "control-label",
-                            set_text: "Output",
-                            set_halign: gtk::Align::Start,
-                        },
-
-                        #[name = "output_selector"]
-                        gtk::ComboBoxText {
-                            add_css_class: "control-combo",
-                            set_hexpand: true,
-                        },
-                    },
-
-                    gtk::Box {
-                        add_css_class: "control-row",
+                        set_halign: gtk::Align::Fill,
+                        set_valign: gtk::Align::Center,
                         set_orientation: gtk::Orientation::Horizontal,
-                        set_spacing: 8,
-                        set_hexpand: true,
-
-                        gtk::Label {
-                            add_css_class: "control-label",
-                            set_text: "Input",
-                            set_halign: gtk::Align::Start,
-                        },
-
-                        #[name = "input_selector"]
-                        gtk::ComboBoxText {
-                            add_css_class: "control-combo",
-                            set_hexpand: true,
-                        },
+                        set_draw_value: false,
+                        set_range: (0.0, 100.0),
+                        set_increments: (1.0, 10.0),
                     },
-                }
-            }
+                },
+
+                gtk::Box {
+                    add_css_class: "control-row",
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_spacing: 8,
+                    set_hexpand: true,
+
+                    gtk::Label {
+                        add_css_class: "control-label",
+                        set_text: "Output",
+                        set_halign: gtk::Align::Start,
+                    },
+
+                    #[name = "output_selector"]
+                    gtk::ComboBoxText {
+                        add_css_class: "control-combo",
+                        set_hexpand: true,
+                    },
+                },
+
+                gtk::Box {
+                    add_css_class: "control-row",
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_spacing: 8,
+                    set_hexpand: true,
+
+                    gtk::Label {
+                        add_css_class: "control-label",
+                        set_text: "Input",
+                        set_halign: gtk::Align::Start,
+                    },
+
+                    #[name = "input_selector"]
+                    gtk::ComboBoxText {
+                        add_css_class: "control-combo",
+                        set_hexpand: true,
+                    },
+                },
+            },
         }
     }
 
     fn init(
         init: Self::Init,
-        _root: Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = Self {
@@ -220,7 +189,8 @@ impl Component for VolumeDropdown {
 
         let widgets = view_output!();
 
-        dropdown::connect_revealer(&widgets.popover, &widgets.revealer);
+        root.set_placement(init.edge, init.region);
+        root.connect_revealer();
         connect_controls(&widgets, &sender, model.syncing.clone());
 
         ComponentParts { model, widgets }
@@ -231,12 +201,13 @@ impl Component for VolumeDropdown {
         widgets: &mut Self::Widgets,
         msg: Self::Input,
         sender: ComponentSender<Self>,
-        _root: &Self::Root,
+        root: &Self::Root,
     ) {
         match msg {
             VolumeDropdownInput::SetPlacement { edge, region } => {
                 self.edge = edge;
                 self.region = region;
+                root.set_placement(edge, region);
             }
             VolumeDropdownInput::SetSnapshot(snapshot) => {
                 self.snapshot = Some(snapshot);

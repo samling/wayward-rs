@@ -113,7 +113,7 @@ impl SimpleComponent for VolumeComponent {
         crate::bar::style::add_bar_item_content_classes(&widgets.content, "volume-content");
         crate::bar::style::configure_bar_label(&widgets.percent);
 
-        root.set_popover(Some(model.dropdown.widget()));
+        root.set_popover(Some(model.dropdown.widget().as_ref()));
         connect_right_click(&root, model.bar_sender.clone());
 
         ComponentParts { model, widgets }

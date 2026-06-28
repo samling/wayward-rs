@@ -1,7 +1,6 @@
 use crate::bar::{dropdown, layout::BarEdge, widget::BarRegion};
 use relm4::gtk;
 use relm4::gtk::prelude::ButtonExt;
-use relm4::gtk::prelude::PopoverExt;
 use relm4::gtk::prelude::ToggleButtonExt;
 use relm4::gtk::prelude::{BoxExt, OrientableExt, WidgetExt};
 use relm4::prelude::*;
@@ -29,6 +28,7 @@ pub(super) struct BatteryDropdown {
     active_profile: Option<PowerProfile>,
     available_profiles: Vec<PowerProfile>,
     history_graph: BatteryHistoryGraph,
+    shell: Option<dropdown::DropdownPopover>,
 }
 
 #[derive(Debug)]
@@ -54,47 +54,15 @@ impl SimpleComponent for BatteryDropdown {
 
     view! {
         #[root]
-        #[name = "popover"]
-        gtk::Popover {
-            set_has_arrow: false,
-            add_css_class: "dropdown",
-            add_css_class: "battery-dropdown",
-
-            #[watch]
-            set_position: dropdown::position_for_edge(model.edge),
-
-            #[watch]
-            set_offset: (
-                dropdown::x_offset_for_placement(model.edge, model.region),
-                dropdown::y_offset_for_placement(model.edge, model.region),
-            ),
-
-            #[watch]
-            set_margin_start: dropdown::margin_start_for_placement(model.edge, model.region),
-
-            #[watch]
-            set_margin_end: dropdown::margin_end_for_placement(model.edge, model.region),
-
-            #[watch]
-            set_margin_top: dropdown::margin_top_for_placement(model.edge, model.region),
-
-            #[watch]
-            set_margin_bottom: dropdown::margin_bottom_for_placement(model.edge, model.region),
-
-            #[name = "revealer"]
-            gtk::Revealer {
-                set_transition_duration: dropdown::TRANSITION_MS,
-                set_reveal_child: false,
-
-                #[watch]
-                set_transition_type: dropdown::transition_for_edge(model.edge),
-
-                #[name = "content"]
-                gtk::Box {
-                    add_css_class: "dropdown-content",
-                    add_css_class: "battery-dropdown-content",
-                    set_orientation: gtk::Orientation::Vertical,
-                    set_spacing: 8,
+        #[template]
+        #[name = "shell"]
+        dropdown::DropdownPopover(dropdown::DropdownPopoverInit {
+            root_css_class: "battery-dropdown",
+            content_css_class: "battery-dropdown-content",
+            content_spacing: 8,
+        }) {
+            #[template_child]
+            content {
 
                     gtk::Box {
                         add_css_class: "dropdown-header",
@@ -306,18 +274,17 @@ impl SimpleComponent for BatteryDropdown {
                             set_label: "Performance",
                         },
                     },
-                },
             },
         },
     }
 
     fn init(
         init: Self::Init,
-        _root: Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let history_graph = BatteryHistoryGraph::new();
-        let model = Self {
+        let mut model = Self {
             view_model: BatteryViewModel::unavailable(),
             edge: init.edge,
             region: init.region,
@@ -325,6 +292,7 @@ impl SimpleComponent for BatteryDropdown {
             active_profile: None,
             available_profiles: Vec::new(),
             history_graph,
+            shell: None,
         };
 
         refresh_history_graph(&model.history_graph);
@@ -332,10 +300,12 @@ impl SimpleComponent for BatteryDropdown {
         let history_graph = model.history_graph.root();
         let widgets = view_output!();
 
-        dropdown::connect_revealer(&widgets.popover, &widgets.revealer);
+        root.set_placement(init.edge, init.region);
+        root.connect_revealer();
+        model.shell = Some(root.clone());
 
         let history_graph_on_map = model.history_graph.clone();
-        widgets.popover.connect_map(move |_| {
+        root.as_ref().connect_map(move |_| {
             refresh_history_graph(&history_graph_on_map);
         });
 
@@ -347,6 +317,9 @@ impl SimpleComponent for BatteryDropdown {
             BatteryDropdownInput::SetPlacement { edge, region } => {
                 self.edge = edge;
                 self.region = region;
+                if let Some(shell) = &self.shell {
+                    shell.set_placement(edge, region);
+                }
             }
             BatteryDropdownInput::SetViewModel(view_model) => {
                 self.view_model = view_model;

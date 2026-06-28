@@ -121,7 +121,7 @@ impl SimpleComponent for UpdatesComponent {
         crate::bar::style::add_bar_item_content_classes(&widgets.content, "updates-content");
         crate::bar::style::configure_bar_label(&widgets.count);
 
-        root.set_popover(Some(model.dropdown.widget()));
+        root.set_popover(Some(model.dropdown.widget().as_ref()));
 
         let bar_sender = model.bar_sender.clone();
         root.connect_notify_local(Some("active"), move |button, _| {

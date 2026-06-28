@@ -376,9 +376,11 @@ fn find_named_label(parent: &gtk::Widget, name: &str) -> Option<gtk::Label> {
 
     while let Some(widget) = child {
         if widget.widget_name() == name {
-            return Some(widget
-                .downcast::<gtk::Label>()
-                .expect("named child is a label"));
+            return Some(
+                widget
+                    .downcast::<gtk::Label>()
+                    .expect("named child is a label"),
+            );
         }
 
         if let Some(label) = find_named_label(&widget, name) {

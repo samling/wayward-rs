@@ -9,6 +9,52 @@ use crate::bar::widget::BarRegion;
 const DROPDOWN_GAP: i32 = 6;
 pub(crate) const TRANSITION_MS: u32 = 140;
 
+pub(crate) struct DropdownPopoverInit {
+    pub(crate) root_css_class: &'static str,
+    pub(crate) content_css_class: &'static str,
+    pub(crate) content_spacing: i32,
+}
+
+#[relm4::widget_template(pub(crate))]
+impl relm4::WidgetTemplate for DropdownPopover {
+    type Init = DropdownPopoverInit;
+
+    view! {
+        #[name = "popover"]
+        gtk::Popover {
+            set_has_arrow: false,
+            set_autohide: true,
+            add_css_class: "dropdown",
+            add_css_class: init.root_css_class,
+
+            #[name = "revealer"]
+            gtk::Revealer {
+                set_transition_duration: TRANSITION_MS,
+                set_reveal_child: false,
+                set_transition_type: gtk::RevealerTransitionType::SlideDown,
+
+                #[name = "content"]
+                gtk::Box {
+                    add_css_class: "dropdown-content",
+                    add_css_class: init.content_css_class,
+                    set_orientation: gtk::Orientation::Vertical,
+                    set_spacing: init.content_spacing,
+                }
+            }
+        }
+    }
+}
+
+impl DropdownPopover {
+    pub(crate) fn connect_revealer(&self) {
+        crate::bar::dropdown::connect_revealer(self.as_ref(), &self.revealer);
+    }
+
+    pub(crate) fn set_placement(&self, edge: BarEdge, region: BarRegion) {
+        crate::bar::dropdown::set_placement(self.as_ref(), &self.revealer, edge, region);
+    }
+}
+
 pub(crate) fn install_revealer(
     popover: &gtk::Popover,
     revealer: &gtk::Revealer,

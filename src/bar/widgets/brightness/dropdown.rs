@@ -53,131 +53,100 @@ impl Component for BrightnessDropdown {
 
     view! {
         #[root]
-        #[name = "popover"]
-        gtk::Popover {
-            set_has_arrow: false,
-            set_autohide: true,
-            add_css_class: "dropdown",
-            add_css_class: "brightness-dropdown",
+        #[template]
+        #[name = "shell"]
+        dropdown::DropdownPopover(dropdown::DropdownPopoverInit {
+            root_css_class: "brightness-dropdown",
+            content_css_class: "brightness-dropdown-content",
+            content_spacing: 10,
+        }) {
+            #[template_child]
+            content {
+                gtk::Box {
+                    add_css_class: "dropdown-header",
+                    add_css_class: "brightness-dropdown-header",
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_spacing: 8,
 
-            #[watch]
-            set_position: dropdown::position_for_edge(model.edge),
+                    gtk::Label {
+                        add_css_class: "dropdown-title",
+                        set_halign: gtk::Align::Start,
+                        set_hexpand: true,
+                        set_text: "Brightness",
+                    },
 
-            #[watch]
-            set_offset: (
-                dropdown::x_offset_for_placement(model.edge, model.region),
-                dropdown::y_offset_for_placement(model.edge, model.region),
-            ),
+                    #[name = "percent_label"]
+                    gtk::Label {
+                        add_css_class: "brightness-dropdown-percent",
+                        set_halign: gtk::Align::End,
+                    },
+                },
 
-            #[watch]
-            set_margin_start: dropdown::margin_start_for_placement(model.edge, model.region),
-            #[watch]
-            set_margin_end: dropdown::margin_end_for_placement(model.edge, model.region),
-            #[watch]
-            set_margin_top: dropdown::margin_top_for_placement(model.edge, model.region),
-            #[watch]
-            set_margin_bottom: dropdown::margin_bottom_for_placement(model.edge, model.region),
-
-            #[name = "revealer"]
-            gtk::Revealer {
-                set_transition_duration: dropdown::TRANSITION_MS,
-                set_reveal_child: false,
-
-                #[watch]
-                set_transition_type: dropdown::transition_for_edge(model.edge),
+                #[name = "error_label"]
+                gtk::Label {
+                    add_css_class: "brightness-error",
+                    set_halign: gtk::Align::Start,
+                    set_visible: false,
+                },
 
                 gtk::Box {
-                    add_css_class: "dropdown-content",
-                    add_css_class: "brightness-dropdown-content",
-                    set_orientation: gtk::Orientation::Vertical,
-                    set_spacing: 10,
+                    add_css_class: "control-row",
+                    add_css_class: "brightness-control-row",
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_spacing: 8,
 
-                    gtk::Box {
-                        add_css_class: "dropdown-header",
-                        add_css_class: "brightness-dropdown-header",
+                    #[name = "brightness_scale"]
+                    gtk::Scale {
+                        add_css_class: "control-scale",
+                        set_hexpand: true,
+                        set_halign: gtk::Align::Fill,
                         set_orientation: gtk::Orientation::Horizontal,
-                        set_spacing: 8,
-
-                        gtk::Label {
-                            add_css_class: "dropdown-title",
-                            set_halign: gtk::Align::Start,
-                            set_hexpand: true,
-                            set_text: "Brightness",
-                        },
-
-                        #[name = "percent_label"]
-                        gtk::Label {
-                            add_css_class: "brightness-dropdown-percent",
-                            set_halign: gtk::Align::End,
-                        },
+                        set_draw_value: false,
+                        set_range: (0.0, 100.0),
+                        set_increments: (1.0, 10.0),
                     },
+                },
 
-                    #[name = "error_label"]
+                gtk::Box {
+                    add_css_class: "control-row",
+                    add_css_class: "blue-light-row",
+                    set_orientation: gtk::Orientation::Horizontal,
+                    set_spacing: 8,
+
                     gtk::Label {
-                        add_css_class: "brightness-error",
+                        add_css_class: "control-label",
+                        set_text: "Blue light filter",
                         set_halign: gtk::Align::Start,
-                        set_visible: false,
+                        set_hexpand: true,
                     },
 
-                    gtk::Box {
-                        add_css_class: "control-row",
-                        add_css_class: "brightness-control-row",
-                        set_orientation: gtk::Orientation::Horizontal,
-                        set_spacing: 8,
-
-                        #[name = "brightness_scale"]
-                        gtk::Scale {
-                            add_css_class: "control-scale",
-                            set_hexpand: true,
-                            set_halign: gtk::Align::Fill,
-                            set_orientation: gtk::Orientation::Horizontal,
-                            set_draw_value: false,
-                            set_range: (0.0, 100.0),
-                            set_increments: (1.0, 10.0),
-                        },
+                    #[name = "sunsetr_status_label"]
+                    gtk::Label {
+                        add_css_class: "blue-light-status",
+                        set_halign: gtk::Align::End,
                     },
 
-                    gtk::Box {
-                        add_css_class: "control-row",
-                        add_css_class: "blue-light-row",
-                        set_orientation: gtk::Orientation::Horizontal,
-                        set_spacing: 8,
-
-                        gtk::Label {
-                            add_css_class: "control-label",
-                            set_text: "Blue light filter",
-                            set_halign: gtk::Align::Start,
-                            set_hexpand: true,
-                        },
-
-                        #[name = "sunsetr_status_label"]
-                        gtk::Label {
-                            add_css_class: "blue-light-status",
-                            set_halign: gtk::Align::End,
-                        },
-
-                        #[name = "sunsetr_button"]
-                        gtk::Button {
-                            add_css_class: "control-toggle",
-                            set_cursor_from_name: Some("pointer"),
-                            set_label: "Pause",
-                        },
+                    #[name = "sunsetr_button"]
+                    gtk::Button {
+                        add_css_class: "control-toggle",
+                        set_cursor_from_name: Some("pointer"),
+                        set_label: "Pause",
                     },
+                },
 
-                    #[name = "sunsetr_details_grid"]
-                    gtk::Grid {
-                        add_css_class: "blue-light-details",
-                        set_column_spacing: 10,
-                        set_row_spacing: 3,
-                    },
-                }
-            }
+                #[name = "sunsetr_details_grid"]
+                gtk::Grid {
+                    add_css_class: "blue-light-details",
+                    set_column_spacing: 10,
+                    set_row_spacing: 3,
+                },
+            },
         }
     }
 
     fn init(
         init: Self::Init,
-        _root: Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let model = Self {
@@ -190,9 +159,10 @@ impl Component for BrightnessDropdown {
 
         let widgets = view_output!();
 
-        dropdown::connect_revealer(&widgets.popover, &widgets.revealer);
+        root.set_placement(init.edge, init.region);
+        root.connect_revealer();
         connect_controls(&widgets, &sender, model.syncing.clone());
-        connect_opened(&widgets.popover, &sender);
+        connect_opened(root.as_ref(), &sender);
 
         ComponentParts { model, widgets }
     }
@@ -202,12 +172,13 @@ impl Component for BrightnessDropdown {
         widgets: &mut Self::Widgets,
         msg: Self::Input,
         sender: ComponentSender<Self>,
-        _root: &Self::Root,
+        root: &Self::Root,
     ) {
         match msg {
             BrightnessDropdownInput::SetPlacement { edge, region } => {
                 self.edge = edge;
                 self.region = region;
+                root.set_placement(edge, region);
             }
             BrightnessDropdownInput::SetSnapshot(snapshot) => {
                 self.snapshot = Some(snapshot);
