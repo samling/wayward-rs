@@ -41,6 +41,29 @@ Current period: Static 󰋙
 }
 
 #[test]
+fn state_details_formats_status_as_rows() {
+    let status = SunsetrStatus {
+        active_preset: "default".to_string(),
+        current_period: Some("Day 󰖨".to_string()),
+        state: Some("stable".to_string()),
+        temperature: Some("6500K".to_string()),
+        gamma: Some("100.0%".to_string()),
+        next_period: Some("19:18:46 (in 7h6m)".to_string()),
+    };
+
+    assert_eq!(
+        SunsetrState::Automatic(status).details(),
+        SunsetrDetails::Rows(vec![
+            SunsetrDetailRow::new("Preset", "default"),
+            SunsetrDetailRow::new("Period", "Day 󰖨"),
+            SunsetrDetailRow::new("Temperature", "6500K"),
+            SunsetrDetailRow::new("Gamma", "100.0%"),
+            SunsetrDetailRow::new("Next", "19:18:46 (in 7h6m)"),
+        ])
+    );
+}
+
+#[test]
 fn classifies_default_preset_as_automatic() {
     let config = SunsetrConfig::default();
     let status = SunsetrStatus {
@@ -74,4 +97,23 @@ fn classifies_paused_preset_as_paused() {
         SunsetrState::from_status(status, &config),
         SunsetrState::Paused(_)
     ));
+}
+
+#[test]
+fn pending_action_rejects_stale_status_before_accepting_target_status() {
+    let mut pending = PendingSunsetrAction::new(true);
+
+    assert!(!pending.accepts_status(&SunsetrState::Automatic(status_with_preset("default"))));
+    assert!(pending.accepts_status(&SunsetrState::Paused(status_with_preset("day"))));
+}
+
+fn status_with_preset(preset: &str) -> SunsetrStatus {
+    SunsetrStatus {
+        active_preset: preset.to_string(),
+        current_period: None,
+        state: None,
+        temperature: None,
+        gamma: None,
+        next_period: None,
+    }
 }

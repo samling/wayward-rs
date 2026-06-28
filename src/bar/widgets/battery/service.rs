@@ -32,6 +32,8 @@ async fn run_battery_watcher(
     let mut percentage_updates = service.device.percentage.watch().fuse();
     let mut state_updates = service.device.state.watch().fuse();
     let mut energy_rate_updates = service.device.energy_rate.watch().fuse();
+    let mut time_to_empty_updates = service.device.time_to_empty.watch().fuse();
+    let mut time_to_full_updates = service.device.time_to_full.watch().fuse();
     let mut capacity_updates = service.device.capacity.watch().fuse();
     let mut active_profile_updates = power_profiles
         .as_ref()
@@ -56,6 +58,20 @@ async fn run_battery_watcher(
                 send_battery_snapshot(&sender, &service, power_profiles.as_deref());
             }
             update = energy_rate_updates.next() => {
+                if update.is_none() {
+                    break;
+                }
+
+                send_battery_snapshot(&sender, &service, power_profiles.as_deref());
+            }
+            update = time_to_empty_updates.next() => {
+                if update.is_none() {
+                    break;
+                }
+
+                send_battery_snapshot(&sender, &service, power_profiles.as_deref());
+            }
+            update = time_to_full_updates.next() => {
                 if update.is_none() {
                     break;
                 }
@@ -117,6 +133,8 @@ pub(super) fn snapshot_from_services(
     let percentage = service.device.percentage.get();
     let state = service.device.state.get();
     let energy_rate = service.device.energy_rate.get();
+    let time_to_empty = service.device.time_to_empty.get();
+    let time_to_full = service.device.time_to_full.get();
     let capacity = service.device.capacity.get();
 
     let active_profile = power_profiles.map(|service| service.power_profiles.active_profile.get());
@@ -138,6 +156,8 @@ pub(super) fn snapshot_from_services(
         percentage,
         state,
         energy_rate,
+        time_to_empty,
+        time_to_full,
         capacity,
         active_profile,
         available_profiles,
