@@ -15,6 +15,7 @@ pub(super) struct UpdatesDropdown {
     last_error: Option<String>,
     refreshing: bool,
     rows: FactoryVecDeque<UpdateRow>,
+    shell: Option<dropdown::DropdownPopover>,
 }
 
 pub(super) struct UpdatesDropdownInit {
@@ -42,44 +43,15 @@ impl SimpleComponent for UpdatesDropdown {
 
     view! {
         #[root]
-        #[name = "popover"]
-        gtk::Popover {
-            set_has_arrow: false,
-            set_autohide: true,
-            add_css_class: "dropdown",
-            add_css_class: "updates-dropdown",
-
-            #[watch]
-            set_position: dropdown::position_for_edge(model.edge),
-
-            #[watch]
-            set_offset: (
-                dropdown::x_offset_for_placement(model.edge, model.region),
-                dropdown::y_offset_for_placement(model.edge, model.region),
-            ),
-
-            #[watch]
-            set_margin_start: dropdown::margin_start_for_placement(model.edge, model.region),
-            #[watch]
-            set_margin_end: dropdown::margin_end_for_placement(model.edge, model.region),
-            #[watch]
-            set_margin_top: dropdown::margin_top_for_placement(model.edge, model.region),
-            #[watch]
-            set_margin_bottom: dropdown::margin_bottom_for_placement(model.edge, model.region),
-
-            #[name = "revealer"]
-            gtk::Revealer {
-                set_transition_duration: dropdown::TRANSITION_MS,
-                set_reveal_child: false,
-
-                #[watch]
-                set_transition_type: dropdown::transition_for_edge(model.edge),
-
-                gtk::Box {
-                    add_css_class: "dropdown-content",
-                    add_css_class: "updates-dropdown-content",
-                    set_orientation: gtk::Orientation::Vertical,
-                    set_spacing: 8,
+        #[template]
+        #[name = "shell"]
+        dropdown::DropdownPopover(dropdown::DropdownPopoverInit {
+            root_css_class: "updates-dropdown",
+            content_css_class: "updates-dropdown-content",
+            content_spacing: 8,
+        }) {
+            #[template_child]
+            content {
 
                     gtk::Box {
                         add_css_class: "dropdown-header",
@@ -211,31 +183,33 @@ impl SimpleComponent for UpdatesDropdown {
                             }
                         },
                     },
-                }
             }
         }
     }
 
     fn init(
         init: Self::Init,
-        _root: Self::Root,
+        root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let list = gtk::ListBox::default();
         let rows = FactoryVecDeque::builder().launch(list.clone()).detach();
 
-        let model = Self {
+        let mut model = Self {
             edge: init.edge,
             region: init.region,
             packages: Vec::new(),
             last_error: None,
             refreshing: false,
             rows,
+            shell: None,
         };
 
         let widgets = view_output!();
 
-        dropdown::connect_revealer(&widgets.popover, &widgets.revealer);
+        root.set_placement(init.edge, init.region);
+        root.connect_revealer();
+        model.shell = Some(root);
 
         ComponentParts { model, widgets }
     }
@@ -245,6 +219,9 @@ impl SimpleComponent for UpdatesDropdown {
             UpdatesDropdownInput::SetPlacement { edge, region } => {
                 self.edge = edge;
                 self.region = region;
+                if let Some(shell) = &self.shell {
+                    shell.set_placement(edge, region);
+                }
             }
             UpdatesDropdownInput::SetSnapshot(snapshot) => {
                 self.packages = snapshot.packages.clone();

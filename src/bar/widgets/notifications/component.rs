@@ -97,7 +97,7 @@ impl SimpleComponent for NotificationsComponent {
         crate::bar::style::add_bar_item_content_classes(&widgets.content, "notifications-content");
         crate::bar::style::configure_bar_label(&widgets.count);
 
-        root.set_popover(Some(model.dropdown.widget()));
+        root.set_popover(Some(model.dropdown.widget().as_ref()));
 
         ComponentParts { model, widgets }
     }
