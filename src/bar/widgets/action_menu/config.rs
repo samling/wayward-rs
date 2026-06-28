@@ -68,12 +68,10 @@ impl Default for ActionMenuHeaderConfig {
     }
 }
 
-// No deny_unknown_fields: tolerate deprecated keys (e.g. the removed `column-spacing`)
-// in existing configs instead of failing the whole action_menu config parse.
+// No deny_unknown_fields: tolerate deprecated keys in existing configs.
 #[derive(Clone, Debug, Deserialize)]
 #[serde(default, rename_all = "kebab-case")]
 pub(super) struct ActionMenuLayoutConfig {
-    pub(super) columns: usize,
     pub(super) button_width: Option<i32>,
     pub(super) button_height: Option<i32>,
     pub(super) row_spacing: i32,
@@ -82,7 +80,6 @@ pub(super) struct ActionMenuLayoutConfig {
 impl Default for ActionMenuLayoutConfig {
     fn default() -> Self {
         Self {
-            columns: 3,
             button_width: Some(40),
             button_height: Some(40),
             row_spacing: 12,
