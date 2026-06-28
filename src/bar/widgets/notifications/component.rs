@@ -5,6 +5,7 @@ use relm4::{ComponentController, Controller};
 
 use crate::bar::BarMsg;
 use crate::bar::layout::BarEdge;
+use crate::bar::menu_button;
 use crate::bar::widget::BarRegion;
 use crate::notifications::model::NotificationToast;
 
@@ -40,12 +41,6 @@ impl SimpleComponent for NotificationsComponent {
 
     view! {
         gtk::MenuButton {
-            set_always_show_arrow: false,
-            set_cursor_from_name: Some("pointer"),
-            add_css_class: "bar-item",
-            add_css_class: "notifications",
-            add_css_class: "flat",
-
             #[wrap(Some)]
             #[name = "content"]
             set_child = &gtk::Box {
@@ -94,10 +89,11 @@ impl SimpleComponent for NotificationsComponent {
         };
 
         let widgets = view_output!();
-        crate::bar::style::add_bar_item_content_classes(&widgets.content, "notifications-content");
+        menu_button::configure_root(&root, "notifications", None);
+        menu_button::configure_content(&widgets.content, "notifications-content");
         crate::bar::style::configure_bar_label(&widgets.count);
 
-        root.set_popover(Some(model.dropdown.widget().as_ref()));
+        menu_button::attach_popover(&root, model.dropdown.widget());
 
         ComponentParts { model, widgets }
     }

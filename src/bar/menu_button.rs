@@ -18,14 +18,18 @@ pub(crate) fn content_box(
     content_class: &str,
 ) -> gtk::Box {
     let content = gtk::Box::new(orientation, spacing);
-    crate::bar::style::add_bar_item_content_classes(&content, content_class);
+    configure_content(&content, content_class);
     content
+}
+
+pub(crate) fn configure_content(content: &gtk::Box, content_class: &str) {
+    crate::bar::style::add_bar_item_content_classes(content, content_class);
 }
 
 pub(crate) fn attach_content(root: &gtk::MenuButton, content: &gtk::Box) {
     root.set_child(Some(content));
 }
 
-pub(crate) fn attach_popover(root: &gtk::MenuButton, popover: &impl IsA<gtk::Popover>) {
-    root.set_popover(Some(popover));
+pub(crate) fn attach_popover(root: &gtk::MenuButton, popover: &impl AsRef<gtk::Popover>) {
+    root.set_popover(Some(popover.as_ref()));
 }
