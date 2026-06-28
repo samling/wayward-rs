@@ -110,7 +110,7 @@ impl SimpleComponent for BatteryComponent {
         crate::bar::style::configure_bar_label(&widgets.percentage);
         crate::bar::style::configure_bar_label(&widgets.energy_rate);
 
-        root.set_popover(Some(model.dropdown.widget()));
+        root.set_popover(Some(model.dropdown.widget().as_ref()));
 
         ComponentParts { model, widgets }
     }

@@ -121,7 +121,7 @@ impl SimpleComponent for BrightnessComponent {
         crate::bar::style::add_bar_item_content_classes(&widgets.content, "brightness-content");
         crate::bar::style::configure_bar_label(&widgets.percent);
 
-        root.set_popover(Some(model.dropdown.widget()));
+        root.set_popover(Some(model.dropdown.widget().as_ref()));
 
         model.check_sunsetr_state(sender.input_sender().clone());
 
