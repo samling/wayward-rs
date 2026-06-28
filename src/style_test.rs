@@ -182,6 +182,26 @@ fn default_css_workspaces_surface_does_not_shrink_indicator_layer() {
 }
 
 #[test]
+fn default_css_workspaces_items_match_shared_widget_thickness() {
+    let horizontal_rule = DEFAULT_CSS
+        .split("\n.bar.horizontal .workspaces-items {")
+        .nth(1)
+        .and_then(|css| css.split_once('}'))
+        .map(|(rule, _)| rule)
+        .expect("horizontal workspaces items rule should exist");
+
+    let vertical_rule = DEFAULT_CSS
+        .split("\n.bar.vertical .workspaces-items {")
+        .nth(1)
+        .and_then(|css| css.split_once('}'))
+        .map(|(rule, _)| rule)
+        .expect("vertical workspaces items rule should exist");
+
+    assert!(horizontal_rule.contains("min-height: var(--bar-widget-thickness, 16px);"));
+    assert!(vertical_rule.contains("min-width: var(--bar-widget-thickness, 16px);"));
+}
+
+#[test]
 fn default_css_bar_menu_buttons_inherit_font_weight() {
     for selector in [".bar-item {", "menubutton.bar-item > button,"] {
         let rule = DEFAULT_CSS

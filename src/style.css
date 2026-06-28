@@ -217,8 +217,13 @@ menubutton.bar-item > button:checked {
     padding: var(--bar-widget-padding-y, 0px) var(--bar-widget-padding-x, 4px);
 }
 
+.bar.horizontal .workspaces-items {
+    min-height: var(--bar-widget-thickness, 16px);
+}
+
 .bar.vertical .workspaces-items {
     border-spacing: var(--workspaces-vertical-gap, 2px);
+    min-width: var(--bar-widget-thickness, 16px);
 }
 
 /* Pills carry no cross-axis padding: that would exceed the shared
