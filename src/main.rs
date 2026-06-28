@@ -10,6 +10,7 @@ mod shell;
 mod style;
 
 use relm4::RelmApp;
+use tracing_subscriber::EnvFilter;
 
 fn main() {
     if std::env::args().any(|arg| arg == "--print-default-style-config") {
@@ -17,7 +18,7 @@ fn main() {
         return;
     }
 
-    tracing_subscriber::fmt::init();
+    init_tracing();
     tracing::info!("wayward starting");
 
     config::ensure_config_files();
@@ -33,4 +34,11 @@ fn main() {
     app.run::<shell::Shell>(shell::ShellInit { services, style });
 
     runtime.shutdown_background();
+}
+
+fn init_tracing() {
+    let filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info,zbus::proxy=error"));
+
+    tracing_subscriber::fmt().with_env_filter(filter).init();
 }

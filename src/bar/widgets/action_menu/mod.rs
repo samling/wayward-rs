@@ -87,16 +87,6 @@ impl BarWidget for ActionMenuWidget {
                 title: "Layout".to_string(),
                 settings: vec![
                     SettingSpec::Number(NumberSpec {
-                        label: "Columns",
-                        description: None,
-                        path: &["widgets", "action_menu", "layout", "columns"],
-                        value: layout.and_then(|table| table_u16(table, "columns")),
-                        default: 3,
-                        min: 1.0,
-                        max: 8.0,
-                        step: 1.0,
-                    }),
-                    SettingSpec::Number(NumberSpec {
                         label: "Button width",
                         description: None,
                         path: &["widgets", "action_menu", "layout", "button-width"],
