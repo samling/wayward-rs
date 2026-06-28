@@ -3,6 +3,7 @@ mod window;
 
 pub(crate) mod dropdown;
 pub(crate) mod layout;
+pub(crate) mod menu_button;
 pub(crate) mod registry;
 pub(crate) mod state;
 pub(crate) mod widget;

@@ -6,6 +6,7 @@ use relm4::{
 
 use crate::bar::BarMsg;
 use crate::bar::layout::BarEdge;
+use crate::bar::menu_button;
 use crate::bar::widget::BarRegion;
 
 use super::config::ActionMenuConfig;
@@ -62,20 +63,17 @@ impl SimpleComponent for ActionMenuComponent {
             dropdown,
         };
 
-        let content = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        crate::bar::style::add_bar_item_content_classes(&content, "action-menu-content");
+        let content =
+            menu_button::content_box(gtk::Orientation::Horizontal, 0, "action-menu-content");
 
         let bar_icon = gtk::Label::new(Some("\u{f303}"));
         bar_icon.add_css_class("action-menu-bar-icon");
         crate::bar::style::configure_bar_label(&bar_icon);
         content.append(&bar_icon);
 
-        root.set_always_show_arrow(false);
-        root.set_cursor_from_name(Some("pointer"));
-        crate::bar::style::add_bar_item_classes(&root, "action-menu", None);
-        root.add_css_class("flat");
-        root.set_child(Some(&content));
-        root.set_popover(Some(model.dropdown.widget()));
+        menu_button::configure_root(&root, "action-menu", None);
+        menu_button::attach_content(&root, &content);
+        menu_button::attach_popover(&root, model.dropdown.widget());
 
         ComponentParts {
             model,
