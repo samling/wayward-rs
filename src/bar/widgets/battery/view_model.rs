@@ -1,14 +1,14 @@
 use crate::bar::state::BatterySnapshot;
 
 use super::format::{
-    battery_energy_rate_text, battery_health_text, battery_icon_name, battery_percentage_text,
+    battery_energy_rate_text, battery_health_text, battery_icon_names, battery_percentage_text,
     battery_state_text, battery_time_remaining_duration_text, battery_time_remaining_label,
     battery_time_remaining_text, initial_text,
 };
 
 #[derive(Clone, Debug)]
 pub(super) struct BatteryViewModel {
-    pub(super) icon_name: &'static str,
+    pub(super) icon_names: &'static [&'static str],
     pub(super) percentage_text: String,
     pub(super) energy_rate_text: String,
     pub(super) health_text: String,
@@ -22,7 +22,7 @@ pub(super) struct BatteryViewModel {
 impl BatteryViewModel {
     pub(super) fn unavailable() -> Self {
         Self {
-            icon_name: "battery-missing-symbolic",
+            icon_names: &["battery-missing", "battery-missing-symbolic"],
             percentage_text: initial_text(),
             energy_rate_text: String::new(),
             health_text: String::new(),
@@ -47,7 +47,7 @@ impl BatteryViewModel {
         );
 
         Self {
-            icon_name: battery_icon_name(snapshot.percentage, snapshot.state),
+            icon_names: battery_icon_names(snapshot.percentage, snapshot.state),
             percentage_text: battery_percentage_text(snapshot.percentage),
             energy_rate_text: battery_energy_rate_text(snapshot.energy_rate),
             health_text: battery_health_text(snapshot.capacity),

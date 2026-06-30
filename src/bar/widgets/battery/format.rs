@@ -65,45 +65,48 @@ pub(super) fn battery_state_text(state: DeviceState) -> String {
     state.to_string()
 }
 
-pub(super) fn battery_icon_name(percentage: f64, state: DeviceState) -> &'static str {
+pub(super) fn battery_icon_names(percentage: f64, state: DeviceState) -> &'static [&'static str] {
     let level = ((percentage / 10.0).round() as i32 * 10).clamp(0, 100);
 
     match state {
-        DeviceState::FullyCharged => "battery-level-100-charged-symbolic",
-        DeviceState::Charging => charging_battery_icon_name(level.min(90)),
-        _ => discharging_battery_icon_name(level),
+        DeviceState::FullyCharged => &["battery-100-charged", "battery-level-100-charged-symbolic"],
+        DeviceState::Charging => charging_battery_icon_names(level),
+        _ => discharging_battery_icon_names(level),
     }
 }
 
-fn charging_battery_icon_name(level: i32) -> &'static str {
+fn charging_battery_icon_names(level: i32) -> &'static [&'static str] {
     match level {
-        100 => "battery-level-100-charging-symbolic",
-        90 => "battery-level-90-charging-symbolic",
-        80 => "battery-level-80-charging-symbolic",
-        70 => "battery-level-70-charging-symbolic",
-        60 => "battery-level-60-charging-symbolic",
-        50 => "battery-level-50-charging-symbolic",
-        40 => "battery-level-40-charging-symbolic",
-        30 => "battery-level-30-charging-symbolic",
-        20 => "battery-level-20-charging-symbolic",
-        10 => "battery-level-10-charging-symbolic",
-        _ => "battery-level-0-charging-symbolic",
+        100 => &[
+            "battery-100-charging",
+            "battery-level-100-charging-symbolic",
+        ],
+        90 => &["battery-090-charging", "battery-level-90-charging-symbolic"],
+        80 => &["battery-080-charging", "battery-level-80-charging-symbolic"],
+        70 => &["battery-070-charging", "battery-level-70-charging-symbolic"],
+        60 => &["battery-060-charging", "battery-level-60-charging-symbolic"],
+        50 => &["battery-050-charging", "battery-level-50-charging-symbolic"],
+        40 => &["battery-040-charging", "battery-level-40-charging-symbolic"],
+        30 => &["battery-030-charging", "battery-level-30-charging-symbolic"],
+        20 => &["battery-020-charging", "battery-level-20-charging-symbolic"],
+        10 => &["battery-010-charging", "battery-level-10-charging-symbolic"],
+        _ => &["battery-000-charging", "battery-level-0-charging-symbolic"],
     }
 }
 
-fn discharging_battery_icon_name(level: i32) -> &'static str {
+fn discharging_battery_icon_names(level: i32) -> &'static [&'static str] {
     match level {
-        100 => "battery-level-100-symbolic",
-        90 => "battery-level-90-symbolic",
-        80 => "battery-level-80-symbolic",
-        70 => "battery-level-70-symbolic",
-        60 => "battery-level-60-symbolic",
-        50 => "battery-level-50-symbolic",
-        40 => "battery-level-40-symbolic",
-        30 => "battery-level-30-symbolic",
-        20 => "battery-level-20-symbolic",
-        10 => "battery-level-10-symbolic",
-        _ => "battery-level-0-symbolic",
+        100 => &["battery-100", "battery-level-100-symbolic"],
+        90 => &["battery-090", "battery-level-90-symbolic"],
+        80 => &["battery-080", "battery-level-80-symbolic"],
+        70 => &["battery-070", "battery-level-70-symbolic"],
+        60 => &["battery-060", "battery-level-60-symbolic"],
+        50 => &["battery-050", "battery-level-50-symbolic"],
+        40 => &["battery-040", "battery-level-40-symbolic"],
+        30 => &["battery-030", "battery-level-30-symbolic"],
+        20 => &["battery-020", "battery-level-20-symbolic"],
+        10 => &["battery-010", "battery-level-10-symbolic"],
+        _ => &["battery-000", "battery-level-0-symbolic"],
     }
 }
 

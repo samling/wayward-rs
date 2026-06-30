@@ -54,25 +54,52 @@ fn battery_time_remaining_text_hides_missing_duration() {
 }
 
 #[test]
-fn battery_icon_name_uses_charged_icon_for_fully_charged() {
+fn battery_icon_names_use_charged_icon_for_fully_charged() {
     assert_eq!(
-        battery_icon_name(100.0, DeviceState::FullyCharged),
-        "battery-level-100-charged-symbolic"
+        battery_icon_names(100.0, DeviceState::FullyCharged),
+        &["battery-100-charged", "battery-level-100-charged-symbolic"]
     );
 }
 
 #[test]
-fn battery_icon_name_uses_charging_icons_for_charging_state() {
+fn battery_icon_names_use_charging_icons_for_charging_state() {
     assert_eq!(
-        battery_icon_name(84.0, DeviceState::Charging),
-        "battery-level-80-charging-symbolic"
+        battery_icon_names(84.0, DeviceState::Charging),
+        &["battery-080-charging", "battery-level-80-charging-symbolic"]
     );
 }
 
 #[test]
-fn battery_icon_name_uses_level_icons_for_other_states() {
+fn battery_icon_names_use_full_icon_for_high_charging_levels() {
     assert_eq!(
-        battery_icon_name(26.0, DeviceState::Discharging),
-        "battery-level-30-symbolic"
+        battery_icon_names(99.0, DeviceState::Charging),
+        &[
+            "battery-100-charging",
+            "battery-level-100-charging-symbolic"
+        ]
+    );
+}
+
+#[test]
+fn battery_icon_names_use_mid_level_icon_when_discharging() {
+    assert_eq!(
+        battery_icon_names(68.0, DeviceState::Discharging),
+        &["battery-070", "battery-level-70-symbolic"]
+    );
+}
+
+#[test]
+fn battery_icon_names_use_level_icons_for_other_states() {
+    assert_eq!(
+        battery_icon_names(26.0, DeviceState::Discharging),
+        &["battery-030", "battery-level-30-symbolic"]
+    );
+}
+
+#[test]
+fn battery_icon_names_use_full_icon_for_high_discharging_levels() {
+    assert_eq!(
+        battery_icon_names(96.0, DeviceState::Discharging),
+        &["battery-100", "battery-level-100-symbolic"]
     );
 }

@@ -63,7 +63,7 @@ impl SimpleComponent for BatteryComponent {
                     add_css_class: "battery-icon",
 
                     #[watch]
-                    set_icon_name: Some(model.view_model.icon_name),
+                    set_from_gicon: &gtk::gio::ThemedIcon::from_names(model.view_model.icon_names),
                 },
 
                 #[name = "percentage"]
